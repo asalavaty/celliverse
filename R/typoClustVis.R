@@ -1,0 +1,398 @@
+# A function for adding the cell type annotations from an object of class TypoClust to a Seurat object
+
+library(ggplot2)
+library(ggalluvial)
+library(dplyr)
+library(stringr)
+library(patchwork)
+
+typoClustVis <- function(
+    typoClust, # An object of class TypoClust generated via `typoClust` function.
+    desired_sets = NULL, # Optional. A character vector of the names of desired clusters, sub-clusters, and/or cell-subsets present in the specified `objects`. If not specified, all clusters and cell-subsets in the typoClust object will be visualized.
+    rank_thresh = 1, # Integer, the top N ranked cell types for each cluster will be visualized.
+    refine = TRUE, # Logical, whether to refine the cell types by going further down the cell type table to find a more specific match for the N-ranked cell type.
+    refine_thresh = 1, # Integer, specifies how deep to traverse the hierarchy of cell subtypes. Ignored if refine = FALSE.
+    
+    # ---- Visualization arguments ----
+    order_by = c("Cell Type", "Cluster", "Combined Score", "Combined Count", "Purity"), # How to order the clusters. One of Cell Type, Cluster, Combined Score, Combined Count, or Purity
+    plot_title = NULL, # Plot Title
+    cellType_palette = NULL, # A scale specification for coloring cell types. Can be specified in one of two forms: 
+    ## A ggplot2 scale object (e.g. ggplot2::scale_fill_hue(), ggsci::scale_fill_igv()). 
+    ## A character vector of colors (e.g. c("red", "blue", "green")).
+    
+    # Tile plot
+    tile_width = 0.2,
+    tile_height = 0.6,
+    tile_xlim = c(0.5, 1.5),
+    tile_legend_title = "Cell Type",
+    
+    # Dot plot
+    dot_color_low = "blue",
+    dot_color_high = "red",
+    dot_panel_border_color = "black",
+    dot_panel_border_size = 0.5,
+    dot_axis_text_size = 11,
+    dot_axis_title_size = 12,
+    dot_plot_margin_right = 10,
+    dot_xlab = "Lead Cell Type Score",
+    dot_size_title = "Combined\nCount",
+    dot_color_title = "Avg Purity",
+    
+    # Label plot
+    label_size = 3,
+    label_padding_lines = 0.5,
+
+    # Combined plot
+    legend_box = "vertical",
+    legend_box_just = "left",
+    legend_position = "right"
+) {
+  
+  #______________________
+  
+  # A helper functions
+  
+  convert_to_factor <- function(x) {
+    non_na <- x[!is.na(x)]
+    
+    # Separate special labels first
+    special_labels <- non_na[non_na %in% c("Quiescent", "Isolated")]
+    cluster_like <- non_na[!non_na %in% c("Quiescent", "Isolated")]
+    
+    if (length(cluster_like) > 0) {
+      df <- data.frame(original = cluster_like, stringsAsFactors = FALSE)
+      
+      # Extract major cluster number
+      df$major <- as.numeric(sub("^C([0-9]+).*", "\\1", df$original))
+      
+      # Extract subcluster number (if present, else NA)
+      df$sub <- suppressWarnings(
+        as.numeric(sub(".*-Sub([0-9]+).*", "\\1", df$original))
+      )
+      df$sub[grepl("-Sub", df$original) == FALSE] <- Inf  # so they come before "Sub" entries when sorting
+      
+      # Extract level number (if present, else NA)
+      df$level <- suppressWarnings(
+        as.numeric(sub(".*_L([0-9]+)$", "\\1", df$original))
+      )
+      df$level[grepl("_L", df$original) == FALSE] <- Inf  # so no-level comes first
+      
+      # Sort: major first, then sub, then level
+      df <- df[order(df$major, df$sub, df$level), , drop = FALSE]
+      
+      levels <- unique(c(df$original, sort(special_labels)))
+    } else {
+      # No cluster-like values, only special labels
+      levels <- sort(unique(special_labels))
+    }
+    
+    factor(x, levels = levels)
+  }
+  
+  #________________________________________
+  
+  # Setting the args
+  
+  order_by <- match.arg(order_by)
+  
+  #________________________________________
+  
+  # Defining the default logs for info messages
+  log_message <- function(...) {
+    cli::cli_alert_info(...)
+  }
+  
+  #________________________________________
+  
+  # Performing initial checks
+  
+  if(!inherits(typoClust, "TypoClust")) {
+    cli::cli_abort("The specified `typoClust` is of the wrong class. It should be a 'TypoClust' object, created using the typoClust function!")
+  }
+  
+  if(is.null(desired_sets)) {
+    log_message("Since `desired_sets` is NULL, all clusters and cell subsets will be visualized!")
+  }
+  
+  if(!is.null(desired_sets)) {
+    if(!inherits(desired_sets, "character")) {
+      cli::cli_abort("The `desired_sets` argument should be a character vector of the names of desired clusters, sub-clusters, and/or cell-subsets present in the specified `typoClust` object!")
+    }
+    
+    if(!all(desired_sets %in% names(typoClust$cell_types))) {
+      missing_desired_sets <- desired_sets[which(!(desired_sets %in% names(typoClust$cell_types)))]
+      log_message(paste0("The following desired sets are not available in the specified `typoClust` object and will not be visualized!\n  ⚠ ",
+                         paste0(missing_desired_sets, collapse = "\n  ⚠ ")))
+    }
+  }
+  
+  if(rank_thresh < 1) {
+    cli::cli_abort("The `rank_thresh` argument must be an integer greater than or equal to one!")
+  }
+  
+  if(refine & refine_thresh < 1) {
+    cli::cli_abort("The `refine_thresh` argument must be an integer greater than or equal to one!")
+  }
+  
+  #______________________
+  
+  # Preparing the dataframe for visualization
+  
+  final_clusters <- if(!is.null(desired_sets)) desired_sets[desired_sets %in% names(typoClust$cell_types)] else names(typoClust$cell_types)
+  
+  final_list <- lapply(final_clusters, function(curr_cluster) {
+    tmp_df <- typoClust$cell_types[[curr_cluster]] %>% 
+      dplyr::mutate(Cluster = curr_cluster)
+    
+    if(rank_thresh > 1) {
+      tmp_df <- tmp_df %>% 
+        dplyr::mutate(Cluster = paste(Cluster, "_R", Rank, sep = "")) 
+    } else {
+      tmp_df <- tmp_df %>% 
+        dplyr::mutate(Cluster = paste(Cluster, "_R", "1", sep = "")) 
+    }
+    
+    if(!refine) {
+      tmp_df <- tmp_df %>% 
+        dplyr::filter(Rank %in% seq_len(rank_thresh)) %>% 
+        dplyr::rowwise() %>% 
+        dplyr::mutate(Avg_Purity = mean(c(Avg_Pos_Purity, Avg_Neg_Purity), na.rm = TRUE)) %>% 
+        dplyr::mutate(first_ranked_Combined_Score = Combined_Score) %>% 
+        dplyr::ungroup()
+      
+    } else {
+      for(curr_rank in seq_len(rank_thresh)) {
+        # Set the initial values for refining
+        celltype_val <- tmp_df$CellType[curr_rank]
+        curr_refine_index <- curr_rank
+        curr_refined_cellType <- celltype_val
+        final_refined_cellType <- celltype_val
+        
+        if(rank_thresh > 1) {
+          tmp_df$Cluster[curr_rank] <- paste0(tmp_df$Cluster[curr_rank], "_R", curr_rank)
+        }
+        
+        curr_cluster_name <- tmp_df$Cluster[curr_rank]
+        
+        for (curr_refine in seq_len(refine_thresh)) {
+          curr_refined_cellType <- grep(paste0(c(paste0(gsub("\\+", "\\\\+", (if(!is.na(curr_refined_cellType) & curr_refined_cellType == "Mononuclear Phagocyte") {"Monocyte|Macrophage|Dendritic Cell"} else {curr_refined_cellType})), "$"),
+                                                 paste0(gsub("\\+", "\\\\+", (if(!is.na(curr_refined_cellType) & curr_refined_cellType == "Mononuclear Phagocyte") {"Monocyte|Macrophage|Dendritic Cell"} else {curr_refined_cellType})), " "),
+                                                 paste0(" ", gsub("\\+", "\\\\+", (if(!is.na(curr_refined_cellType) & curr_refined_cellType == "Mononuclear Phagocyte") {"Monocyte|Macrophage|Dendritic Cell"} else {curr_refined_cellType})))), 
+                                               collapse = "|"),
+                                        tmp_df[(curr_refine_index + 1):nrow(tmp_df), "CellType"],
+                                        value = TRUE)[1]
+          
+          if(!is.na(curr_refined_cellType) & !grepl(gsub("\\+", "\\\\+", curr_refined_cellType), final_refined_cellType)) {
+            final_refined_cellType <- paste0(final_refined_cellType, " → ", curr_refined_cellType)
+            
+            curr_refine_index <- curr_refine_index + grep(paste0(c(paste0(gsub("\\+", "\\\\+", curr_refined_cellType), "$"),
+                                                                   paste0(gsub("\\+", "\\\\+", curr_refined_cellType), " "),
+                                                                   paste0(" ", gsub("\\+", "\\\\+", curr_refined_cellType))), 
+                                                                 collapse = "|"),
+                                                          tmp_df[(curr_refine_index + 1):nrow(tmp_df), "CellType"])[1]
+            
+            tmp_df$CellType[curr_refine_index] <- final_refined_cellType
+            tmp_df$Cluster[curr_refine_index] <- paste0(curr_cluster_name, "_L")
+          } else {
+            tmp_df$CellType[curr_refine_index] <- final_refined_cellType
+            tmp_df$Cluster[curr_refine_index] <- paste0(curr_cluster_name, "_L")
+          }
+        }
+      }
+    }
+    
+    #__________________
+    
+    # Calculating the combined count and avg purity
+    if(!refine) {
+      tmp_df <- tmp_df %>%
+        dplyr::filter(Rank %in% seq_len(rank_thresh))
+    } else {
+      tmp_df$first_ranked_Combined_Score <- 0
+      tmp_df$Avg_Purity <- 0
+
+      for(curr_rank in seq_len(rank_thresh)) {
+
+        tmp_df$Combined_Count[grep(paste0("_R", curr_rank, "$|", "_R", curr_rank, "_L"), tmp_df$Cluster)] <-
+          stringr::str_split(tmp_df$Combined_Markers[grep(paste0("_R", curr_rank, "$|", "_R", curr_rank, "_L"), tmp_df$Cluster)], "\\|") %>%
+          unlist() %>% unique() %>% length()
+
+        tmp_df$first_ranked_Combined_Score[grep(paste0("_R", curr_rank, "$|", "_R", curr_rank, "_L"), tmp_df$Cluster)] <-
+          tmp_df$Combined_Score[curr_rank]
+
+        tmp_df$Avg_Purity[grep(paste0("_R", curr_rank, "$|", "_R", curr_rank, "_L"), tmp_df$Cluster)] <-
+          mean(c(tmp_df$Avg_Pos_Purity[grep(paste0("_R", curr_rank, "$|", "_R", curr_rank, "_L"), tmp_df$Cluster)],
+                 tmp_df$Avg_Neg_Purity[grep(paste0("_R", curr_rank, "$|", "_R", curr_rank, "_L"), tmp_df$Cluster)]),
+               na.rm = TRUE)
+      }
+
+      tmp_df <- tmp_df %>%
+        dplyr::filter(grepl("_L$", Cluster))
+      
+      tmp_df <- tmp_df %>%
+        dplyr::mutate(tmpCluster = gsub("_L$", "", Cluster))
+
+      tmp_df <- tmp_df %>%
+        dplyr::rowwise() %>%
+        dplyr::mutate(Cluster = paste(Cluster, ((stringr::str_split(CellType, "→") %>% unlist() %>% length()) - 1), sep = "")) %>%
+        dplyr::ungroup()
+      
+      # Retaining only the highest refinement level
+      tmp_df <- tmp_df %>%
+        dplyr::mutate(tmpLevel = sapply(Cluster, function(i) {
+          as.integer(str_match(i, "_L(\\d+)$")[,2])
+        }))
+      
+      tmp_df <- tmp_df %>%
+        dplyr::group_by(tmpCluster) %>% 
+        dplyr::slice_max(order_by = tmpLevel, n = 1) %>% 
+        dplyr::ungroup()
+
+      tmp_df$Cluster <- gsub("_L0$", "", tmp_df$Cluster)
+    }
+    
+    #__________________
+
+    tmp_df <- tmp_df[,-grep("Adjusted|Wrong|Occurrence", colnames(tmp_df,))]
+    
+    tmp_df
+  })
+  
+  final_df <- do.call(rbind, final_list)
+  
+  if(rank_thresh == 1) {
+    final_df$Cluster <- gsub("_R1", "", final_df$Cluster)
+  }
+  
+  order_by_col <- ifelse(order_by == "Cell Type", "CellType",
+                         ifelse(order_by == "Cluster", "Cluster", 
+                                ifelse(order_by == "Combined Score", "first_ranked_Combined_Score", 
+                                       ifelse(order_by == "Combined Count", "Combined_Count", 
+                                              ifelse(order_by == "Purity", "Avg_Purity", 
+                                                     "CellType")))))
+  
+  if(order_by != "Cluster") {
+    final_df$Cluster <- factor(final_df$Cluster, levels = final_df$Cluster[order(final_df[[order_by_col]])])
+    final_df$CellType <- factor(final_df$CellType, levels = final_df$CellType[order(final_df[[order_by_col]])] %>% unique() %>% rev())
+  } else {
+    final_df$Cluster <- convert_to_factor(final_df$Cluster)
+    final_df$CellType <- factor(final_df$CellType, 
+                                levels = final_df$CellType[sapply(levels(final_df$Cluster), function(i)  { 
+                                  grep(i, as.character(final_df$Cluster)) 
+                                  }) %>% unlist() %>% unname()] %>% unique() %>% rev())
+  }
+  
+  #______________________
+  
+  # Generate the plot
+
+  # Tile plot with legend kept
+  tile_plot <- ggplot2::ggplot(final_df,
+                      aes(y = Cluster, fill = CellType)) +
+    geom_tile(aes(x = 1, width = tile_width, height = tile_height),
+              color = "black") +
+    theme_void() +
+    theme(
+      plot.margin = margin(0, 0, 0, 0)
+    ) +
+    coord_cartesian(xlim = tile_xlim) +
+    guides(fill = guide_legend(title = tile_legend_title))
+    
+  if (!is.null(cellType_palette)) {
+    if (is.character(cellType_palette)) {
+      cellType_palette <- ggplot2::scale_fill_manual(values = cellType_palette)
+    }
+    tile_plot <- tile_plot + cellType_palette
+  }
+  
+  #_________
+  
+  # Dot plot
+  
+  dot_plot <- ggplot2::ggplot(final_df,
+                     aes(x = first_ranked_Combined_Score,
+                         y = Cluster,
+                         size = Combined_Count,
+                         color = Avg_Purity)) +
+    geom_point() +
+    scale_color_gradient(low = dot_color_low, high = dot_color_high) +
+    ggplot2::theme_minimal() +
+    theme(
+      panel.border = element_rect(color = dot_panel_border_color, 
+                                  fill = NA, 
+                                  linewidth = dot_panel_border_size),
+      axis.title.y = element_blank(),
+      axis.text.y = element_blank(),
+      axis.text.x = element_text(size = dot_axis_text_size),
+      axis.title.x = element_text(size = dot_axis_title_size,
+                                  margin = margin(t = 10)),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.margin = margin(r = dot_plot_margin_right)
+    ) +
+    labs(x = dot_xlab, size = dot_size_title, color = dot_color_title) +
+    guides(color = guide_colorbar(order = 1),
+           size  = guide_legend(order = 2))
+  
+  if(!is.null(plot_title)) {
+    dot_plot <- dot_plot + ggplot2::ggtitle(plot_title)
+  }
+  
+  ## Adding lines
+  if(order_by == "Cluster") {
+    if(all(sapply(as.character(final_df$Cluster), function(i) {
+      grepl("^C\\d+", i)
+    }))) {
+      # Step 1. Extract main cluster name (before first "-")
+      final_df <- final_df %>%
+        dplyr::mutate(MainCluster = stringr::str_extract(as.character(final_df$Cluster), "^C\\d+"))
+      
+      # Step 2. Get the "last" y-position index of each main cluster
+      # because ggplot plots factors as 1...n on y
+      cluster_breaks <- final_df %>%
+        dplyr::group_by(MainCluster) %>%
+        dplyr::summarise(last_pos = max(as.numeric(factor(as.character(Cluster), levels = levels(final_df$Cluster))))) %>%
+        ungroup()
+      cluster_breaks <- cluster_breaks[order(cluster_breaks$last_pos),]
+      cluster_breaks <- cluster_breaks[-nrow(cluster_breaks),]
+      
+      dot_plot <- dot_plot + ggplot2::geom_hline(data = cluster_breaks,
+                                        aes(yintercept = last_pos + 0.5),
+                                        linetype = "dashed",
+                                        color = "darkgrey")
+
+    }
+  }
+  
+  if(length(unique(final_df$first_ranked_Combined_Score)) <= 4) {
+    dot_plot <- dot_plot + ggplot2::scale_x_continuous(breaks = unique(final_df$first_ranked_Combined_Score))
+  }
+  
+  #_________
+  
+  # Label plot
+  label_plot <- ggplot2::ggplot(final_df,
+                       aes(y = Cluster)) +
+    geom_label(aes(x = 1, label = Cluster, fill = NULL), hjust = 1, 
+               vjust = 0.5, size = label_size,
+               label.padding = unit(label_padding_lines, "lines")) +
+    ggplot2::theme_void() +  
+    ggplot2::theme(legend.position = "none",
+          plot.margin = margin(r = 0, 
+                               l = 0)) +
+    coord_cartesian(xlim = c(1, 1))
+  
+  #_________
+  
+  # Combine plots & collect legends
+  combined_plot <- (label_plot + patchwork::plot_spacer() + tile_plot + 
+                      patchwork::plot_spacer() + dot_plot) +
+    patchwork::plot_layout(widths = c(1, -0.72, 0.5, -0.23, 2.5), guides = "collect") &
+    ggplot2::theme(
+      legend.box = legend_box,
+      legend.box.just = legend_box_just,
+      legend.position = legend_position
+    )
+  
+  return(combined_plot)
+}

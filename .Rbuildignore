@@ -1,0 +1,13 @@
+R_Package_CelliVerse.Rproj
+.Rproj.user/
+.Rhistory
+README.Rmd
+README.html
+cran-comments.Rmd
+cran-comments.html
+cran-comments.md
+.git/
+.gitignore
+vignettes/.gitignore
+logo.png
+Vignettes.html
