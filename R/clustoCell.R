@@ -726,7 +726,8 @@ clustoCell <- function(
       rownames(pos_marker_freq_mat) <- rownames(pos_mat_major_clustered)
       
       ### Calculaing gini scores
-      pos_cluster_gini_scores <- apply(pos_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      # pos_cluster_gini_scores <- apply(pos_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      pos_cluster_gini_scores <- gini_rows_freq_mat(pos_marker_freq_mat)
       pos_clusters_specific_features <- names(pos_cluster_gini_scores)[pos_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       pos_clusters_non_specific_features <- pos_cluster_gini_scores[pos_cluster_gini_scores < gini_thresh] %>% na.omit()
       pos_clusters_non_specific_features <- data.frame(Feature = names(pos_clusters_non_specific_features), 
@@ -763,8 +764,10 @@ clustoCell <- function(
       
       if(ncol(curr_pos_mat) > 1) {
         # curr_cluster_gini_scores <- apply(curr_pos_mat, 1, function(x) ineq::Gini(x))
-        curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_pos_mat@i, curr_pos_mat@p, curr_pos_mat@x, nrow(curr_pos_mat), ncol(curr_pos_mat))
-        names(curr_cluster_gini_scores) <- rownames(curr_pos_mat)
+        curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_pos_mat@i, curr_pos_mat@p, curr_pos_mat@x, 
+                                                               nrow(curr_pos_mat), ncol(curr_pos_mat), 
+                                                               curr_pos_mat@Dimnames[[1]])
+        
         curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                Gini_Score = curr_cluster_gini_scores,
                                                Purity = 1 - curr_cluster_gini_scores,
@@ -823,7 +826,8 @@ clustoCell <- function(
       rownames(neg_marker_freq_mat) <- rownames(neg_mat_major_clustered)
       
       ### Calculaing gini scores
-      neg_cluster_gini_scores <- apply(neg_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      # neg_cluster_gini_scores <- apply(neg_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      neg_cluster_gini_scores <- gini_rows_freq_mat(neg_marker_freq_mat)
       neg_clusters_specific_features <- names(neg_cluster_gini_scores)[neg_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       neg_clusters_non_specific_features <- neg_cluster_gini_scores[neg_cluster_gini_scores < gini_thresh] %>% na.omit()
       neg_clusters_non_specific_features <- data.frame(Feature = names(neg_clusters_non_specific_features), 
@@ -860,8 +864,10 @@ clustoCell <- function(
       
       if(ncol(curr_neg_mat) > 1) {
         # curr_cluster_gini_scores <- apply(curr_neg_mat, 1, function(x) ineq::Gini(x))
-        curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_neg_mat@i, curr_neg_mat@p, curr_neg_mat@x, nrow(curr_neg_mat), ncol(curr_neg_mat))
-        names(curr_cluster_gini_scores) <- rownames(curr_neg_mat)
+        curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_neg_mat@i, curr_neg_mat@p, curr_neg_mat@x, 
+                                                               nrow(curr_neg_mat), ncol(curr_neg_mat), 
+                                                               curr_neg_mat@Dimnames[[1]])
+        
         curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                Gini_Score = curr_cluster_gini_scores,
                                                Purity = 1 - curr_cluster_gini_scores,
@@ -920,7 +926,8 @@ clustoCell <- function(
       rownames(med_marker_freq_mat) <- rownames(med_mat_major_clustered)
       
       ### Calculaing gini scores
-      med_cluster_gini_scores <- apply(med_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      # med_cluster_gini_scores <- apply(med_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      med_cluster_gini_scores <- gini_rows_freq_mat(med_marker_freq_mat)
       med_clusters_specific_features <- names(med_cluster_gini_scores)[med_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       med_clusters_non_specific_features <- med_cluster_gini_scores[med_cluster_gini_scores < gini_thresh] %>% na.omit()
       med_clusters_non_specific_features <- data.frame(Feature = names(med_clusters_non_specific_features), 
@@ -956,8 +963,10 @@ clustoCell <- function(
       
       if(ncol(curr_med_mat) > 1) {
         # curr_cluster_gini_scores <- apply(curr_med_mat, 1, function(x) ineq::Gini(x))
-        curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_med_mat@i, curr_med_mat@p, curr_med_mat@x, nrow(curr_med_mat), ncol(curr_med_mat))
-        names(curr_cluster_gini_scores) <- rownames(curr_med_mat)
+        curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_med_mat@i, curr_med_mat@p, curr_med_mat@x, 
+                                                               nrow(curr_med_mat), ncol(curr_med_mat), 
+                                                               curr_med_mat@Dimnames[[1]])
+        
         curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                Gini_Score = curr_cluster_gini_scores,
                                                Purity = 1 - curr_cluster_gini_scores,
@@ -991,33 +1000,33 @@ clustoCell <- function(
   
   ## R Version
   # lapply(names(major_cluster_pos_markers), function(cur_cl) {
-  #   
+  # 
   #   # subsetting the cluster markers
   #   curr_pos_markers <- major_cluster_pos_markers[[cur_cl]]
   #   curr_neg_markers <- major_cluster_neg_markers[[cur_cl]]
   #   curr_med_markers <- major_cluster_med_markers[[cur_cl]]
-  #   
+  # 
   #   # Step 0: Store the original objects in a named list
   #   major_cluster_markers_list <- list(
   #     curr_pos_markers = curr_pos_markers,
   #     curr_neg_markers = curr_neg_markers,
   #     curr_med_markers = curr_med_markers
   #   )
-  #   
+  # 
   #   # Step 1: Keep only data frames
   #   major_cluster_marker_dfs <- lapply(major_cluster_markers_list, function(df) if (is.data.frame(df)) df else NULL)
   #   major_cluster_marker_dfs <- Filter(Negate(is.null), major_cluster_marker_dfs)
-  #   
+  # 
   #   # Step 2: Keep only those with a "Purity" column
   #   major_cluster_with_purity <- major_cluster_marker_dfs[sapply(major_cluster_marker_dfs, function(df) "Purity" %in% colnames(df))]
-  #   
+  # 
   #   # Step 3: Create a named list of Features
   #   major_cluster_features_list <- lapply(major_cluster_with_purity, function(df) df$Feature)
-  #   
+  # 
   #   # Step 4: Count how many data frames each Feature appears in
   #   major_cluster_feature_counts <- table(unlist(major_cluster_features_list))
   #   overlapping_features <- names(major_cluster_feature_counts[major_cluster_feature_counts >= 2])
-  #   
+  # 
   #   # Step 5: For each overlapping feature, retain only in the data frame with highest purity
   #   for (feature in overlapping_features) {
   #     # Collect Purity values across data frames
@@ -1026,18 +1035,18 @@ clustoCell <- function(
   #       row <- df[df$Feature == feature, ]
   #       if (nrow(row) > 0) return(row$Purity) else return(NA)
   #     })
-  #     
+  # 
   #     # Identify the data frame with highest purity for this feature
   #     if (all(is.na(major_cluster_purity_values))) next  # skip if all values are NA
   #     major_cluster_max_purity_name <- names(which.max(major_cluster_purity_values))
-  #     
+  # 
   #     # Remove the feature from all other data frames
   #     for (name in setdiff(names(major_cluster_with_purity), major_cluster_max_purity_name)) {
   #       df <- major_cluster_with_purity[[name]]
   #       major_cluster_with_purity[[name]] <- df[df$Feature != feature, ]
   #     }
   #   }
-  #   
+  # 
   #   # Step 6: Merge updated data frames back into the full list
   #   for (name in names(major_cluster_marker_dfs)) {
   #     if (name %in% names(major_cluster_with_purity)) {
@@ -1045,47 +1054,47 @@ clustoCell <- function(
   #     }
   #     # else: keep the original version without "Purity" column
   #   }
-  #   
+  # 
   #   # Step 7: Assign updated versions back to original variables
   #   if ("curr_pos_markers" %in% names(major_cluster_marker_dfs)) {
   #     curr_pos_markers <- major_cluster_marker_dfs[["curr_pos_markers"]]
   #     if(grepl("Purity", colnames(curr_pos_markers)) %>% any()) {
-  #       curr_pos_markers <- curr_pos_markers %>% 
-  #         dplyr::mutate(Rank = data.table::frankv(Purity, order = -1, ties.method="dense")) %>% 
+  #       curr_pos_markers <- curr_pos_markers %>%
+  #         dplyr::mutate(Rank = data.table::frankv(Purity, order = -1, ties.method="dense")) %>%
   #         dplyr::arrange(Rank)
   #     } else if(grepl("EWCSR", colnames(curr_pos_markers)) %>% any()) {
-  #       curr_pos_markers <- curr_pos_markers %>% 
-  #         dplyr::mutate(Rank = data.table::frankv(EWCSR, order = -1, ties.method="dense")) %>% 
+  #       curr_pos_markers <- curr_pos_markers %>%
+  #         dplyr::mutate(Rank = data.table::frankv(EWCSR, order = -1, ties.method="dense")) %>%
   #         dplyr::arrange(Rank)
   #     }
   #   }
-  #   
+  # 
   #   if ("curr_neg_markers" %in% names(major_cluster_marker_dfs)) {
   #     curr_neg_markers <- major_cluster_marker_dfs[["curr_neg_markers"]]
   #     if(grepl("Purity", colnames(curr_neg_markers)) %>% any()) {
-  #       curr_neg_markers <- curr_neg_markers %>% 
-  #         dplyr::mutate(Rank = data.table::frankv(Purity, order = -1, ties.method="dense")) %>% 
+  #       curr_neg_markers <- curr_neg_markers %>%
+  #         dplyr::mutate(Rank = data.table::frankv(Purity, order = -1, ties.method="dense")) %>%
   #         dplyr::arrange(Rank)
   #     } else if(grepl("EWCSR", colnames(curr_neg_markers)) %>% any()) {
-  #       curr_neg_markers <- curr_neg_markers %>% 
-  #         dplyr::mutate(Rank = data.table::frankv(EWCSR, order = -1, ties.method="dense")) %>% 
+  #       curr_neg_markers <- curr_neg_markers %>%
+  #         dplyr::mutate(Rank = data.table::frankv(EWCSR, order = -1, ties.method="dense")) %>%
   #         dplyr::arrange(Rank)
   #     }
   #   }
-  #   
+  # 
   #   if ("curr_med_markers" %in% names(major_cluster_marker_dfs)) {
   #     curr_med_markers <- major_cluster_marker_dfs[["curr_med_markers"]]
   #     if(grepl("Purity", colnames(curr_med_markers)) %>% any()) {
-  #       curr_med_markers <- curr_med_markers %>% 
-  #         dplyr::mutate(Rank = data.table::frankv(Purity, order = -1, ties.method="dense")) %>% 
+  #       curr_med_markers <- curr_med_markers %>%
+  #         dplyr::mutate(Rank = data.table::frankv(Purity, order = -1, ties.method="dense")) %>%
   #         dplyr::arrange(Rank)
   #     } else if(grepl("EWCSR", colnames(curr_med_markers)) %>% any()) {
-  #       curr_med_markers <- curr_med_markers %>% 
-  #         dplyr::mutate(Rank = data.table::frankv(EWCSR, order = -1, ties.method="dense")) %>% 
+  #       curr_med_markers <- curr_med_markers %>%
+  #         dplyr::mutate(Rank = data.table::frankv(EWCSR, order = -1, ties.method="dense")) %>%
   #         dplyr::arrange(Rank)
   #     }
   #   }
-  #   
+  # 
   #   # Updating the cluster markers
   #   major_cluster_pos_markers[[cur_cl]] <<- curr_pos_markers
   #   if(is.data.frame(major_cluster_pos_markers[[cur_cl]])) {
@@ -1093,14 +1102,14 @@ clustoCell <- function(
   #       major_cluster_pos_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
   #     }
   #   }
-  #   
+  # 
   #   major_cluster_neg_markers[[cur_cl]] <<- curr_neg_markers
   #   if(is.data.frame(major_cluster_neg_markers[[cur_cl]])) {
   #     if(nrow(major_cluster_neg_markers[[cur_cl]]) == 0) {
   #       major_cluster_neg_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
   #     }
   #   }
-  #   
+  # 
   #   major_cluster_med_markers[[cur_cl]] <<- curr_med_markers
   #   if(is.data.frame(major_cluster_med_markers[[cur_cl]])) {
   #     if(nrow(major_cluster_med_markers[[cur_cl]]) == 0) {
@@ -1110,10 +1119,10 @@ clustoCell <- function(
   # })
   
   ## C++ version
-  cpp_major_markers_list <- filter_cluster_markers_cpp(pos_markers = major_cluster_pos_markers, 
-                                                        neg_markers = major_cluster_neg_markers, 
+  cpp_major_markers_list <- filter_cluster_markers_cpp(pos_markers = major_cluster_pos_markers,
+                                                        neg_markers = major_cluster_neg_markers,
                                                         med_markers = major_cluster_med_markers)
-  
+
   major_cluster_pos_markers <- cpp_major_markers_list$pos
   major_cluster_neg_markers <- cpp_major_markers_list$neg
   major_cluster_med_markers <- cpp_major_markers_list$med
@@ -1357,8 +1366,10 @@ clustoCell <- function(
             
             if(ncol(curr_pos_mat) > 1) {
               # curr_cluster_gini_scores <- apply(curr_pos_mat, 1, function(x) ineq::Gini(x))
-              curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_pos_mat@i, curr_pos_mat@p, curr_pos_mat@x, nrow(curr_pos_mat), ncol(curr_pos_mat))
-              names(curr_cluster_gini_scores) <- rownames(curr_pos_mat)
+              curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_pos_mat@i, curr_pos_mat@p, curr_pos_mat@x, 
+                                                                     nrow(curr_pos_mat), ncol(curr_pos_mat), 
+                                                                     curr_pos_mat@Dimnames[[1]])
+              
               curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                      Gini_Score = curr_cluster_gini_scores,
                                                      Purity = 1 - curr_cluster_gini_scores,
@@ -1405,8 +1416,10 @@ clustoCell <- function(
             
             if(ncol(curr_neg_mat) > 1) {
               # curr_cluster_gini_scores <- apply(curr_neg_mat, 1, function(x) ineq::Gini(x)) %>% na.omit()
-              curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_neg_mat@i, curr_neg_mat@p, curr_neg_mat@x, nrow(curr_neg_mat), ncol(curr_neg_mat))
-              names(curr_cluster_gini_scores) <- rownames(curr_neg_mat)
+              curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_neg_mat@i, curr_neg_mat@p, curr_neg_mat@x, 
+                                                                     nrow(curr_neg_mat), ncol(curr_neg_mat), 
+                                                                     curr_neg_mat@Dimnames[[1]])
+              
               curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                      Gini_Score = curr_cluster_gini_scores,
                                                      Purity = 1 - curr_cluster_gini_scores,
@@ -1452,8 +1465,10 @@ clustoCell <- function(
             
             if(ncol(curr_med_mat) > 1) {
               # curr_cluster_gini_scores <- apply(curr_med_mat, 1, function(x) ineq::Gini(x))
-              curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_med_mat@i, curr_med_mat@p, curr_med_mat@x, nrow(curr_med_mat), ncol(curr_med_mat))
-              names(curr_cluster_gini_scores) <- rownames(curr_med_mat)
+              curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_med_mat@i, curr_med_mat@p, curr_med_mat@x, 
+                                                                     nrow(curr_med_mat), ncol(curr_med_mat), 
+                                                                     curr_med_mat@Dimnames[[1]])
+              
               curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                      Gini_Score = curr_cluster_gini_scores,
                                                      Purity = 1 - curr_cluster_gini_scores,

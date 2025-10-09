@@ -496,7 +496,8 @@ markoClust <- function(
       rownames(pos_marker_freq_mat) <- rownames(pos_mat_major_clustered)
       
       ### Calculaing gini scores
-      pos_cluster_gini_scores <- apply(pos_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      # pos_cluster_gini_scores <- apply(pos_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      pos_cluster_gini_scores <- gini_rows_freq_mat(pos_marker_freq_mat)
       pos_clusters_specific_features <- names(pos_cluster_gini_scores)[pos_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       pos_clusters_non_specific_features <- pos_cluster_gini_scores[pos_cluster_gini_scores < gini_thresh] %>% na.omit()
       pos_clusters_non_specific_features <- data.frame(Feature = names(pos_clusters_non_specific_features), 
@@ -533,8 +534,10 @@ markoClust <- function(
       
       if(ncol(curr_pos_mat) > 1) {
         # curr_cluster_gini_scores <- apply(curr_pos_mat, 1, function(x) ineq::Gini(x))
-        curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_pos_mat@i, curr_pos_mat@p, curr_pos_mat@x, nrow(curr_pos_mat), ncol(curr_pos_mat))
-        names(curr_cluster_gini_scores) <- rownames(curr_pos_mat)
+        curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_pos_mat@i, curr_pos_mat@p, curr_pos_mat@x, 
+                                                               nrow(curr_pos_mat), ncol(curr_pos_mat), 
+                                                               curr_pos_mat@Dimnames[[1]])
+        
         curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                Gini_Score = curr_cluster_gini_scores,
                                                Purity = 1 - curr_cluster_gini_scores,
@@ -592,7 +595,8 @@ markoClust <- function(
       rownames(neg_marker_freq_mat) <- rownames(neg_mat_major_clustered)
       
       ### Calculaing gini scores
-      neg_cluster_gini_scores <- apply(neg_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      # neg_cluster_gini_scores <- apply(neg_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      neg_cluster_gini_scores <- gini_rows_freq_mat(neg_marker_freq_mat)
       neg_clusters_specific_features <- names(neg_cluster_gini_scores)[neg_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       neg_clusters_non_specific_features <- neg_cluster_gini_scores[neg_cluster_gini_scores < gini_thresh] %>% na.omit()
       neg_clusters_non_specific_features <- data.frame(Feature = names(neg_clusters_non_specific_features), 
@@ -629,8 +633,10 @@ markoClust <- function(
       
       if(ncol(curr_neg_mat) > 1) {
         # curr_cluster_gini_scores <- apply(curr_neg_mat, 1, function(x) ineq::Gini(x))
-        curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_neg_mat@i, curr_neg_mat@p, curr_neg_mat@x, nrow(curr_neg_mat), ncol(curr_neg_mat))
-        names(curr_cluster_gini_scores) <- rownames(curr_neg_mat)
+        curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_neg_mat@i, curr_neg_mat@p, curr_neg_mat@x, 
+                                                               nrow(curr_neg_mat), ncol(curr_neg_mat), 
+                                                               curr_neg_mat@Dimnames[[1]])
+        
         curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                Gini_Score = curr_cluster_gini_scores,
                                                Purity = 1 - curr_cluster_gini_scores,
@@ -688,7 +694,8 @@ markoClust <- function(
       rownames(med_marker_freq_mat) <- rownames(med_mat_major_clustered)
       
       ### Calculaing gini scores
-      med_cluster_gini_scores <- apply(med_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      # med_cluster_gini_scores <- apply(med_marker_freq_mat, 1, function(x) ineq::Gini(x))
+      med_cluster_gini_scores <- gini_rows_freq_mat(med_marker_freq_mat)
       med_clusters_specific_features <- names(med_cluster_gini_scores)[med_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       med_clusters_non_specific_features <- med_cluster_gini_scores[med_cluster_gini_scores < gini_thresh] %>% na.omit()
       med_clusters_non_specific_features <- data.frame(Feature = names(med_clusters_non_specific_features), 
@@ -725,8 +732,10 @@ markoClust <- function(
       
       if(ncol(curr_med_mat) > 1) {
         # curr_cluster_gini_scores <- apply(curr_med_mat, 1, function(x) ineq::Gini(x))
-        curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_med_mat@i, curr_med_mat@p, curr_med_mat@x, nrow(curr_med_mat), ncol(curr_med_mat))
-        names(curr_cluster_gini_scores) <- rownames(curr_med_mat)
+        curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_med_mat@i, curr_med_mat@p, curr_med_mat@x, 
+                                                               nrow(curr_med_mat), ncol(curr_med_mat), 
+                                                               curr_med_mat@Dimnames[[1]])
+        
         curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                Gini_Score = curr_cluster_gini_scores,
                                                Purity = 1 - curr_cluster_gini_scores,
@@ -1114,8 +1123,10 @@ markoClust <- function(
             
             if(ncol(curr_pos_mat) > 1) {
               # curr_cluster_gini_scores <- apply(curr_pos_mat, 1, function(x) ineq::Gini(x))
-              curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_pos_mat@i, curr_pos_mat@p, curr_pos_mat@x, nrow(curr_pos_mat), ncol(curr_pos_mat))
-              names(curr_cluster_gini_scores) <- rownames(curr_pos_mat)
+              curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_pos_mat@i, curr_pos_mat@p, curr_pos_mat@x, 
+                                                                     nrow(curr_pos_mat), ncol(curr_pos_mat), 
+                                                                     curr_pos_mat@Dimnames[[1]])
+              
               curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                      Gini_Score = curr_cluster_gini_scores,
                                                      Purity = 1 - curr_cluster_gini_scores,
@@ -1160,9 +1171,11 @@ markoClust <- function(
             curr_neg_mat <- neg_mat_sub_clustered[, cells, drop = FALSE]
             
             if(ncol(curr_neg_mat) > 1) {
-              # curr_cluster_gini_scores <- apply(curr_neg_mat, 1, function(x) ineq::Gini(x))
-              curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_neg_mat@i, curr_neg_mat@p, curr_neg_mat@x, nrow(curr_neg_mat), ncol(curr_neg_mat))
-              names(curr_cluster_gini_scores) <- rownames(curr_neg_mat)
+              # curr_cluster_gini_scores <- apply(curr_neg_mat, 1, function(x) ineq::Gini(x)) %>% na.omit()
+              curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_neg_mat@i, curr_neg_mat@p, curr_neg_mat@x, 
+                                                                     nrow(curr_neg_mat), ncol(curr_neg_mat), 
+                                                                     curr_neg_mat@Dimnames[[1]])
+              
               curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                      Gini_Score = curr_cluster_gini_scores,
                                                      Purity = 1 - curr_cluster_gini_scores,
@@ -1208,8 +1221,10 @@ markoClust <- function(
             
             if(ncol(curr_med_mat) > 1) {
               # curr_cluster_gini_scores <- apply(curr_med_mat, 1, function(x) ineq::Gini(x))
-              curr_cluster_gini_scores <- gini_rows_lg_matrix(curr_med_mat@i, curr_med_mat@p, curr_med_mat@x, nrow(curr_med_mat), ncol(curr_med_mat))
-              names(curr_cluster_gini_scores) <- rownames(curr_med_mat)
+              curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_med_mat@i, curr_med_mat@p, curr_med_mat@x, 
+                                                                     nrow(curr_med_mat), ncol(curr_med_mat), 
+                                                                     curr_med_mat@Dimnames[[1]])
+              
               curr_cluster_gini_scores <- data.frame(Feature = names(curr_cluster_gini_scores), 
                                                      Gini_Score = curr_cluster_gini_scores,
                                                      Purity = 1 - curr_cluster_gini_scores,

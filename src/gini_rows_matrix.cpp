@@ -116,3 +116,110 @@ NumericVector gini_rows_lg_matrix(IntegerVector i, IntegerVector p, LogicalVecto
   
   return gini;
 }
+
+//=======================================================
+//=======================================================
+
+#include <Rcpp.h>
+#include <algorithm>
+#include <vector>
+#include <numeric>
+
+using namespace Rcpp;
+
+// Most reliable: Direct port of the ineq::Gini algorithm
+// [[Rcpp::export]]
+NumericVector gini_rows_freq_mat(NumericMatrix mat) {
+  int n_rows = mat.nrow();
+  int n_cols = mat.ncol();
+  NumericVector result(n_rows);
+  std::vector<double> x(n_cols);
+  
+  // Get row names from the input matrix
+  CharacterVector row_names = rownames(mat);
+  
+  for (int i = 0; i < n_rows; i++) {
+    // Copy and sort
+    for (int j = 0; j < n_cols; j++) {
+      x[j] = mat(i, j);
+    }
+    std::sort(x.begin(), x.end());
+    
+    double sum_x = 0.0;
+    for (int j = 0; j < n_cols; j++) {
+      sum_x += x[j];
+    }
+    
+    if (sum_x == 0.0) {
+      result[i] = 0.0;
+      continue;
+    }
+    
+    // This is the exact algorithm used by ineq::Gini
+    double gini = 0.0;
+    for (int j = 0; j < n_cols; j++) {
+      gini += (j + 1) * x[j];
+    }
+    
+    result[i] = (2.0 * gini) / (n_cols * sum_x) - (n_cols + 1.0) / n_cols;
+  }
+  
+  // Set row names to the result vector
+  if (row_names.size() == n_rows) {
+    result.attr("names") = row_names;
+  }
+  
+  return result;
+}
+
+//=======================================================
+//=======================================================
+
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// gini_rows_matrix for lgCMatrix
+
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::export]]
+NumericVector gini_rows_lg_marker_matrix(
+    IntegerVector i, 
+    IntegerVector p, 
+    LogicalVector x, 
+    int m, 
+    int n, 
+    CharacterVector names = CharacterVector()
+) {
+  NumericVector gini(m);
+  
+  // Calculate row sums (number of TRUE values per row)
+  std::vector<int> row_sums(m, 0);
+  for (int col = 0; col < n; ++col) {
+    int start = p[col];
+    int end = p[col + 1];
+    for (int idx = start; idx < end; ++idx) {
+      if (x[idx]) {  // only count TRUE entries
+        row_sums[i[idx]]++;
+      }
+    }
+  }
+  
+  // Calculate Gini for each row (binary data)
+  for (int row = 0; row < m; ++row) {
+    int sum = row_sums[row];
+    if (sum == 0)
+      gini[row] = NA_REAL;
+    else
+      gini[row] = 1.0 - static_cast<double>(sum) / n;
+  }
+  
+  // Assign row names if provided
+  if (names.size() == m) {
+    gini.attr("names") = names;
+  }
+  
+  return gini;
+}
+

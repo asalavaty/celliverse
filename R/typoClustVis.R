@@ -48,7 +48,15 @@ typoClustVis <- function(
     legend_position = "right"
 ) {
   
-  #______________________
+  #________________________________________
+  # Dealing with warnings
+  ## Save current warning setting and disable warnings
+  old_warn <- getOption("warn")
+  options(warn = -1)   # -1 = suppress all warnings
+  
+  on.exit(options(warn = old_warn), add = TRUE)  # restore when function exits
+  
+  #________________________________________
   
   # A helper functions
   

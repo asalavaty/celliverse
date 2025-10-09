@@ -19,7 +19,13 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
                       verbose = TRUE # Logical, whether to show progress messages
                       ) {
   
-  suppressWarnings({
+  #________________________________________
+  # Dealing with warnings
+  ## Save current warning setting and disable warnings
+  old_warn <- getOption("warn")
+  options(warn = -1)   # -1 = suppress all warnings
+  
+  on.exit(options(warn = old_warn), add = TRUE)  # restore when function exits
   
   #________________________________________
   
@@ -903,9 +909,6 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
     cli::cli_rule(left = cli::col_green("SUCCESS"), right = cli::col_silver(Sys.time()))
     cli::cli_alert_success(cli::style_italic(cli::style_bold("TypoClust finished successfully!")))
   }
-  
-  
-  })
   
   # Return results
   structure(final_results_list,
