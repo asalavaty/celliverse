@@ -28,10 +28,9 @@ markoClust <- function(
     mr_thresh = NULL, # The threshold for choosing the cell-to-cell similarities with lower than selected thresh (if it is null it will be set to the square root of the number of cells by default).
     isolated_cluster_thresh = 5, # Major clusters with lower than this number of cells (default is set to 5) will be considered as isolated cells.
     leiden_obj_function = c("modularity", "CPM"), # Whether to use the Constant Potts Model (CPM) or modularity.
-    leiden_resolution = 1, # The resolution parameter to use. Higher resolutions lead to more smaller communities, while lower resolutions lead to fewer larger communities.
+    leiden_resolution = 0.75, # The resolution parameter to use. Higher resolutions lead to more smaller communities, while lower resolutions lead to fewer larger communities.
     leiden_n_iterations = 5, # the number of iterations to iterate the Leiden algorithm. Each iteration may improve the partition further.
     identify_subclusters = TRUE, # Whether to identify subclusters as well or not
-    subcluster_resolution_weight = 0.75, # A multiplier for `leiden_resolution` to adjust the resolution used for sub-cluster identification. Higher values result in more and smaller sub-clusters, while lower values yield fewer and larger sub-clusters. For large datasets (e.g., hundreds of thousands of cells), it is recommended to use smaller weights (e.g. 0.6).
     num_threads = -1, # Integer. Number of threads (cores) to use. Default is -1, which uses all available cores.
     seed = 121, # The seed for randomization and making consistent results
     verbose = TRUE # Logical, whether to show progress messages
@@ -1046,7 +1045,7 @@ markoClust <- function(
           graph = g_union,
           objective_function = leiden_obj_function,
           weights = igraph::E(g_union)$weight,
-          resolution = leiden_resolution*subcluster_resolution_weight,
+          resolution = leiden_resolution,
           beta = 0.01,
           n_iterations = leiden_n_iterations
         )

@@ -661,7 +661,7 @@ clustoCell <- function(
   log_progress_done()
   
   log_progress_step("Detecting clusters")
-  
+
   # Leiden clustering
   leiden_clusters <- igraph::cluster_leiden(
     graph = g_union,
@@ -1287,7 +1287,7 @@ clustoCell <- function(
           graph = g_union,
           objective_function = leiden_obj_function,
           weights = igraph::E(g_union)$weight,
-          resolution = leiden_resolution*subcluster_resolution_weight,
+          resolution = subcluster_resolution_weight*leiden_resolution,
           beta = 0.01,
           n_iterations = leiden_n_iterations
         )
@@ -1755,10 +1755,9 @@ clustoCell <- function(
         mr_thresh = mr_thresh,
         isolated_cluster_thresh = isolated_cluster_thresh,
         leiden_obj_function = leiden_obj_function,
-        leiden_resolution = leiden_resolution,
+        leiden_resolution = subcluster_resolution_weight*leiden_resolution,
         leiden_n_iterations = leiden_n_iterations,
         identify_subclusters = identify_subclusters,
-        subcluster_resolution_weight = subcluster_resolution_weight,
         num_threads = num_threads,
         seed = seed,
         verbose = FALSE
