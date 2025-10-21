@@ -7,7 +7,7 @@ library(magrittr)
 
 #______________________
 
-clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell obtained by running clustoCell on a sketched (samples) dataset.
+clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell obtained by running clustoCell on a sketched (sampled) dataset.
                                      query_ewcsr_mat, # A dgCMatrix matrix. Query EWCSR matrix. This is not required if method is set to 'count-knn' and mandatory otherwise. All cells in the clustoCell should be present in the query_ewcsr_mat and query_expr_mat.
                                      query_expr_mat, # A dgCMatrix matrix. Query count matrix. This is mandatory if method is set to 'count-knn' and not required otherwise.
                                      method = c("ewcsr-cor", 
@@ -19,6 +19,7 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
                                      #   \item \code{"count-knn"}: Transfers labels using the Seurat \code{FindTransferAnchors} and \code{TransferData} pipeline, based on shared features in count-based expression data and k-nearest neighbor matching.
                                      dims = 30, # Integer, number of dimensions used during the sketching.
                                      num_threads = -1, # Integer. Number of threads (cores) to use. Default is -1, which uses all available cores.
+                                     inherit_major_clusters = TRUE, # logical, whether to inherit the major cluster labels and label transfer sub-clusters (if present) within each major cluster or transfer labels of all cell based on the skeched data labels regardless of their original major cluster label. This is only used if all cells of the data are available within the major_cluster slot of the clustoCell object.
                                      seed = 121, # The seed for randomization and making consistent results
                                      verbose = TRUE # Logical, whether to show progress messages
                                      ) { 
@@ -96,8 +97,24 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
 
   if(any(grepl("merged_sub_clusters", names(clustoCell$clusters)))) {
     sketched_cluster_source <- "merged_sub_clusters"
+    
+    if(inherit_major_clusters && !is.null(query_ewcsr_mat) && length(clustoCell$clusters$major_clusters) == ncol(query_ewcsr_mat)) {
+      use_major_clusters <- TRUE
+      true_major_clusters <- paste(unique(clustoCell$clusters$major_clusters), "-", sep = "")
+      all_major_clusters <- clustoCell$clusters$major_clusters
+      log_message("All major clusters have been identified and will be used to label the transferred sketch data within each cluster!")
+    } else if(inherit_major_clusters && !is.null(query_expr_mat) && length(clustoCell$clusters$major_clusters) == ncol(query_expr_mat)) {
+      use_major_clusters <- TRUE
+      true_major_clusters <- paste(unique(clustoCell$clusters$major_clusters), "-", sep = "")
+      all_major_clusters <- clustoCell$clusters$major_clusters
+      log_message("All major clusters have been identified and will be used to label the transferred sketch data within each cluster!")
+    } else {
+      use_major_clusters <- FALSE
+    }
+    
   } else {
     sketched_cluster_source <- "major_clusters"
+    use_major_clusters <- FALSE
   }
   
   sketched_clusters <- clustoCell$clusters[[sketched_cluster_source]]
@@ -137,15 +154,32 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
     
     # Pearson correlation to centroids
     # sim_scores <- cor(as.matrix(query_ewcsr_mat), centroids)  # Cells x Clusters
-    sim_scores <- sparse_dense_correlation_cpp(sp_mat = query_ewcsr_mat, centroids = centroids, num_threads = num_threads)
-    
-    predicted_labels <- unique_clusters[apply(sim_scores, 1, which.max)]
-    confidence <- apply(sim_scores, 1, max)  # Max correlation as confidence
-    
-    label_transfer_df <- data.frame(cell = colnames(query_ewcsr_mat),
-                                    predicted_cluster = predicted_labels,
-                                    confidence = confidence)
-    
+    if(use_major_clusters) {
+      label_transfer_df <- lapply(true_major_clusters, function(i) {
+        curr_true_major_cluster_idx <- grep(i, unique_clusters)
+        curr_true_major_cluster <- unique_clusters[curr_true_major_cluster_idx]
+        curr_non_sketched_cells <- colnames(query_ewcsr_mat)[colnames(query_ewcsr_mat) %in% names(all_major_clusters[all_major_clusters == gsub("-$", "", i)])]
+        curr_query_ewcsr_mat <- query_ewcsr_mat[,curr_non_sketched_cells]
+        curr_centroids <- centroids[,curr_true_major_cluster_idx, drop = FALSE]
+        curr_sim_scores <- sparse_dense_correlation_cpp(sp_mat = curr_query_ewcsr_mat, centroids = curr_centroids, num_threads = num_threads)
+        curr_predicted_labels <- curr_true_major_cluster[apply(curr_sim_scores, 1, which.max)]
+        curr_confidence <- apply(curr_sim_scores, 1, max)  # Max correlation as confidence
+        curr_label_transfer_df <- data.frame(cell = colnames(curr_query_ewcsr_mat),
+                                             predicted_cluster = curr_predicted_labels,
+                                             confidence = curr_confidence)
+        curr_label_transfer_df
+      }) %>% do.call(what = rbind)
+      label_transfer_df <- label_transfer_df[match(colnames(query_ewcsr_mat), label_transfer_df$cell),]
+      predicted_labels <- label_transfer_df$predicted_cluster
+    } else {
+      sim_scores <- sparse_dense_correlation_cpp(sp_mat = query_ewcsr_mat, centroids = centroids, num_threads = num_threads)
+      predicted_labels <- unique_clusters[apply(sim_scores, 1, which.max)]
+      confidence <- apply(sim_scores, 1, max)  # Max correlation as confidence
+      label_transfer_df <- data.frame(cell = colnames(query_ewcsr_mat),
+                                      predicted_cluster = predicted_labels,
+                                      confidence = confidence)
+    }
+
     names(predicted_labels) <- colnames(query_ewcsr_mat)
     predicted_labels <- c(predicted_labels, sketched_clusters)
     
@@ -156,8 +190,8 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
     
     original_seu <- Seurat::CreateSeuratObject(counts = query_ewcsr_mat[, !(colnames(query_ewcsr_mat) %in% sketch_cells)], 
                                                     data = query_ewcsr_mat[, !(colnames(query_ewcsr_mat) %in% sketch_cells)])
-    sketched_seu <- Seurat::CreateSeuratObject(counts = query_ewcsr_mat[, sketch_cells], 
-                                                    data = query_ewcsr_mat[, sketch_cells])
+    sketched_seu <- Seurat::CreateSeuratObject(counts = query_ewcsr_mat[, (colnames(query_ewcsr_mat) %in% sketch_cells)], 
+                                                    data = query_ewcsr_mat[, (colnames(query_ewcsr_mat) %in% sketch_cells)])
     
     all_seu <- suppressWarnings(merge(original_seu, sketched_seu))  # Merge for joint HVG/PCA
     all_seu <- suppressWarnings(Seurat::FindVariableFeatures(all_seu, verbose = FALSE))
@@ -179,14 +213,33 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
     
     centroids <- compute_reduced_centroids_cpp(mat = sketched_reduced, sketched_clusters = sketched_clusters, unique_clusters = unique_clusters)
     
-    # Pearson correlation to centroids (in reduced space)
-    sim_scores <- cor(t(original_reduced), t(centroids))  # Cells x Clusters
-    predicted_labels <- unique_clusters[apply(sim_scores, 1, which.max)]
-    confidence <- apply(sim_scores, 1, max)  # Max correlation as confidence
-    
-    label_transfer_df <- data.frame(cell = colnames(original_seu),
-                                    predicted_cluster = predicted_labels,
-                                    confidence = confidence)
+    if(use_major_clusters) {
+      label_transfer_df <- lapply(true_major_clusters, function(i) {
+        curr_true_major_cluster_idx <- grep(i, unique_clusters)
+        curr_true_major_cluster <- unique_clusters[curr_true_major_cluster_idx]
+        curr_non_sketched_cells <- colnames(original_seu)[colnames(original_seu) %in% names(all_major_clusters[all_major_clusters == gsub("-$", "", i)])]
+        curr_original_reduced <- original_reduced[curr_non_sketched_cells,]
+        curr_centroids <- centroids[curr_true_major_cluster_idx, , drop = FALSE]
+        curr_sim_scores <- cor(t(curr_original_reduced), t(curr_centroids))  # Cells x Clusters
+        curr_predicted_labels <- curr_true_major_cluster[apply(curr_sim_scores, 1, which.max)]
+        curr_confidence <- apply(curr_sim_scores, 1, max)  # Max correlation as confidence
+        curr_label_transfer_df <- data.frame(cell = rownames(curr_original_reduced),
+                                             predicted_cluster = curr_predicted_labels,
+                                             confidence = curr_confidence)
+        curr_label_transfer_df
+      }) %>% do.call(what = rbind)
+      label_transfer_df <- label_transfer_df[match(colnames(original_seu), label_transfer_df$cell),]
+      predicted_labels <- label_transfer_df$predicted_cluster
+    } else {
+      # Pearson correlation to centroids (in reduced space)
+      sim_scores <- cor(t(original_reduced), t(centroids))  # Cells x Clusters
+      predicted_labels <- unique_clusters[apply(sim_scores, 1, which.max)]
+      confidence <- apply(sim_scores, 1, max)  # Max correlation as confidence
+      
+      label_transfer_df <- data.frame(cell = colnames(original_seu),
+                                      predicted_cluster = predicted_labels,
+                                      confidence = confidence)
+    }
     
     names(predicted_labels) <- colnames(original_seu)
     predicted_labels <- c(predicted_labels, sketched_clusters)
@@ -195,7 +248,7 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
     # kNN voting (using Seurat's framework)
     
     original_seu <- Seurat::CreateSeuratObject(counts = query_expr_mat[, !(colnames(query_expr_mat) %in% sketch_cells)])
-    sketched_seu <- Seurat::CreateSeuratObject(counts = query_expr_mat[, sketch_cells])
+    sketched_seu <- Seurat::CreateSeuratObject(counts = query_expr_mat[, (colnames(query_expr_mat) %in% sketch_cells)])
     
     original_seu <- Seurat::NormalizeData(original_seu, normalization.method = "LogNormalize", scale.factor = 10000, verbose = FALSE)
     sketched_seu <- Seurat::NormalizeData(sketched_seu, normalization.method = "LogNormalize", scale.factor = 10000, verbose = FALSE)
@@ -203,17 +256,53 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
     original_seu <- Seurat::FindVariableFeatures(original_seu, verbose = FALSE)
     sketched_seu <- Seurat::FindVariableFeatures(sketched_seu, verbose = FALSE)
     
-    anchors <- Seurat::FindTransferAnchors(reference = sketched_seu, query = original_seu, 
-                                           dims = 1:dims, reduction = "pcaproject", verbose = FALSE)
-    
-    predictions <- Seurat::TransferData(anchorset = anchors, refdata = sketched_clusters, weight.reduction = "pcaproject", dims = 1:dims, verbose = FALSE)
-    
-    predicted_labels <- predictions$predicted.id
-    confidence <- predictions$prediction.score.max
-    
-    label_transfer_df <- data.frame(cell = colnames(original_seu),
-                                    predicted_cluster = predicted_labels,
-                                    confidence = confidence)
+    if(use_major_clusters) {
+      label_transfer_df <- lapply(true_major_clusters, function(i) {
+        curr_true_major_cluster_idx <- grep(i, unique_clusters)
+        curr_true_major_cluster <- unique_clusters[curr_true_major_cluster_idx]
+        curr_non_sketched_cells <- colnames(original_seu)[colnames(original_seu) %in% names(all_major_clusters[all_major_clusters == gsub("-$", "", i)])]
+        curr_original_seu <- original_seu[,curr_non_sketched_cells]
+        if(ncol(curr_original_seu) < 70) {
+          curr_k.score <- round(ncol(curr_original_seu)/2)
+          curr_k.weight <- round(ncol(curr_original_seu)/2)
+        } else {
+          curr_k.score <- 30
+          curr_k.weight <- 50
+        }
+        curr_anchors <- Seurat::FindTransferAnchors(reference = sketched_seu, query = curr_original_seu, k.score = curr_k.score,
+                                                    dims = 1:dims, reduction = "pcaproject", verbose = FALSE)
+        curr_predictions <- Seurat::TransferData(anchorset = curr_anchors, refdata = sketched_clusters[colnames(sketched_seu)], k.weight = curr_k.weight,
+                                                 weight.reduction = "pcaproject", dims = 1:dims, verbose = FALSE)
+        curr_predicted_labels <- curr_predictions$predicted.id
+        curr_confidence <- curr_predictions$prediction.score.max
+        curr_label_transfer_df <- data.frame(cell = colnames(curr_original_seu),
+                                             predicted_cluster = curr_predicted_labels,
+                                             confidence = curr_confidence)
+        curr_label_transfer_df
+      }) %>% do.call(what = rbind)
+      label_transfer_df <- label_transfer_df[match(colnames(original_seu), label_transfer_df$cell),]
+      predicted_labels <- label_transfer_df$predicted_cluster
+    } else {
+      if(ncol(original_seu) < 70) {
+        curr_k.score <- round(ncol(original_seu)/2)
+        curr_k.weight <- round(ncol(original_seu)/2)
+      } else {
+        curr_k.score <- 30
+        curr_k.weight <- 50
+      }
+      anchors <- Seurat::FindTransferAnchors(reference = sketched_seu, query = original_seu, k.score = curr_k.score,
+                                             dims = 1:dims, reduction = "pcaproject", verbose = FALSE)
+      
+      predictions <- Seurat::TransferData(anchorset = anchors, refdata = sketched_clusters, k.weight = curr_k.weight,
+                                          weight.reduction = "pcaproject", dims = 1:dims, verbose = FALSE)
+      
+      predicted_labels <- predictions$predicted.id
+      confidence <- predictions$prediction.score.max
+      
+      label_transfer_df <- data.frame(cell = colnames(original_seu),
+                                      predicted_cluster = predicted_labels,
+                                      confidence = confidence)
+    }
     
     names(predicted_labels) <- colnames(original_seu)
     predicted_labels <- c(predicted_labels, sketched_clusters)
