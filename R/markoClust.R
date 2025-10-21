@@ -23,6 +23,21 @@ markoClust <- function(
     hvg_selection.method = c("vst", "mean.var.plot", "dispersion"), # How to choose top variable features. Choose one of 'vst', 'mean.var.plot', or 'dispersion'
     hvg_var_thresh = 1, # The variance threshold for choosing HVGs (genes whose variability is more than this threshold standard deviation above the expected technical noise).
     gini_thresh = 0.5, # The Gini threshold for detecting non-specific (global) markers.
+    sketch = FALSE, # Logical. Whether to perform data sketching (sampling) using Seurat’s uniform sketching method. Only applied if `identify_subclusters` is set to TRUE.
+    #'   Recommended for very large datasets or when system resources (e.g., RAM, number of cores) are limited. 
+    #'   If TRUE, sketching is applied using Seurat's 'uniform' sketching method after the initial filtering step.
+    sketch_fraction = 0.5, # A numeric value between 0 and 1 that controls the proportion of cells to sketch from each cluster when generating the sketched dataset. 
+    #' Values closer to 1 will select a larger proportion of data, while values closer to 0 will select a smaller proportion. For example, setting 
+    #' `sketch_fraction = 0.5` will sketch 50% of the cells in each cluster. This parameter allows for controlling the trade-off between 
+    #' data compression and representation in the sketched dataset. For small datasets (fewer than 10,000 cells), set this argument to at least 0.5.
+    label_transfer_method = c("ewcsr-cor", 
+                              "ewcsr-red-cor", 
+                              "count-knn"), 
+    # Character string specifying the label transfer method to use. Optional. Used if sketch == TRUE. Options include:
+    #   \item \code{"ewcsr-cor"}: Transfers labels by computing the correlation between each cell in the query expression matrix (\code{query_expr_mat}) and the EWCSR centroids of each cluster in the \code{clustoCell_obj}, using the full expression space (i.e., non-reduced).
+    #   \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but performs correlation in the reduced dimensional space (PCA embedding), using dimensionally reduced EWCSR centroids.
+    #   \item \code{"count-knn"}: Transfers labels using the Seurat \code{FindTransferAnchors} and \code{TransferData} pipeline, based on shared features in count-based expression data and k-nearest neighbor matching.
+    sketch_pca_dims = 30, # Integer, number of dimensions used during the label transferring. Only used when label_transfer_method is one of 'ewcsr-red-cor' or 'count-knn'.
     noise_feature_thresh = 4, # The threshold for detecting noise features/genes (i.e. features that have non-zero expression in more than this number of samples/cells).
     random_marker_thresh = 5, # Markers detected at lower than this number of cell are considered as non-marker genes
     mr_thresh = NULL, # The threshold for choosing the cell-to-cell similarities with lower than selected thresh (if it is null it will be set to the square root of the number of cells by default).
@@ -87,8 +102,8 @@ markoClust <- function(
   
   hvg_selection.method <- match.arg(hvg_selection.method)
   leiden_obj_function <- match.arg(leiden_obj_function)
-  
-  
+  label_transfer_method <- match.arg(label_transfer_method)
+
   #________________________________________
   
   # Checking arguments
@@ -105,7 +120,7 @@ markoClust <- function(
     cli::cli_rule(left = cli::style_italic(cli::style_bold("Starting MarkoClust!")), right = cli::col_silver(Sys.time()))
   }
   
-  cli::cli_h1("Identification of Major Cluster Markers")
+  log_h1("Identification of Major Cluster Markers")
   
   log_h2("Preparing the input data")
   
@@ -187,6 +202,10 @@ markoClust <- function(
     cli::cli_abort("Input data contains negative values. The pipeline requires non-negative input (raw or log-normalized counts).")
   }
   
+  if(identify_subclusters && sketch && sketch_fraction >= 1) {
+    cli::cli_abort("The `sketch_fraction` argument must be set to a number above 0 and less than 1. For small datasets (fewer than 10,000 cells), set this argument to at least 0.5.")
+  }
+  
   if(remove_quiescent_cells) {
     major_cluster_quiescent_cells <- major_clusters[major_clusters == "Quiescent"] %>% names()
     if(length(major_cluster_quiescent_cells) > 0) {
@@ -238,6 +257,11 @@ markoClust <- function(
     
     ## Filtering the expr_mat to include only the hvgs
     expr_mat <- expr_mat[hvgs,] 
+  }
+  
+  if(identify_subclusters && sketch) {
+    # Updating the expr_mat
+    original_expr_mat <- expr_mat
   }
   
   # Step 1: Log1p transformation and converting zeros to NA
@@ -389,6 +413,16 @@ markoClust <- function(
     
     if(length(quiescent_cells) > 0) {
       
+      if(identify_subclusters && sketch) {
+        # Updating the expr_mat
+        original_expr_mat <- original_expr_mat[rownames(expr_mat), colnames(expr_mat)]
+        if(label_transfer_method != "count-knn") {
+          original_ewcsr_mat <- ewcsr_mat
+        } else {
+          original_ewcsr_mat <- NULL
+        }
+      }
+      
       # Updating the pos_mat
       pos_mat <- pos_mat[,-which(colnames(pos_mat) %in% quiescent_cells)]
       
@@ -397,14 +431,35 @@ markoClust <- function(
       
       # Update the major_clusters
       major_clusters <- major_clusters[-match(quiescent_cells, names(major_clusters))]
+    } else {
+      if(identify_subclusters && sketch) {
+        # Updating the expr_mat
+        original_expr_mat <- original_expr_mat[rownames(expr_mat), colnames(expr_mat)]
+        if(label_transfer_method != "count-knn") {
+          original_ewcsr_mat <- ewcsr_mat
+        } else {
+          original_ewcsr_mat <- NULL
+        }
+      }
     }
+    
     quiescent_cells <- unique(c(quiescent_cells, major_cluster_quiescent_cells))
+  } else {
+    if(identify_subclusters && sketch) {
+      # Updating the expr_mat
+      original_expr_mat <- original_expr_mat[rownames(expr_mat), colnames(expr_mat)]
+      if(label_transfer_method != "count-knn") {
+        original_ewcsr_mat <- ewcsr_mat
+      } else {
+        original_ewcsr_mat <- NULL
+      }
+    }
   }
   
   # Removing to reduce memory occupied.
   rm(expr_mat)
   
-  #_______________
+  #______________
   
   ## neg_mat
   # neg_mat <- ewcsr_mat < ewcsr_low_thresh
@@ -906,7 +961,51 @@ markoClust <- function(
   
   if(identify_subclusters) {
     
-    log_space()
+    #______________________________
+    #______________________________
+    
+    # Sketching the data
+    if(sketch) {
+      
+      log_h2("Sketching the filtered data")
+      
+      # Prepare the Seurat object
+      original_seu <- Seurat::CreateSeuratObject(counts = original_expr_mat)
+      original_seu <- suppressWarnings(Seurat::NormalizeData(original_seu, normalization.method = "LogNormalize", scale.factor = 10000, verbose = FALSE))
+      
+      # Sketching the cells of each cluster separately
+      sketch_cells <- sapply(unique(major_clusters), function(i) {
+        curr_cells <- major_clusters[major_clusters == i] %>% names()
+        curr_count <- round(length(curr_cells)*sketch_fraction)
+        
+        tmp_original_seu <- suppressMessages(Seurat::SketchData(object = original_seu[,curr_cells], ncells = curr_count, method = "Uniform", seed = seed, verbose = FALSE))
+        colnames(tmp_original_seu@assays$sketch$counts)
+        
+      }) %>% unlist() %>% unname()
+      
+      original_major_clusters <- major_clusters
+      major_clusters <- major_clusters[names(major_clusters) %in% sketch_cells]
+      
+      all_sketch_cells <- c(sketch_cells, quiescent_cells) %>% unique()
+      
+      # Subset the ewcsr_mat
+      ewcsr_mat <- ewcsr_mat[,sketch_cells]
+      
+      # Subset the binary matrices
+      pos_mat <- pos_mat[,sketch_cells]
+      
+      # Remove redundant objects
+      if(label_transfer_method != "count-knn") {
+        original_expr_mat <- NULL
+      }
+      
+      log_progress_done()
+    } else {
+      log_space()
+    }
+    
+    #______________________________
+    #______________________________
     
     log_h1("Identification of Sub-clusters")
     
@@ -1404,7 +1503,11 @@ markoClust <- function(
   #__________________________________________________________
   
   # Preparing the Results Lists
-  final_clusters_list <- list(major_clusters = major_clusters)
+  if(identify_subclusters && sketch) {
+    final_clusters_list <- list(major_clusters = original_major_clusters)
+  } else {
+    final_clusters_list <- list(major_clusters = major_clusters)
+  }
   
   if(identify_subclusters) {
     final_clusters_list$sub_clusters <- subcluster_list
@@ -1455,6 +1558,28 @@ markoClust <- function(
     final_results_list$globally_pure_medium <- globally_pure_medium
   }
   
+  final_results_list <- structure(final_results_list,
+                                  class = "ClustoCell")
+  
+  # Transferring the label of the sketched data to the original data.
+  if(identify_subclusters && sketch) {
+    
+    final_results_list$sketched_cells <- all_sketch_cells
+    
+    # Transferring the labels
+    final_results_list <- clustoCell_TransferLabel(
+      clustoCell = final_results_list,
+      query_ewcsr_mat = original_ewcsr_mat,
+      query_expr_mat = original_expr_mat,
+      method = label_transfer_method,
+      inherit_major_clusters = TRUE,
+      dims = sketch_pca_dims,
+      num_threads = num_threads,
+      seed = seed, 
+      verbose = verbose
+    )
+    }
+  
   if(verbose) {
     log_space()
     cli::cli_rule(left = cli::col_green("SUCCESS"), right = cli::col_silver(Sys.time()))
@@ -1462,7 +1587,6 @@ markoClust <- function(
   }
   
   # Return results
-  structure(final_results_list,
-            class = "ClustoCell")
+  final_results_list
 }
 
