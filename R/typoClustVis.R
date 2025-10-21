@@ -323,7 +323,20 @@ typoClustVis <- function(
                          size = Combined_Count,
                          color = Avg_Purity)) +
     geom_point() +
-    scale_color_gradient(low = dot_color_low, high = dot_color_high) +
+    
+    scale_color_gradient(
+      low = dot_color_low,
+      high = dot_color_high,
+      name = dot_color_title,
+      breaks = scales::breaks_pretty(n = 5),
+      labels = scales::label_number(accuracy = 0.1)
+    ) +
+    scale_size_continuous(
+      name = dot_size_title,
+      breaks = scales::breaks_pretty(n = 5),
+      labels = scales::label_number(accuracy = 0.1)
+    ) +
+    
     ggplot2::theme_minimal() +
     theme(
       panel.border = element_rect(color = dot_panel_border_color, 
@@ -338,7 +351,7 @@ typoClustVis <- function(
       panel.grid.minor = element_blank(),
       plot.margin = margin(r = dot_plot_margin_right)
     ) +
-    labs(x = dot_xlab, size = dot_size_title, color = dot_color_title) +
+    labs(x = dot_xlab) +
     guides(color = guide_colorbar(order = 1),
            size  = guide_legend(order = 2))
   
@@ -372,9 +385,19 @@ typoClustVis <- function(
     }
   }
   
-  if(length(unique(final_df$first_ranked_Combined_Score)) <= 4) {
-    dot_plot <- dot_plot + ggplot2::scale_x_continuous(breaks = unique(final_df$first_ranked_Combined_Score))
-  }
+  #____________
+  
+  # Set x axis text
+  
+  dot_plot <- dot_plot +
+    ggplot2::scale_x_continuous(
+      labels = scales::label_number(
+        accuracy = 1,
+        big.mark = ",",
+        scale_cut = scales::cut_short_scale()  # 1K, 1M, etc.
+      ),
+      breaks = scales::breaks_pretty(n = 5)
+    )
   
   #_________
   
