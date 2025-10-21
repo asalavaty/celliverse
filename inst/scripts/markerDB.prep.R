@@ -876,7 +876,11 @@ human_pos_marker_db$Condition[human_pos_marker_db$Condition == ""] <- NA
 
 human_pos_marker_db$Original_CellType <- human_pos_marker_db$CellType
 
+dim(human_pos_marker_db) # 284662      8
 length(unique(human_pos_marker_db$Original_CellType) %>% sort()) # 4585
+length(unique(human_pos_marker_db$Marker) %>% sort()) # 22764
+length(unique(human_pos_marker_db$Tissue) %>% sort()) # 496
+length(unique(human_pos_marker_db$Condition) %>% sort()) # 335
 
 #_________________________________________
 #
@@ -33013,6 +33017,14 @@ human_pos_marker_db_final <- human_pos_marker_db_final %>% dplyr::filter(!(CellT
                                                                              Marker %in% c("S100A9", "FCN1")
 ))
 
+human_pos_marker_db_final$CellType[human_pos_marker_db_final$CellType %in% c("CD4+ Memory T Cell", 
+                                                                              "CD4+ Positive Memory T Cell")] <- "Memory CD4+ T Cell"
+
+human_pos_marker_db_final$CellType[human_pos_marker_db_final$CellType %in% c("CD8+ Memory T Cell")] <- "Memory CD8+ T Cell"
+
+human_pos_marker_db_final$CellType[human_pos_marker_db_final$CellType %in% c("CD4+/CD8+",
+                                                                             "CD8+ CD4+ T Cell")] <- "DP T Cell"
+
 #____________________________
 
 # Save Complete Positive Human Database ----
@@ -33020,7 +33032,7 @@ human_pos_marker_db_final <- human_pos_marker_db_final %>% dplyr::filter(!(CellT
 human_pos_marker_db_final <- structure(human_pos_marker_db_final,
                                               class = c("CelliVerse_Data", "data.frame"))
 
-saveRDS(object = human_pos_marker_db_final, file = "R_Package_CelliVerse/data/human_pos_marker_db.rds")
+saveRDS(object = human_pos_marker_db_final, file = "CelliVerse-Project/Marker Database/human_pos_marker_db.rds")
 
 markerDictionary <- structure(markerDictionary,
                               class = c("CelliVerse_Data", "list"))
@@ -33037,7 +33049,7 @@ human_pos_marker_db_final_sparse <- make_sparse_marker_matrix(df = human_pos_mar
 
 human_pos_marker_db_final_sparse <- new("CelliVerse_Sparse_Data", human_pos_marker_db_final_sparse)
 
-saveRDS(object = human_pos_marker_db_final_sparse, file = "R_Package_CelliVerse/data/human_pos_marker_sparse_db.rds")
+saveRDS(object = human_pos_marker_db_final_sparse, file = "CelliVerse-Project/Marker Database/human_pos_marker_sparse_db.rds")
 
 #_________________________________________
 #
@@ -33225,6 +33237,14 @@ human_neg_marker_db_final <- human_neg_marker_db_final %>% dplyr::filter(!(CellT
                                                                              Marker %in% c("CD68")
 ))
 
+human_neg_marker_db_final$CellType[human_neg_marker_db_final$CellType %in% c("CD4+ Memory T Cell", 
+                                                                             "CD4+ Positive Memory T Cell")] <- "Memory CD4+ T Cell"
+
+human_neg_marker_db_final$CellType[human_neg_marker_db_final$CellType %in% c("CD8+ Memory T Cell")] <- "Memory CD8+ T Cell"
+
+human_neg_marker_db_final$CellType[human_neg_marker_db_final$CellType %in% c("CD4+/CD8+",
+                                                                             "CD8+ CD4+ T Cell")] <- "DP T Cell"
+
 #____________________________
 
 # Save Complete Negative Human Database ----
@@ -33232,7 +33252,7 @@ human_neg_marker_db_final <- human_neg_marker_db_final %>% dplyr::filter(!(CellT
 human_neg_marker_db_final <- structure(human_neg_marker_db_final,
                                        class = c("CelliVerse_Data", "data.frame"))
 
-saveRDS(object = human_neg_marker_db_final, file = "R_Package_CelliVerse/data/human_neg_marker_db.rds")
+saveRDS(object = human_neg_marker_db_final, file = "CelliVerse-Project/Marker Database/human_neg_marker_db.rds")
 
 #_________________________________________
 #
@@ -33244,7 +33264,7 @@ human_neg_marker_db_final_sparse <- make_sparse_marker_matrix(df = human_neg_mar
 
 human_neg_marker_db_final_sparse <- new("CelliVerse_Sparse_Data", human_neg_marker_db_final_sparse)
 
-saveRDS(object = human_neg_marker_db_final_sparse, file = "R_Package_CelliVerse/data/human_neg_marker_sparse_db.rds")
+saveRDS(object = human_neg_marker_db_final_sparse, file = "CelliVerse-Project/Marker Database/human_neg_marker_sparse_db.rds")
 
 #_________________________________________
 #
@@ -33280,13 +33300,13 @@ accordion_v1_mouse_pos_sparse <- make_sparse_marker_matrix(df = accordion_v1_mou
 accordion_v1_mouse_positive <- structure(accordion_v1_mouse_positive,
                                          class = c("CelliVerse_Data", "data.frame"))
 
-saveRDS(object = accordion_v1_mouse_positive, file = "R_Package_CelliVerse/data/mouse_pos_marker_db.rds")
+saveRDS(object = accordion_v1_mouse_positive, file = "CelliVerse-Project/Marker Database/mouse_pos_marker_db.rds")
 
 #________________
 
 accordion_v1_mouse_pos_sparse <- new("CelliVerse_Sparse_Data", accordion_v1_mouse_pos_sparse)
 
-saveRDS(object = accordion_v1_mouse_pos_sparse, file = "R_Package_CelliVerse/data/mouse_pos_marker_sparse_db.rds")
+saveRDS(object = accordion_v1_mouse_pos_sparse, file = "CelliVerse-Project/Marker Database/mouse_pos_marker_sparse_db.rds")
 
 #______________________________
 
@@ -33313,13 +33333,13 @@ accordion_v1_mouse_neg_sparse <- make_sparse_marker_matrix(df = accordion_v1_mou
 accordion_v1_mouse_negative <- structure(accordion_v1_mouse_negative,
                                          class = c("CelliVerse_Data", "data.frame"))
 
-saveRDS(object = accordion_v1_mouse_negative, file = "R_Package_CelliVerse/data/mouse_neg_marker_db.rds")
+saveRDS(object = accordion_v1_mouse_negative, file = "CelliVerse-Project/Marker Database/mouse_neg_marker_db.rds")
 
 #________________
 
 accordion_v1_mouse_neg_sparse <- new("CelliVerse_Sparse_Data", accordion_v1_mouse_neg_sparse)
 
-saveRDS(object = accordion_v1_mouse_neg_sparse, file = "R_Package_CelliVerse/data/mouse_neg_marker_sparse_db.rds")
+saveRDS(object = accordion_v1_mouse_neg_sparse, file = "CelliVerse-Project/Marker Database/mouse_neg_marker_sparse_db.rds")
 
 #_________________________________________
 #
