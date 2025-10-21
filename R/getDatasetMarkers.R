@@ -227,27 +227,27 @@ getDatasetMarkers <- function(obj, # an object of class "ClustoCell" generated v
   final_results <- list(combined_markers = combined_markers)
   
   if(!is.null(clusters_pos_markers)) {
-    final_results$clusters_pos_markers <- clusters_pos_markers
+    final_results$clusters_pos_markers <- clusters_pos_markers %>% as.vector() %>% unname() %>% unique()
   }
   
   if(!is.null(clusters_neg_markers)) {
-    final_results$clusters_neg_markers <- clusters_neg_markers
+    final_results$clusters_neg_markers <- clusters_neg_markers %>% as.vector() %>% unname() %>% unique()
   }
   
   if(!is.null(clusters_med_markers)) {
-    final_results$clusters_med_markers <- clusters_med_markers
+    final_results$clusters_med_markers <- clusters_med_markers %>% as.vector() %>% unname() %>% unique()
   }
   
   if(!is.null(sub_clusters_pos_markers)) {
-    final_results$sub_clusters_pos_markers <- sub_clusters_pos_markers
+    final_results$sub_clusters_pos_markers <- sub_clusters_pos_markers %>% as.vector() %>% unname() %>% unique()
   }
   
   if(!is.null(sub_clusters_neg_markers)) {
-    final_results$sub_clusters_neg_markers <- sub_clusters_neg_markers
+    final_results$sub_clusters_neg_markers <- sub_clusters_neg_markers %>% as.vector() %>% unname() %>% unique()
   }
   
   if(!is.null(sub_clusters_med_markers)) {
-    final_results$sub_clusters_med_markers <- sub_clusters_med_markers
+    final_results$sub_clusters_med_markers <- sub_clusters_med_markers %>% as.vector() %>% unname() %>% unique()
   }
   
   #________________________________________________
