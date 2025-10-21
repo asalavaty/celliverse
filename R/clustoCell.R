@@ -33,7 +33,7 @@ clustoCell <- function(
     #   \item \code{"ewcsr-cor"}: Transfers labels by computing the correlation between each cell in the query expression matrix (\code{query_expr_mat}) and the EWCSR centroids of each cluster in the \code{clustoCell_obj}, using the full expression space (i.e., non-reduced).
     #   \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but performs correlation in the reduced dimensional space (PCA embedding), using dimensionally reduced EWCSR centroids.
     #   \item \code{"count-knn"}: Transfers labels using the Seurat \code{FindTransferAnchors} and \code{TransferData} pipeline, based on shared features in count-based expression data and k-nearest neighbor matching.
-    sketch_pca_dims = 30, # Integer, number of dimensions used during the sketching. Only used when label_transfer_method is one of 'ewcsr-red-cor' or 'count-knn'.
+    sketch_pca_dims = 30, # Integer, number of dimensions used during the label transferring. Only used when label_transfer_method is one of 'ewcsr-red-cor' or 'count-knn'.
     refine_transferred_subClusters = FALSE, # Whether to refine the transferred sub-cluster labels by re-assessing each of the transferred major clusters or not. This will only be applied if identify_subclusters == TRUE.
     noise_feature_thresh = 4, # The threshold for detecting noise features/genes (i.e. features that have non-zero expression in more than this number of samples/cells).
     random_marker_thresh = 5, # Markers detected at lower than this number of cell are considered as non-marker genes
@@ -370,6 +370,7 @@ clustoCell <- function(
   
   ### Detecting and removing quiescent cells 
   quiescent_cells <- colnames(pos_mat)[which(Matrix::colSums(pos_mat) == 0)]
+  
   if(length(quiescent_cells) > 0) {
     
     if(sketch) {
