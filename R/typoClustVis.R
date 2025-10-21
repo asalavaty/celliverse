@@ -20,6 +20,8 @@ typoClustVis <- function(
     ## A ggplot2 scale object (e.g. ggplot2::scale_fill_hue(), ggsci::scale_fill_igv()). 
     ## A character vector of colors (e.g. c("red", "blue", "green")).
     
+    flip = FALSE, # Logical, whether to flip the plot or not.
+    
     # Tile plot
     tile_width = 0.2,
     tile_height = 0.6,
@@ -295,22 +297,44 @@ typoClustVis <- function(
   # Generate the plot
 
   # Tile plot with legend kept
-  tile_plot <- ggplot2::ggplot(final_df,
-                      aes(y = Cluster, fill = CellType)) +
-    geom_tile(aes(x = 1, width = tile_width, height = tile_height),
-              color = "black") +
-    theme_void() +
-    theme(
-      plot.margin = margin(0, 0, 0, 0)
-    ) +
-    coord_cartesian(xlim = tile_xlim) +
-    guides(fill = guide_legend(title = tile_legend_title))
+  if(flip) {
+    tile_plot <- ggplot2::ggplot(final_df,
+                                 aes(y = Cluster, fill = CellType)) +
+      geom_tile(aes(x = 1, width = tile_width, height = tile_height),
+                color = "black") +
+      theme_void() +
+      theme(
+        plot.margin = margin(0, 0, 0, 0)
+      ) +
+      ggplot2::coord_cartesian(xlim = tile_xlim) +
+      ggplot2::coord_flip() +
+      guides(fill = guide_legend(title = tile_legend_title))
     
-  if (!is.null(cellType_palette)) {
-    if (is.character(cellType_palette)) {
-      cellType_palette <- ggplot2::scale_fill_manual(values = cellType_palette)
+    if (!is.null(cellType_palette)) {
+      if (is.character(cellType_palette)) {
+        cellType_palette <- ggplot2::scale_fill_manual(values = cellType_palette)
+      }
+      tile_plot <- tile_plot + cellType_palette
     }
-    tile_plot <- tile_plot + cellType_palette
+
+  } else {
+    tile_plot <- ggplot2::ggplot(final_df,
+                                 aes(y = Cluster, fill = CellType)) +
+      geom_tile(aes(x = 1, width = tile_width, height = tile_height),
+                color = "black") +
+      theme_void() +
+      theme(
+        plot.margin = margin(0, 0, 0, 0)
+      ) +
+      ggplot2::coord_cartesian(xlim = tile_xlim) +
+      guides(fill = guide_legend(title = tile_legend_title))
+    
+    if (!is.null(cellType_palette)) {
+      if (is.character(cellType_palette)) {
+        cellType_palette <- ggplot2::scale_fill_manual(values = cellType_palette)
+      }
+      tile_plot <- tile_plot + cellType_palette
+    }
   }
   
   #_________
@@ -342,11 +366,6 @@ typoClustVis <- function(
       panel.border = element_rect(color = dot_panel_border_color, 
                                   fill = NA, 
                                   linewidth = dot_panel_border_size),
-      axis.title.y = element_blank(),
-      axis.text.y = element_blank(),
-      axis.text.x = element_text(size = dot_axis_text_size),
-      axis.title.x = element_text(size = dot_axis_title_size,
-                                  margin = margin(t = 10)),
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
       plot.margin = margin(r = dot_plot_margin_right)
@@ -354,6 +373,24 @@ typoClustVis <- function(
     labs(x = dot_xlab) +
     guides(color = guide_colorbar(order = 1),
            size  = guide_legend(order = 2))
+  
+  if(flip) {
+    dot_plot <- dot_plot + ggplot2::theme(
+      axis.title.x = element_blank(),
+      axis.text.x = element_blank(),
+      axis.text.y = element_text(size = dot_axis_text_size),
+      axis.title.y = element_text(size = dot_axis_title_size,
+                                  margin = margin(r = 10))
+    )
+  } else {
+    dot_plot <- dot_plot + ggplot2::theme(
+      axis.title.y = element_blank(),
+      axis.text.y = element_blank(),
+      axis.text.x = element_text(size = dot_axis_text_size),
+      axis.title.x = element_text(size = dot_axis_title_size,
+                                  margin = margin(t = 10))
+    )
+  }
   
   if(!is.null(plot_title)) {
     dot_plot <- dot_plot + ggplot2::ggtitle(plot_title)
@@ -389,41 +426,80 @@ typoClustVis <- function(
   
   # Set x axis text
   
-  dot_plot <- dot_plot +
-    ggplot2::scale_x_continuous(
-      labels = scales::label_number(
-        accuracy = 1,
-        big.mark = ",",
-        scale_cut = scales::cut_short_scale()  # 1K, 1M, etc.
-      ),
-      breaks = scales::breaks_pretty(n = 5)
-    )
+  if(flip) {
+    dot_plot <- dot_plot +
+      ggplot2::scale_x_continuous(
+        labels = scales::label_number(
+          accuracy = 1,
+          big.mark = ",",
+          scale_cut = scales::cut_short_scale()  # 1K, 1M, etc.
+        ),
+        breaks = scales::breaks_pretty(n = 5)
+      ) + ggplot2::coord_flip()
+    
+  } else {
+    dot_plot <- dot_plot +
+      ggplot2::scale_x_continuous(
+        labels = scales::label_number(
+          accuracy = 1,
+          big.mark = ",",
+          scale_cut = scales::cut_short_scale()  # 1K, 1M, etc.
+        ),
+        breaks = scales::breaks_pretty(n = 5)
+      )
+  }
   
   #_________
   
   # Label plot
-  label_plot <- ggplot2::ggplot(final_df,
-                       aes(y = Cluster)) +
-    geom_label(aes(x = 1, label = Cluster, fill = NULL), hjust = 1, 
-               vjust = 0.5, size = label_size,
-               label.padding = unit(label_padding_lines, "lines")) +
-    ggplot2::theme_void() +  
-    ggplot2::theme(legend.position = "none",
-          plot.margin = margin(r = 0, 
-                               l = 0)) +
-    coord_cartesian(xlim = c(1, 1))
-  
+  if(flip) {
+    
+    label_plot <- ggplot2::ggplot(final_df,
+                                  aes(y = Cluster)) +
+      geom_label(aes(x = 1, label = Cluster, fill = NULL), vjust = 0.5, 
+                 hjust = 0.5, size = label_size, 
+                 label.padding = unit(label_padding_lines, "lines")) +
+      ggplot2::theme_void() +  
+      ggplot2::theme(legend.position = "none",
+                     plot.margin = margin(t = 0, 
+                                          b = 0)) +
+      ggplot2::coord_cartesian(xlim = c(1, 1)) + 
+      ggplot2::coord_flip()
+  } else {
+    label_plot <- ggplot2::ggplot(final_df,
+                                  aes(y = Cluster)) +
+      geom_label(aes(x = 1, label = Cluster, fill = NULL), hjust = 1, 
+                 vjust = 0.5, size = label_size,
+                 label.padding = unit(label_padding_lines, "lines")) +
+      ggplot2::theme_void() +  
+      ggplot2::theme(legend.position = "none",
+                     plot.margin = margin(r = 0, 
+                                          l = 0)) +
+      ggplot2::coord_cartesian(xlim = c(1, 1))
+  }
+
   #_________
   
   # Combine plots & collect legends
-  combined_plot <- (label_plot + patchwork::plot_spacer() + tile_plot + 
-                      patchwork::plot_spacer() + dot_plot) +
-    patchwork::plot_layout(widths = c(1, -0.72, 0.5, -0.23, 2.5), guides = "collect") &
-    ggplot2::theme(
-      legend.box = legend_box,
-      legend.box.just = legend_box_just,
-      legend.position = legend_position
-    )
+  if(flip) {
+    combined_plot <- (dot_plot / tile_plot / 
+                        label_plot / patchwork::plot_spacer()) +
+      patchwork::plot_layout(heights = c(5, 0.25, 0.2, 0.02), guides = "collect") &
+      ggplot2::theme(
+        legend.box = legend_box,
+        legend.box.just = legend_box_just,
+        legend.position = legend_position
+      )
+  } else {
+    combined_plot <- (label_plot + patchwork::plot_spacer() + tile_plot +
+                        patchwork::plot_spacer() + dot_plot) +
+      patchwork::plot_layout(widths = c(1, -0.72, 0.5, -0.23, 2.5), guides = "collect") &
+      ggplot2::theme(
+        legend.box = legend_box,
+        legend.box.just = legend_box_just,
+        legend.position = legend_position
+      )
+  }
   
   return(combined_plot)
 }

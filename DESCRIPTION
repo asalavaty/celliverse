@@ -17,6 +17,7 @@ CelliVerse ensures reliable and interpretable results across a wide range of dat
 Imports:
     Rcpp,
     Matrix,
+    scales,
     
     igraph,
     janitor,
