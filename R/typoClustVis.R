@@ -353,7 +353,7 @@ typoClustVis <- function(
       high = dot_color_high,
       name = dot_color_title,
       breaks = scales::breaks_pretty(n = 5),
-      labels = scales::label_number(accuracy = 0.1)
+      labels = scales::label_number(accuracy = 0.01)
     ) +
     scale_size_continuous(
       name = dot_size_title,
