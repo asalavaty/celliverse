@@ -15,7 +15,9 @@ typoClustVis <- function(
     
     # ---- Visualization arguments ----
     order_by = c("Cell Type", "Cluster", "Combined Score", "Combined Count", "Purity"), # How to order the clusters. One of Cell Type, Cluster, Combined Score, Combined Count, or Purity
-    plot_title = NULL, # Plot Title
+    title = NULL, # Character, the plot title
+    subtitle = NULL, # Character, the plot subtitle
+    tag = NULL, # Character, the plot tag
     cellType_palette = NULL, # A scale specification for coloring cell types. Can be specified in one of two forms: 
     ## A ggplot2 scale object (e.g. ggplot2::scale_fill_hue(), ggsci::scale_fill_igv()). 
     ## A character vector of colors (e.g. c("red", "blue", "green")).
@@ -370,7 +372,7 @@ typoClustVis <- function(
       panel.grid.minor = element_blank(),
       plot.margin = margin(r = dot_plot_margin_right)
     ) +
-    labs(x = dot_xlab) +
+    labs(x = dot_xlab, title = title, subtitle = subtitle, tag = tag) +
     guides(color = guide_colorbar(order = 1),
            size  = guide_legend(order = 2))
   
@@ -390,10 +392,6 @@ typoClustVis <- function(
       axis.title.x = element_text(size = dot_axis_title_size,
                                   margin = margin(t = 10))
     )
-  }
-  
-  if(!is.null(plot_title)) {
-    dot_plot <- dot_plot + ggplot2::ggtitle(plot_title)
   }
   
   ## Adding lines
