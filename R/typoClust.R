@@ -459,7 +459,8 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
   combined_markers_symbol <- alias_to_symbol[combined_panels_all_markers]
   
   marker_symbol_df <- data.frame(Input_Marker = combined_panels_all_markers,
-                                 Std_Symbol = combined_markers_symbol)
+                                 Std_Symbol = combined_markers_symbol,
+                                 row.names = combined_panels_all_markers)
   marker_symbol_df$Available <- TRUE
   marker_symbol_df$Available[is.na(marker_symbol_df$Std_Symbol)] <- FALSE
   
