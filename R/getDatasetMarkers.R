@@ -2,12 +2,12 @@ getDatasetMarkers <- function(obj, # an object of class "ClustoCell" generated v
                               clusters = TRUE, # logical, whether to collect the markers of major clusters or not
                               sub_clusters = TRUE, # logical, whether to collect the markers of sub-clusters or not
                               positive_markers = TRUE, # logical, whether to collect the positive markers or not
-                              negative_markers = TRUE, # logical, whether to collect the negative markers or not
+                              negative_markers = FALSE, # logical, whether to collect the negative markers or not
                               medium_markers = FALSE, # logical, whether to collect the medium markers or not
                               thresh_mode = c("n", "rank"), # Specifies how to select top markers for each cluster or subcluster. Options are:
                               ## "rank": selects all markers with ranks up to the threshold. If multiple markers share the same rank as the cutoff, they are all included.
                               ## "n": selects strictly the top n rows in rank order. Only the first n rows are kept, even if additional rows share the same rank as the n-th row.
-                              pos_thresh = 20, # integer, threshold for filtering positive markers. The larger the dataset you may opt for higher thresholds
+                              pos_thresh = 25, # integer, threshold for filtering positive markers. The larger the dataset you may opt for higher thresholds
                               neg_thresh = 20, # integer, threshold for filtering negative markers. The larger the dataset you may opt for higher thresholds
                               med_thresh = 10, # integer, threshold for filtering medium markers. The larger the dataset you may opt for higher thresholds
                               verbose = TRUE # Logical, whether to show progress messages
