@@ -8,13 +8,17 @@ library(magrittr)
 #______________________
 
 clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell obtained by running clustoCell on a sketched (sampled) dataset.
-                                     query_ewcsr_mat, # A dgCMatrix matrix. Query EWCSR matrix. This is not required if method is set to 'count-knn' and mandatory otherwise. All cells in the clustoCell should be present in the query_ewcsr_mat and query_expr_mat.
-                                     query_expr_mat, # A dgCMatrix matrix. Query count matrix. This is mandatory if method is set to 'count-knn' and not required otherwise.
+                                     query_ewcsr_mat, # A dgCMatrix matrix (Query EWCSR matrix). This is not required if method is set to 'count-knn' and mandatory otherwise. All cells in the clustoCell should be present in the query_ewcsr_mat.
+                                     query_expr_mat, # Either a Seurat object of the entire data or a dgCMatrix matrix (Query count matrix). This is mandatory if method is set to 'count-knn' and not required otherwise. All cells in the clustoCell should be present in the query_expr_mat.
+                                     assay = "RNA", # The desired assay corresponding to query_expr_mat.
+                                     layer = "counts", # The desired layer corresponding to query_expr_mat.
                                      method = c("ewcsr-cor", 
+                                                "count-project",
                                                 "ewcsr-red-cor", 
                                                 "count-knn"), 
                                      # Character string specifying the label transfer method to use. Options include:
                                      #   \item \code{"ewcsr-cor"}: Transfers labels by computing the correlation between each cell in the query expression matrix (\code{query_expr_mat}) and the EWCSR centroids of each cluster in the \code{clustoCell}, using the full expression space (i.e., non-reduced).
+                                     #   \item \code{"count-project"}: Transfers labels using the Seurat \code{ProjectData} pipeline, based on projection of high-dimensional single-cell RNA expression data from a full dataset onto the lower-dimensional embedding of the sketch of the dataset.
                                      #   \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but performs correlation in the reduced dimensional space (PCA embedding), using dimensionally reduced EWCSR centroids.
                                      #   \item \code{"count-knn"}: Transfers labels using the Seurat \code{FindTransferAnchors} and \code{TransferData} pipeline, based on shared features in count-based expression data and k-nearest neighbor matching.
                                      dims = 30, # Integer, number of dimensions used during the sketching.
@@ -89,11 +93,15 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
   
   #________________
   
+  log_h1("Checking the Input Data")
+  
   if(!inherits(clustoCell, "ClustoCell")) {
     cli::cli_abort("The provided `clustoCell` is of the wrong class. It should be a 'ClustoCell' object, created using either the clustoCell or markoClust function!")
   }
   
   #________________
+  
+  log_progress_step("Preparing the Cluster and SubCluster labels!")
 
   if(any(grepl("merged_sub_clusters", names(clustoCell$clusters)))) {
     sketched_cluster_source <- "merged_sub_clusters"
@@ -119,6 +127,8 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
   
   sketched_clusters <- clustoCell$clusters[[sketched_cluster_source]]
   
+  log_progress_step("Inpecting Quiescent and Isolated Cells!")
+  
   # Adding global quiescent_cells & isolated_cells
   
   isolated_cells_vec <- clustoCell$isolated_cells
@@ -131,9 +141,13 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
   
   sketch_cells <- names(sketched_clusters)
   
+  log_progress_done()
+  
+  log_h1("Preparing Query and Reference Data")
+  
   #________________
 
-  if (method == "ewcsr-cor") {
+  if(method == "ewcsr-cor") {
     
     # query_ewcsr_mat[is.na(query_ewcsr_mat)] <- 0
     query_ewcsr_mat <- replace_na_with_zero_cpp(query_ewcsr_mat, num_threads = num_threads)
@@ -151,6 +165,8 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
 
     # Retain only non-sketched data
     query_ewcsr_mat <- query_ewcsr_mat[, !(colnames(query_ewcsr_mat) %in% sketch_cells)]
+    
+    log_h2("Transfering the Labels!")
     
     # Pearson correlation to centroids
     # sim_scores <- cor(as.matrix(query_ewcsr_mat), centroids)  # Cells x Clusters
@@ -183,20 +199,82 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
     names(predicted_labels) <- colnames(query_ewcsr_mat)
     predicted_labels <- c(predicted_labels, sketched_clusters)
     
-  } else if (method == "ewcsr-red-cor") {
+  } else if (method == "count-project") {
+    
+    log_progress_step("Creating Seurat Objects!")
+    
+    if(inherits(query_expr_mat, c("Seurat"))) {
+      
+      so <- query_expr_mat
+      so[["tmp_sketch"]] <- Seurat::CreateAssayObject(counts = so[[assay]][layer][,sketch_cells])
+      
+    } else if(inherits(query_expr_mat, c("Matrix"))) {
+      
+      so <- Seurat::CreateSeuratObject(assay = assay, counts = query_expr_mat)
+      so[["tmp_sketch"]] <- Seurat::CreateAssayObject(counts = query_expr_mat[,sketch_cells])
+    }
+    
+    log_progress_step("Processing the Sketched Data!")
+
+    Seurat::DefaultAssay(so) <- "tmp_sketch"
+    so <- Seurat::NormalizeData(so, normalization.method = "LogNormalize", scale.factor = 10000, verbose = FALSE)
+    so <- Seurat::FindVariableFeatures(so, selection.method = "vst", nfeatures = 2000, verbose = FALSE)
+    so <- Seurat::ScaleData(so, features = VariableFeatures(so), verbose = FALSE)
+    so <- Seurat::RunPCA(so, features = VariableFeatures(object = so), verbose = FALSE)
+    
+    if(sketched_cluster_source == "major_clusters") {
+      so <- addClustoData(obj = so, clustoCell = clustoCell, 
+                          major_cluster_name = "ClustoCell", 
+                          add_sub_clusters = FALSE)
+    } else if(sketched_cluster_source == "merged_sub_clusters") {
+      so <- addClustoData(obj = so, clustoCell = clustoCell, 
+                          sub_cluster_name = "ClustoCell", 
+                          add_major_clusters = FALSE)
+    }
+    
+    log_progress_step("Projecting the Sketched Data!")
+    so <- Seurat::ProjectData(
+      object = so,
+      assay = assay,
+      full.reduction = "pca.full",
+      sketched.assay = "tmp_sketch",
+      sketched.reduction = "pca", 
+      normalization.method = "LogNormalize",
+      k.weight = 50,
+      dims = 1:dims,
+      refdata = list(ClustoCell = "ClustoCell"), 
+      verbose = F
+    )
+    
+    label_transfer_df <- data.frame(cell = colnames(so),
+                                    predicted_cluster = so$ClustoCell,
+                                    confidence = so$ClustoCell.score)
+    
+    predicted_labels <- so$ClustoCell
+    names(predicted_labels) <- colnames(so)
+
+    } else if (method == "ewcsr-red-cor") {
     
     # query_ewcsr_mat[is.na(query_ewcsr_mat)] <- 0
     query_ewcsr_mat <- replace_na_with_zero_cpp(query_ewcsr_mat, num_threads = num_threads)
     
-    original_seu <- Seurat::CreateSeuratObject(counts = query_ewcsr_mat[, !(colnames(query_ewcsr_mat) %in% sketch_cells)], 
-                                                    data = query_ewcsr_mat[, !(colnames(query_ewcsr_mat) %in% sketch_cells)])
-    sketched_seu <- Seurat::CreateSeuratObject(counts = query_ewcsr_mat[, (colnames(query_ewcsr_mat) %in% sketch_cells)], 
-                                                    data = query_ewcsr_mat[, (colnames(query_ewcsr_mat) %in% sketch_cells)])
+    log_progress_step("Creating Seurat Objects!")
+    
+    full_seu <- Seurat::CreateSeuratObject(counts = query_ewcsr_mat,
+                                           data = query_ewcsr_mat)
+    original_seu <- subset(full_seu, cells = setdiff(colnames(full_seu), sketch_cells))
+    sketched_seu <- subset(full_seu, cells = sketch_cells)
+    rm(full_seu)
+    
+    
+    log_progress_step("Processing the Seurat Objects!")
     
     all_seu <- suppressWarnings(merge(original_seu, sketched_seu))  # Merge for joint HVG/PCA
-    all_seu <- suppressWarnings(Seurat::FindVariableFeatures(all_seu, verbose = FALSE))
+    all_seu <- suppressWarnings(Seurat::FindVariableFeatures(all_seu, nfeatures = 2000, verbose = FALSE))
     all_seu <- suppressWarnings(Seurat::ScaleData(all_seu, verbose = FALSE))
     all_seu <- suppressWarnings(Seurat::RunPCA(all_seu, npcs = dims, verbose = FALSE))
+    
+    log_progress_done()
     
     # Extract reduced data
     original_reduced <- Seurat::Embeddings(all_seu)[colnames(original_seu), ]
@@ -212,6 +290,10 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
     # centroids <- do.call(rbind, centroids)  # Cluster x Dim matrix
     
     centroids <- compute_reduced_centroids_cpp(mat = sketched_reduced, sketched_clusters = sketched_clusters, unique_clusters = unique_clusters)
+    
+    log_progress_done()
+    
+    log_h2("Transfering the Labels!")
     
     if(use_major_clusters) {
       label_transfer_df <- lapply(true_major_clusters, function(i) {
@@ -247,14 +329,36 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
   } else if (method == "count-knn") {
     # kNN voting (using Seurat's framework)
     
-    original_seu <- Seurat::CreateSeuratObject(counts = query_expr_mat[, !(colnames(query_expr_mat) %in% sketch_cells)])
-    sketched_seu <- Seurat::CreateSeuratObject(counts = query_expr_mat[, (colnames(query_expr_mat) %in% sketch_cells)])
+    log_progress_step("Creating Seurat Objects!")
+    
+    full_seu <- Seurat::CreateSeuratObject(counts = query_expr_mat)
+    original_seu <- subset(full_seu, cells = setdiff(colnames(full_seu), sketch_cells))
+    sketched_seu <- subset(full_seu, cells = sketch_cells)
+    rm(full_seu)
+    
+    log_progress_step("Normalizing the Data!")
     
     original_seu <- Seurat::NormalizeData(original_seu, normalization.method = "LogNormalize", scale.factor = 10000, verbose = FALSE)
     sketched_seu <- Seurat::NormalizeData(sketched_seu, normalization.method = "LogNormalize", scale.factor = 10000, verbose = FALSE)
     
-    original_seu <- Seurat::FindVariableFeatures(original_seu, verbose = FALSE)
-    sketched_seu <- Seurat::FindVariableFeatures(sketched_seu, verbose = FALSE)
+    log_progress_step("Finding HVGs!")
+    
+    original_seu <- Seurat::FindVariableFeatures(original_seu, nfeatures = 2000, verbose = FALSE)
+    sketched_seu <- Seurat::FindVariableFeatures(sketched_seu, nfeatures = 2000, verbose = FALSE)
+    
+    log_progress_step("Scaling the Data!")
+    
+    original_seu <- Seurat::ScaleData(original_seu, verbose = FALSE)
+    sketched_seu <- Seurat::ScaleData(sketched_seu, verbose = FALSE)
+    
+    log_progress_step("Running PCA!")
+    
+    original_seu <- Seurat::RunPCA(original_seu, npcs = dims, verbose = FALSE)
+    sketched_seu <- Seurat::RunPCA(sketched_seu, npcs = dims, verbose = FALSE)
+    
+    log_progress_done()
+    
+    log_h2("Transfering the Labels!")
     
     if(use_major_clusters) {
       label_transfer_df <- lapply(true_major_clusters, function(i) {
@@ -269,8 +373,14 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
           curr_k.score <- 30
           curr_k.weight <- 50
         }
+        
+        log_progress_step("Finding Transfter Anchors!")
+        
         curr_anchors <- Seurat::FindTransferAnchors(reference = sketched_seu, query = curr_original_seu, k.score = curr_k.score,
                                                     dims = 1:dims, reduction = "pcaproject", verbose = FALSE)
+        
+        log_progress_step("Transferring the Data!")
+        
         curr_predictions <- Seurat::TransferData(anchorset = curr_anchors, refdata = sketched_clusters[colnames(sketched_seu)], k.weight = curr_k.weight,
                                                  weight.reduction = "pcaproject", dims = 1:dims, verbose = FALSE)
         curr_predicted_labels <- curr_predictions$predicted.id
@@ -282,6 +392,9 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
       }) %>% do.call(what = rbind)
       label_transfer_df <- label_transfer_df[match(colnames(original_seu), label_transfer_df$cell),]
       predicted_labels <- label_transfer_df$predicted_cluster
+      
+      log_progress_done()
+      
     } else {
       if(ncol(original_seu) < 70) {
         curr_k.score <- round(ncol(original_seu)/2)
@@ -290,8 +403,13 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
         curr_k.score <- 30
         curr_k.weight <- 50
       }
+      
+      log_progress_step("Finding Transfter Anchors!")
+      
       anchors <- Seurat::FindTransferAnchors(reference = sketched_seu, query = original_seu, k.score = curr_k.score,
                                              dims = 1:dims, reduction = "pcaproject", verbose = FALSE)
+      
+      log_progress_step("Transferring the Data!")
       
       predictions <- Seurat::TransferData(anchorset = anchors, refdata = sketched_clusters, k.weight = curr_k.weight,
                                           weight.reduction = "pcaproject", dims = 1:dims, verbose = FALSE)
@@ -302,6 +420,8 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
       label_transfer_df <- data.frame(cell = colnames(original_seu),
                                       predicted_cluster = predicted_labels,
                                       confidence = confidence)
+      
+      log_progress_done()
     }
     
     names(predicted_labels) <- colnames(original_seu)
@@ -335,6 +455,12 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
   }
   
   clustoCell$label_transfer_df <- label_transfer_df
+  
+  if(verbose) {
+    log_space()
+    cli::cli_rule(left = cli::col_green("SUCCESS"), right = cli::col_silver(Sys.time()))
+    cli::cli_alert_success(cli::style_italic(cli::style_bold("Labels transferred successfully!")))
+  }
   
   # Return results
   structure(clustoCell,

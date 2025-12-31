@@ -261,7 +261,7 @@ markoCell <- function(
     expr_mat <- expr_mat[hvgs,] 
   }
   
-  # Step 1: Log1p transformation and converting zeros to NA
+  # Step 1: Log1p transformation
   if(log1p) {
     expr_mat <- log1p(expr_mat)
   }

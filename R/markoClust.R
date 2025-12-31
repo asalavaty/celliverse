@@ -31,10 +31,12 @@ markoClust <- function(
     #' `sketch_fraction = 0.5` will sketch 50% of the cells in each cluster. This parameter allows for controlling the trade-off between 
     #' data compression and representation in the sketched dataset. For small datasets (fewer than 10,000 cells), set this argument to at least 0.5.
     label_transfer_method = c("ewcsr-cor", 
+                              "count-project",
                               "ewcsr-red-cor", 
                               "count-knn"), 
     # Character string specifying the label transfer method to use. Optional. Used if sketch == TRUE. Options include:
-    #   \item \code{"ewcsr-cor"}: Transfers labels by computing the correlation between each cell in the query expression matrix (\code{query_expr_mat}) and the EWCSR centroids of each cluster in the \code{clustoCell_obj}, using the full expression space (i.e., non-reduced).
+    #   \item \code{"ewcsr-cor"}: Transfers labels by computing the correlation between each cell in the query expression matrix (\code{query_expr_mat}) and the EWCSR centroids of each cluster in the \code{clustoCell}, using the full expression space (i.e., non-reduced).
+    #   \item \code{"count-project"}: Transfers labels using the Seurat \code{ProjectData} pipeline, based on projection of high-dimensional single-cell RNA expression data from a full dataset onto the lower-dimensional embedding of the sketch of the dataset.
     #   \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but performs correlation in the reduced dimensional space (PCA embedding), using dimensionally reduced EWCSR centroids.
     #   \item \code{"count-knn"}: Transfers labels using the Seurat \code{FindTransferAnchors} and \code{TransferData} pipeline, based on shared features in count-based expression data and k-nearest neighbor matching.
     sketch_pca_dims = 30, # Integer, number of dimensions used during the label transferring. Only used when label_transfer_method is one of 'ewcsr-red-cor' or 'count-knn'.
@@ -264,7 +266,7 @@ markoClust <- function(
     original_expr_mat <- expr_mat
   }
   
-  # Step 1: Log1p transformation and converting zeros to NA
+  # Step 1: Log1p transformation
   if(log1p) {
     expr_mat <- log1p(expr_mat)
   }
@@ -416,7 +418,7 @@ markoClust <- function(
       if(identify_subclusters && sketch) {
         # Updating the expr_mat
         original_expr_mat <- original_expr_mat[rownames(expr_mat), colnames(expr_mat)]
-        if(label_transfer_method != "count-knn") {
+        if(!(label_transfer_method %in% c("count-knn", "count-project"))) {
           original_ewcsr_mat <- ewcsr_mat
         } else {
           original_ewcsr_mat <- NULL
@@ -435,7 +437,7 @@ markoClust <- function(
       if(identify_subclusters && sketch) {
         # Updating the expr_mat
         original_expr_mat <- original_expr_mat[rownames(expr_mat), colnames(expr_mat)]
-        if(label_transfer_method != "count-knn") {
+        if(!(label_transfer_method %in% c("count-knn", "count-project"))) {
           original_ewcsr_mat <- ewcsr_mat
         } else {
           original_ewcsr_mat <- NULL
@@ -448,7 +450,7 @@ markoClust <- function(
     if(identify_subclusters && sketch) {
       # Updating the expr_mat
       original_expr_mat <- original_expr_mat[rownames(expr_mat), colnames(expr_mat)]
-      if(label_transfer_method != "count-knn") {
+      if(!(label_transfer_method %in% c("count-knn", "count-project"))) {
         original_ewcsr_mat <- ewcsr_mat
       } else {
         original_ewcsr_mat <- NULL
@@ -555,9 +557,12 @@ markoClust <- function(
       pos_clusters_specific_features <- names(pos_cluster_gini_scores)[pos_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       pos_clusters_non_specific_features <- pos_cluster_gini_scores[pos_cluster_gini_scores < gini_thresh] %>% na.omit()
       pos_clusters_non_specific_features <- data.frame(Feature = names(pos_clusters_non_specific_features), 
-                                                       Gini_Score = pos_clusters_non_specific_features,
-                                                       Rank = data.table::frankv(pos_clusters_non_specific_features, ties.method="dense")) %>% dplyr::arrange(Rank) %>% 
-        dplyr::filter(!is.na(Gini_Score))
+                                                       Gini_Score = pos_clusters_non_specific_features) %>% 
+        dplyr::filter(!is.na(Gini_Score)) %>% 
+        dplyr::mutate(Med_Freq = apply(pos_marker_freq_mat[Feature,], 1, median),
+                      Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
+                      Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
+        ) %>% dplyr::arrange(Rank) 
       rownames(pos_clusters_non_specific_features) <- NULL
       
       ### Filtering the pos_mat_major_clustered
@@ -654,9 +659,12 @@ markoClust <- function(
       neg_clusters_specific_features <- names(neg_cluster_gini_scores)[neg_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       neg_clusters_non_specific_features <- neg_cluster_gini_scores[neg_cluster_gini_scores < gini_thresh] %>% na.omit()
       neg_clusters_non_specific_features <- data.frame(Feature = names(neg_clusters_non_specific_features), 
-                                                       Gini_Score = neg_clusters_non_specific_features,
-                                                       Rank = data.table::frankv(neg_clusters_non_specific_features, ties.method="dense")) %>% dplyr::arrange(Rank) %>% 
-        dplyr::filter(!is.na(Gini_Score))
+                                                       Gini_Score = neg_clusters_non_specific_features) %>% 
+        dplyr::filter(!is.na(Gini_Score)) %>% 
+        dplyr::mutate(Med_Freq = apply(neg_marker_freq_mat[Feature,], 1, median),
+                      Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
+                      Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
+        ) %>% dplyr::arrange(Rank) 
       rownames(neg_clusters_non_specific_features) <- NULL
       
       ### Filtering the neg_mat_major_clustered
@@ -753,9 +761,12 @@ markoClust <- function(
       med_clusters_specific_features <- names(med_cluster_gini_scores)[med_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       med_clusters_non_specific_features <- med_cluster_gini_scores[med_cluster_gini_scores < gini_thresh] %>% na.omit()
       med_clusters_non_specific_features <- data.frame(Feature = names(med_clusters_non_specific_features), 
-                                                       Gini_Score = med_clusters_non_specific_features,
-                                                       Rank = data.table::frankv(med_clusters_non_specific_features, ties.method="dense")) %>% dplyr::arrange(Rank) %>% 
-        dplyr::filter(!is.na(Gini_Score))
+                                                       Gini_Score = med_clusters_non_specific_features) %>% 
+        dplyr::filter(!is.na(Gini_Score)) %>% 
+        dplyr::mutate(Med_Freq = apply(med_marker_freq_mat[Feature,], 1, median),
+                      Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
+                      Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
+        ) %>% dplyr::arrange(Rank) 
       rownames(med_clusters_non_specific_features) <- NULL
       
       ### Filtering the med_mat_major_clustered
@@ -995,7 +1006,7 @@ markoClust <- function(
       pos_mat <- pos_mat[,sketch_cells]
       
       # Remove redundant objects
-      if(label_transfer_method != "count-knn") {
+      if(!(label_transfer_method %in% c("count-knn", "count-project"))) {
         original_expr_mat <- NULL
       }
       
@@ -1569,8 +1580,9 @@ markoClust <- function(
     # Transferring the labels
     final_results_list <- clustoCell_TransferLabel(
       clustoCell = final_results_list,
+      assay = assay, layer = layer, 
       query_ewcsr_mat = original_ewcsr_mat,
-      query_expr_mat = original_expr_mat,
+      query_expr_mat = ifelse(!is.null(so) & label_transfer_method == "count-project", so, original_expr_mat),
       method = label_transfer_method,
       inherit_major_clusters = TRUE,
       dims = sketch_pca_dims,
