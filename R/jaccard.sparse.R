@@ -1,5 +1,27 @@
-library(Matrix)
-
+#' Compute Jaccard similarity for sparse matrices
+#'
+#' @description
+#' Computes pairwise Jaccard similarity between columns of a sparse matrix.
+#'
+#' @param mat
+#' A sparse matrix of class \code{Matrix}.
+#'
+#' @param num_threads
+#' Integer; number of threads to use. \code{-1} uses all available cores.
+#'
+#' @return
+#' A numeric matrix of Jaccard similarity scores.
+#'
+#' @seealso
+#' \code{\link{mutual.rank}}
+#'
+#' @examples
+#' \dontrun{
+#' jac <- jaccard.sparse(mat)
+#' }
+#' 
+#' @useDynLib celliverse, .registration = TRUE
+#' @export
 
 jaccard.sparse <- function(mat,
                            num_threads = -1 # Integer. Number of threads (cores) to use. Default is -1, which uses all available cores.

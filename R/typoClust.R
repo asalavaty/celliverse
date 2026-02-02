@@ -1,6 +1,120 @@
-# Function for cell type annotation
-
-library(Matrix)
+#' Cell type annotation of clusters, sub-clusters, or cell subsets
+#'
+#' @description
+#' Annotates clusters, sub-clusters, or arbitrary cell subsets using curated
+#' cell-type marker databases or large language model (LLM)–based annotation.
+#' Annotation can be performed either from marker results stored in
+#' \code{ClustoCell} or \code{MarkoCell} objects, or directly from user-specified
+#' positive and/or negative marker panels.
+#'
+#' @details
+#' \code{typoClust()} identifies candidate cell types for each target set by
+#' comparing positive and/or negative marker genes against tissue- and
+#' condition-aware cell-type marker databases. Users may restrict annotation
+#' to specific tissues or conditions, control the number of markers used per
+#' cluster, and choose between rank-based or fixed-size marker selection.
+#'
+#' Exactly one of the following inputs must be provided:
+#' \itemize{
+#'   \item One or more \code{ClustoCell} or \code{MarkoCell} objects via
+#'   \code{objects}
+#'   \item User-defined positive and/or negative marker panels via
+#'   \code{desired_pos_markers} and/or \code{desired_neg_markers}
+#' }
+#'
+#' @param objects
+#' A list of one or more objects of class \code{ClustoCell} or \code{MarkoCell}
+#' (e.g. \code{list(obj1, obj2)}). Mandatory if \code{desired_pos_markers} and
+#' \code{desired_neg_markers} are not specified.
+#'
+#' @param desired_sets
+#' Optional character vector specifying the names of clusters, sub-clusters,
+#' and/or cell subsets to annotate. These names must exist in the supplied
+#' \code{objects}. If \code{NULL}, all available sets are annotated.
+#'
+#' @param tissue
+#' Optional character vector specifying one or more tissue contexts used for
+#' annotation. If \code{NULL}, all available tissues are examined. Available
+#' tissue types can be accessed via
+#' \code{data("tissueCondition_types", package = "celliverse")}.
+#'
+#' @param condition
+#' Optional character vector specifying one or more conditions (e.g. Healthy,
+#' disease states) used for annotation. If \code{NULL}, all available conditions
+#' are examined. Available condition types can be accessed via
+#' \code{data("tissueCondition_types", package = "celliverse")}.
+#'
+#' @param use_pos_markers
+#' Logical; whether to use positive markers for cell-type annotation.
+#' Default is \code{TRUE}.
+#'
+#' @param use_neg_markers
+#' Logical; whether to use negative markers for cell-type annotation.
+#' Default is \code{TRUE}.
+#'
+#' @param desired_pos_markers
+#' Optional named list of character vectors specifying positive marker panels.
+#' Each list element corresponds to one cluster or cell subset
+#' (e.g. \code{list(cluster1 = c("GeneA", "GeneB"))}). Mandatory if
+#' \code{objects} and \code{desired_neg_markers} are not specified. List names
+#' must match those of \code{desired_neg_markers}, if provided.
+#'
+#' @param desired_neg_markers
+#' Optional named list of character vectors specifying negative marker panels.
+#' Each list element corresponds to one cluster or cell subset. Mandatory if
+#' \code{objects} and \code{desired_pos_markers} are not specified. List names
+#' must match those of \code{desired_pos_markers}, if provided.
+#'
+#' @param thresh_mode
+#' Character string specifying how to select top markers. One of:
+#' \itemize{
+#'   \item \code{"rank"}: Selects all markers with ranks up to the threshold.
+#'   If multiple markers share the cutoff rank, all are included.
+#'   \item \code{"n"}: Selects strictly the top \code{n} markers in rank order,
+#'   even if additional markers share the same rank.
+#' }
+#'
+#' @param thresh
+#' Integer specifying the marker selection threshold. Interpreted according to
+#' \code{thresh_mode}. Only used when \code{objects} is specified.
+#'
+#' @param mode
+#' Character string specifying the annotation strategy. One of:
+#' \itemize{
+#'   \item \code{"markerDB"}: Annotates cell sets using curated cell-type
+#'   marker databases.
+#'   \item \code{"ceLLMarkup"}: Annotates cell sets using large language models
+#'   (LLM).
+#' }
+#' Currently, only \code{"markerDB"} is accessible.
+#'
+#' @param species
+#' Character string specifying the species. One of \code{"human"} or
+#' \code{"mouse"}.
+#'
+#' @param verbose
+#' Logical; whether to display progress messages.
+#'
+#' @return
+#' An object of class \code{TypoClust} containing ranked cell-type annotations,
+#' supporting marker evidence, and summary statistics for each annotated set.
+#'
+#' @seealso
+#' \code{\link{typoClustVis}}, \code{\link{markoCell}}, \code{\link{markoClust}},
+#' \code{\link{clustoCell}}
+#'
+#' @examples
+#' \dontrun{
+#' tc <- typoClust(
+#'   objects = list(clust_obj),
+#'   tissue = "Blood",
+#'   condition = "Healthy",
+#'   thresh = 20,
+#'   species = "human"
+#' )
+#' }
+#' 
+#' @export
 
 typoClust <- function(objects = NULL, # A list of one or more objects of class ClustoCell or MarkoCell (e.g. list(obj1, obj2)). This argument is mandatory if desired_pos_markers and desired_neg_markers are not specified.
                       desired_sets = NULL, # Optional. A character vector of the names of desired clusters, sub-clusters, and/or cell-subsets present in the specified `objects`. If not specified, all clusters and cell-subsets in the objects will be annotated.
@@ -14,7 +128,7 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
                       ## "rank": selects all markers with ranks up to the threshold. If multiple markers share the same rank as the cutoff, they are all included.
                       ## "n": selects strictly the top n rows in rank order. Only the first n rows are kept, even if additional rows share the same rank as the n-th row.
                       thresh = 20, # Integer, threshold for choosing the top N rows of the marker tables or top N ranked markers of each cluster, sub-cluster, and cell-subset. Only used if `objects` is specified.
-                      mode = c("markerDB", "ceLLMarkup"), # Either `markerDB` (which annotates the cell clusters and cell subsets based on the prepared database of cell-type markers) or ceLLMarkup (which annotates the cell clusters and cell subsets using large language models (LLM))
+                      mode = c("markerDB", "ceLLMarkup"), # Currently only markerDB is accessible. Either `markerDB` (which annotates the cell clusters and cell subsets based on the prepared database of cell-type markers) or ceLLMarkup (which annotates the cell clusters and cell subsets using large language models (LLM))
                       species = c("human", "mouse"), # Character vector, either 'human' or 'mouse'.
                       verbose = TRUE # Logical, whether to show progress messages
                       ) {
@@ -419,20 +533,11 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
   # Generating the standard marker names dataframe ----
   
   # Check if 'markerDictionary' exists and is of the correct class
-  if (!exists("markerDictionary") || !inherits(markerDictionary, "CelliVerse_Data")) {
-    
-    # Check if the loaded object is of the correct class
-    if (exists("markerDictionary") & !inherits(markerDictionary, "CelliVerse_Data")) {
-      log_message("The loaded markerDictionary object is not of class 'CelliVerse_Data'.")
-    }
-    
-    # If it doesn't exist or the class is incorrect, load it from the celliverse package
-    data("markerDictionary", package = "celliverse")
-    log_message("markerDictionary has been successfully loaded and is of class 'CelliVerse_Data'.")
-    
-  } else {
-    log_message("markerDictionary is already loaded and of the correct class 'CelliVerse_Data'.")
+  if (!exists("markerDictionary", inherits = FALSE)) {
+    utils::data("markerDictionary", package = "celliverse", envir = environment())
   }
+  
+  markerDictionary <- get("markerDictionary", envir = environment())
   
   #____________________
   
@@ -449,7 +554,7 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
   combined_panels_all_markers <- combined_panels_list %>% unlist() %>% unname() %>% unique()
   
   # Split aliases by "|"
-  alias_list <- strsplit(curr_markerDictionary$Alias, "\\|")
+  alias_list <- strsplit(as.character(curr_markerDictionary$Alias), "\\|")
   
   # Create lookup vector: names are aliases, values are Symbols
   alias_to_symbol <- setNames(rep(curr_markerDictionary$Symbol, lengths(alias_list)),
@@ -477,39 +582,22 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
     log_message("Setting the cell type annotation mode to markerDB!")
 
     # Check if 'markerDB' exists and is of the correct class
-    if (!exists("markerDB") || !inherits(markerDB, "CelliVerse_Data")) {
-      
-      # Check if the loaded object is of the correct class
-      if (exists("markerDB") & !inherits(markerDB, "CelliVerse_Data")) {
-        log_message("The loaded markerDB object is not of class 'CelliVerse_Data'.")
-      }
-      
-      # If it doesn't exist or the class is incorrect, load it from the celliverse package
-      data("markerDB", package = "celliverse")
-      log_message("markerDB has been successfully loaded and is of class 'CelliVerse_Data'.")
-
-    } else {
-      log_message("markerDB is already loaded and of the correct class 'CelliVerse_Data'.")
+    if (!exists("markerDB", inherits = FALSE)) {
+      utils::data("markerDB", package = "celliverse", envir = environment())
     }
+    
+    markerDB <- get("markerDB", envir = environment())
     
     #____________________
     
     # Check if 'tissueCondition_types' exists and is of the correct class ----
     if(!is.null(tissue)) {
-      if (!exists("tissueCondition_types") || !inherits(tissueCondition_types, "CelliVerse_Data")) {
-        
-        # Check if the loaded object is of the correct class
-        if (exists("tissueCondition_types") & !inherits(tissueCondition_types, "CelliVerse_Data")) {
-          log_message("The loaded tissueCondition_types object is not of class 'CelliVerse_Data'.")
-        }
-        
-        # If it doesn't exist or the class is incorrect, load it from the celliverse package
-        data("tissueCondition_types", package = "celliverse")
-        log_message("tissueCondition_types has been successfully loaded and is of class 'CelliVerse_Data'.")
-        
-      } else {
-        log_message("tissueCondition_types is already loaded and of the correct class 'CelliVerse_Data'.")
+      
+      if (!exists("tissueCondition_types", inherits = FALSE)) {
+        utils::data("tissueCondition_types", package = "celliverse", envir = environment())
       }
+      
+      tissueCondition_types <- get("tissueCondition_types", envir = environment())
     }
     
     #____________________
@@ -737,19 +825,19 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
         stringsAsFactors = FALSE
       )
       
-      split_combo <- do.call(rbind, strsplit(df$Combo, "_"))
+      split_combo <- do.call(rbind, strsplit(as.character(df$Combo), "_"))
       df$Tissue <- split_combo[, 1]
       df$Condition <- split_combo[, 2]
       df$CellType <- split_combo[, 3]
       
       # Filter the df based on the user specified tissue type
       if(!is.null(tissue)) {
-        df <- df %>% dplyr::filter(Tissue %in% tissue)
+        df <- df %>% dplyr::filter(.data$Tissue %in% tissue)
       }
       
       # Filter the df based on the user specified condition type
       if(!is.null(condition)) {
-        df <- df %>% dplyr::filter(Condition %in% condition)
+        df <- df %>% dplyr::filter(.data$Condition %in% condition)
       }
       
       ### Positive overlap
@@ -762,7 +850,7 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
         
         df$Avg_Pos_Purity <- vapply(df$Pos_Markers, function(tmp_marker_set) {
           if (tmp_marker_set == "") return(NA_real_)
-          markers <- strsplit(tmp_marker_set, "|", fixed = TRUE)[[1]]  # Drop unique if no dups expected
+          markers <- strsplit(as.character(tmp_marker_set), "|", fixed = TRUE)[[1]]  # Drop unique if no dups expected
           mean(pos_purity_lookup[markers], na.rm = TRUE)
         }, FUN.VALUE = numeric(1))  
         df$Pos_Count <- pos_results$overlap_counts[df$Combo]
@@ -784,7 +872,7 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
         
         df$Avg_Neg_Purity <- vapply(df$Neg_Markers, function(tmp_marker_set) {
           if (tmp_marker_set == "") return(NA_real_)
-          markers <- strsplit(tmp_marker_set, "|", fixed = TRUE)[[1]]  # Drop unique if no dups expected
+          markers <- strsplit(as.character(tmp_marker_set), "|", fixed = TRUE)[[1]]  # Drop unique if no dups expected
           mean(neg_purity_lookup[markers], na.rm = TRUE)
         }, FUN.VALUE = numeric(1))
         df$Neg_Count <- neg_results$overlap_counts[df$Combo]
@@ -806,7 +894,7 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
           if(tmp_marker_set == "") {
             return(NA)
           } else {
-            pos_marker_purity_df$Purity[match(c(strsplit(tmp_marker_set, split = "\\|") %>% unlist() %>% unique()),
+            pos_marker_purity_df$Purity[match(c(strsplit(as.character(tmp_marker_set), split = "\\|") %>% unlist() %>% unique()),
                                               pos_marker_purity_df$Std_Symbol)] %>% mean()
           }
         })  
@@ -828,7 +916,7 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
           if(tmp_marker_set == "") {
             return(NA)
           } else {
-            neg_marker_purity_df$Purity[match(c(strsplit(tmp_marker_set, split = "\\|") %>% unlist() %>% unique()),
+            neg_marker_purity_df$Purity[match(c(strsplit(as.character(tmp_marker_set), split = "\\|") %>% unlist() %>% unique()),
                                               neg_marker_purity_df$Std_Symbol)] %>% mean()
           }
         })  
@@ -866,7 +954,7 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
           
           Combined_Score = special_multiply((Adjusted_Count^2) * sign(Adjusted_Count), log2(Adjusted_Occurrence + 1))
         ) %>%
-        dplyr::filter(Combined_Score != 0 & !is.na(Combined_Score)) %>%
+        dplyr::filter(.data$Combined_Score != 0 & !is.na(.data$Combined_Score)) %>%
         dplyr::select(Tissue, Condition, CellType, 
                       Pos_Markers, Neg_Markers, Combined_Markers, 
                       Pos_Count, Neg_Count, Combined_Count,
@@ -878,7 +966,7 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
                       Avg_Wrong_Pos_Purity, Avg_Wrong_Neg_Purity,
                       Adjusted_Count, Adjusted_Occurrence, Combined_Score) %>%
         dplyr::arrange(desc(Combined_Score), desc(Adjusted_Count), desc(Adjusted_Occurrence), desc(Pos_Count), desc(Neg_Count)) %>%
-        dplyr::mutate(Rank = row_number())
+        dplyr::mutate(Rank = dplyr::row_number())
       return(df)
     })
     

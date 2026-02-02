@@ -1,7 +1,39 @@
-library(Matrix)
-
-# Feature selection based on Gini inequality coefficient evaluation of ranked data (genes that have very low ranks (very low expressions) in most cell, mostly including housekeeping and ribosomal genes, are removed, 
-# but the ones with high ranks even the same across many cells are retained and are to be assessed in later stages of filtration)
+#' Feature selection using Gini coefficient on ranked expression data
+#'
+#' @description
+#' Identifies specific and non-specific features based on the Gini inequality
+#' coefficient computed on ranked expression values.
+#'
+#' @details
+#' This method removes globally low-ranked features while retaining features
+#' with consistently high ranks across cells for downstream analysis.
+#'
+#' @param mat
+#' A matrix with features as rows and cells as columns.
+#'
+#' @param gini_thresh
+#' Numeric; Gini threshold for selecting specific features.
+#'
+#' @param noise_thresh
+#' Integer; minimum number of cells required for a feature to be retained.
+#'
+#' @param num_threads
+#' Integer; number of threads to use. \code{-1} uses all available cores.
+#'
+#' @return
+#' A list containing \code{specific_features}, \code{non_specific_features},
+#' and \code{no_occurrence}.
+#'
+#' @seealso
+#' \code{\link{gini.ewcsr.fs}}
+#'
+#' @examples
+#' \dontrun{
+#' fs <- gini.rank.fs(mat)
+#' }
+#' 
+#' @useDynLib celliverse, .registration = TRUE
+#' @export
 
 gini.rank.fs <- function(mat, # A matrix with cells/samples on columns and features/genes on rows
                          gini_thresh = 0.5, # The Gini threshold for selecting specific features.

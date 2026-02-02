@@ -1,63 +1,168 @@
 #=============================================================================
 #
-#    Code chunk 1: Documenting the coexpression.data data frame
+#    markerDB
 #
 #=============================================================================
 
-#' Co-expression dataset
+#' Cell-type marker database
 #'
-#' A co-expression dataset of lncRNAs and mRNAs in lung adenocarcinoma
+#' A curated database of positive and negative cell-type marker genes for
+#' human and mouse, stored in sparse matrix format. This dataset is used
+#' internally by \code{typoClust()} for marker-based cell-type annotation.
 #'
-#' @format A data frame with 2410 rows and 2 variables:
+#' @format
+#' An object of class \code{CelliVerse_Data}, implemented as a named list with
+#' two elements:
 #' \describe{
-#'   \item{lncRNA}{lncRNA symbol}
-#'   \item{Coexpressed.Gene}{Co-expressed gene symbol}
-#'   ...
+#'   \item{human}{A list containing human marker databases:
+#'     \describe{
+#'       \item{positive_db}{An object of class \code{CelliVerse_Sparse_Data}
+#'       wrapping a sparse \code{dgCMatrix} of dimensions
+#'       16,899 genes × 9,410 cell types.}
+#'       \item{negative_db}{An object of class \code{CelliVerse_Sparse_Data}
+#'       wrapping a sparse \code{dgCMatrix} of dimensions
+#'       329 genes × 93 cell types.}
+#'     }}
+#'   \item{mouse}{A list containing mouse marker databases:
+#'     \describe{
+#'       \item{positive_db}{An object of class \code{CelliVerse_Sparse_Data}
+#'       wrapping a sparse \code{dgCMatrix} of dimensions
+#'       4,779 genes × 2,112 cell types.}
+#'       \item{negative_db}{An object of class \code{CelliVerse_Sparse_Data}
+#'       wrapping a sparse \code{dgCMatrix} of dimensions
+#'       32 genes × 33 cell types.}
+#'     }}
 #' }
-#' @source \url{https://pubmed.ncbi.nlm.nih.gov/31211495/}
-"coexpression.data"
+#'
+#' @details
+#' Rows correspond to marker genes and columns correspond to annotated
+#' cell types. Matrix values encode marker presence or strength as defined
+#' during database construction. Sparse representation is used to minimize
+#' memory usage.
+#' 
+#' @keywords datasets
+#'
+#' @name markerDB
+#' @docType data
+#'
+#' @seealso
+#' \code{\link{typoClust}}, \code{\link{markerDictionary}},
+#' \code{\link{tissueCondition_types}}
+#'
+#' @source
+#' Curated from published cell-type marker resources and expert annotation.
+NULL
+
 
 #=============================================================================
 #
-#    Code chunk 2: Documenting the centrality.measures data frame
+#    markerDictionary
 #
 #=============================================================================
 
-#' Centrality measures dataset
+#' Marker gene dictionary
 #'
-#' The centrality measures of a co-expression network of lncRNAs and
-#' mRNAs in lung adenocarcinoma
+#' A species-specific dictionary mapping marker identifiers to standardized
+#' gene annotations, including gene symbols, aliases, and database identifiers.
+#' This dataset supports marker harmonization and identifier resolution within
+#' the \code{celliverse} framework.
 #'
-#' @format A data frame with 794 rows and 6 variables:
+#' @format
+#' An object of class \code{CelliVerse_Data}, implemented as a named list with
+#' two elements:
 #' \describe{
-#'   \
-#'   \item{DC}{Degree Centrality}
-#'   \item{CR}{ClusterRank}
-#'   \item{NC}{Neighborhood Connectivity}
-#'   \item{LH_index}{Local H-index}
-#'   \item{BC}{Betweenness Centrality}
-#'   \item{CI}{Collective Influence}
-#'   ...
+#'   \item{human}{A data frame with 20,887 rows and 6 variables:
+#'     \describe{
+#'       \item{Marker}{Internal marker identifier}
+#'       \item{Symbol}{Official gene symbol}
+#'       \item{Alias}{Alternative gene symbols or aliases}
+#'       \item{Entrez}{Entrez Gene identifier}
+#'       \item{Ensembl}{Ensembl gene identifier}
+#'       \item{UniProt}{UniProt protein identifier}
+#'     }}
+#'   \item{mouse}{A data frame with 4,779 rows and 6 variables:
+#'     \describe{
+#'       \item{Marker}{Internal marker identifier}
+#'       \item{Symbol}{Official gene symbol}
+#'       \item{Alias}{Alternative gene symbols or aliases}
+#'       \item{Entrez}{Entrez Gene identifier}
+#'       \item{Ensembl}{Ensembl gene identifier}
+#'       \item{UniProt}{UniProt protein identifier}
+#'     }}
 #' }
-#' @source \url{https://pubmed.ncbi.nlm.nih.gov/31211495/}
-"centrality.measures"
+#'
+#' @details
+#' This dictionary is used to standardize marker gene identifiers across
+#' datasets and species, enabling consistent matching between user-provided
+#' markers and curated cell-type marker databases.
+#' 
+#' @keywords datasets
+#'
+#' @name markerDictionary
+#' @docType data
+#'
+#' @seealso
+#' \code{\link{markerDB}}, \code{\link{typoClust}}
+#'
+#' @source
+#' Integrated from public gene annotation resources including Ensembl,
+#' Entrez Gene, and UniProt.
+NULL
+
 
 #=============================================================================
 #
-#    Code chunk 3: Documenting the coexpression.adjacency data frame
+#    tissueCondition_types
 #
 #=============================================================================
 
-#' Adjacency matrix
+#' Tissue and condition reference catalog
 #'
-#' The adjacency matrix of a co-expression network of lncRNAs and
-#' mRNAs in lung adenocarcinoma that was generated using igraph functions
+#' A reference catalog of tissues and disease conditions for human and mouse,
+#' used to contextualize cell-type annotation by tissue and pathological state.
 #'
-#' @format A data frame with 794 rows and 794 variables:
+#' @format
+#' An object of class \code{CelliVerse_Data}, implemented as a named list with
+#' two elements:
 #' \describe{
-#'   \item{lncRNA}{lncRNA symbol}
-#'   \item{lncRNA}{lncRNA symbol}
-#'   ...
+#'   \item{human}{A list containing:
+#'     \describe{
+#'       \item{all_tissues}{Character vector of all supported tissues (length 396)}
+#'       \item{healthy_tissue}{Character vector of healthy tissues (length 367)}
+#'       \item{diseased_tissue}{Character vector of diseased tissues (length 103)}
+#'       \item{all_conditions}{Character vector of all supported conditions (length 265)}
+#'       \item{diseased_tissueCondition}{A data frame with two variables:
+#'         \describe{
+#'           \item{Tissue}{Tissue name}
+#'           \item{Condition}{Associated disease condition}
+#'         }}
+#'     }}
+#'   \item{mouse}{A list containing:
+#'     \describe{
+#'       \item{all_tissues}{Character vector of all supported tissues (length 110)}
+#'       \item{healthy_tissue}{Character vector of healthy tissues (length 108)}
+#'       \item{diseased_tissue}{Character vector of diseased tissues (length 19)}
+#'       \item{all_conditions}{Character vector of all supported conditions (length 51)}
+#'       \item{diseased_tissueCondition}{A data frame with two variables:
+#'         \describe{
+#'           \item{Tissue}{Tissue name}
+#'           \item{Condition}{Associated disease condition}
+#'         }}
+#'     }}
 #' }
-#' @source \url{https://pubmed.ncbi.nlm.nih.gov/31211495/}
-"coexpression.adjacency"
+#'
+#' @details
+#' This dataset is used by \code{typoClust()} to restrict or guide cell-type
+#' annotation according to tissue context and disease state.
+#' 
+#' @keywords datasets
+#'
+#' @name tissueCondition_types
+#' @docType data
+#'
+#' @seealso
+#' \code{\link{typoClust}}, \code{\link{markerDB}}
+#'
+#' @source
+#' Curated from public tissue ontologies and disease annotation resources.
+NULL

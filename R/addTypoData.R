@@ -1,4 +1,58 @@
-# A function for adding the cell type annotations from an object of class TypoClust to a Seurat object
+#' Add TypoClust cell type annotations to a single-cell object
+#'
+#' @description
+#' Adds inferred cell type annotations from a \code{TypoClust} object to the
+#' metadata of a Seurat or SingleCellExperiment object.
+#'
+#' @details
+#' Cell type labels are assigned to specified cluster or subset columns and
+#' appended as new metadata columns. Multiple ranked cell types can be added,
+#' and hierarchical refinement can be applied to obtain more specific cell
+#' type annotations.
+#'
+#' @param obj
+#' An object of class \code{Seurat} or \code{SingleCellExperiment}.
+#'
+#' @param typoClust
+#' An object of class \code{TypoClust}, generated using \code{typoClust()}.
+#'
+#' @param clusters
+#' Character vector; names of metadata columns in \code{obj} defining clusters
+#' or cell subsets to which cell types will be assigned.
+#'
+#' @param rank_thresh
+#' Integer; the top N ranked cell types to add for each cluster, stored as
+#' separate metadata columns.
+#'
+#' @param refine
+#' Logical; whether to refine inferred cell types by traversing deeper levels
+#' of the cell type hierarchy.
+#'
+#' @param refine_thresh
+#' Integer; depth of (lexical) hierarchical traversal for refinement. Ignored if
+#' \code{refine = FALSE}.
+#'
+#' @param outNames
+#' Character vector; names of output metadata columns. If \code{NULL}, defaults
+#' to \code{paste0(clusters, "_Celltype")}.
+#'
+#' @return
+#' The input object \code{obj} with additional metadata columns containing
+#' inferred cell type annotations.
+#'
+#' @seealso
+#' \code{\link{typoClust}}, \code{\link{typoClustVis}}
+#'
+#' @examples
+#' \dontrun{
+#' so <- addTypoData(
+#'   obj = so,
+#'   typoClust = tc,
+#'   clusters = "ClustoCell_Clusters"
+#' )
+#' }
+#'
+#' @export
 
 addTypoData <- function(
     obj, # An object of class Seurat or SingleCellExperiment (SCE)
@@ -91,8 +145,8 @@ addTypoData <- function(
             missing_tmp_cluster_names <- tmp_cluster_names[which(!(tmp_cluster_names %in% names(typoClust$cell_types)))]
             missing_tmp_cluster_names <- missing_tmp_cluster_names[!(missing_tmp_cluster_names %in% c("Quiescent", "Isolated"))]
             if(length(missing_tmp_cluster_names) > 0) {
-              log_message(paste0("The following cluster names are not available in the specified `typoClust` object and their corresponding cell types will be set to NA!\n  ⚠ ",
-                                 paste0(missing_tmp_cluster_names, collapse = "\n  ⚠ ")))
+              log_message(paste0("The following cluster names are not available in the specified `typoClust` object and their corresponding cell types will be set to NA!\n  WARNING: ",
+                                 paste0(missing_tmp_cluster_names, collapse = "\n  WARNING: ")))
             }
           }
           
@@ -133,7 +187,7 @@ addTypoData <- function(
                                                 value = TRUE)[1]
                   
                   if(!is.na(curr_refined_cellType) & !grepl(gsub("\\+", "\\\\+", curr_refined_cellType), final_refined_cellType)) {
-                    final_refined_cellType <- paste0(final_refined_cellType, " → ", curr_refined_cellType)
+                    final_refined_cellType <- paste0(final_refined_cellType, " -> ", curr_refined_cellType)
                     
                     curr_refine_index <- curr_refine_index + grep(paste0(c(paste0(gsub("\\+", "\\\\+", curr_refined_cellType), "$"),
                                                                            paste0(gsub("\\+", "\\\\+", curr_refined_cellType), " "),
@@ -161,8 +215,8 @@ addTypoData <- function(
             missing_tmp_cluster_names <- tmp_cluster_names[which(!(tmp_cluster_names %in% names(typoClust$cell_types)))]
             missing_tmp_cluster_names <- missing_tmp_cluster_names[!(missing_tmp_cluster_names %in% c("Quiescent", "Isolated"))]
             if(length(missing_tmp_cluster_names) > 0) {
-              log_message(paste0("The following cluster names are not available in the specified `typoClust` object and their corresponding cell types will be set to NA!\n  ⚠ ",
-                                 paste0(missing_tmp_cluster_names, collapse = "\n  ⚠ ")))
+              log_message(paste0("The following cluster names are not available in the specified `typoClust` object and their corresponding cell types will be set to NA!\n  WARNING: ",
+                                 paste0(missing_tmp_cluster_names, collapse = "\n  WARNING: ")))
             }
           }
           
@@ -202,7 +256,7 @@ addTypoData <- function(
                                                 value = TRUE)[1]
                   
                   if(!is.na(curr_refined_cellType) & !grepl(gsub("\\+", "\\\\+", curr_refined_cellType), final_refined_cellType)) {
-                    final_refined_cellType <- paste0(final_refined_cellType, " → ", curr_refined_cellType)
+                    final_refined_cellType <- paste0(final_refined_cellType, " -> ", curr_refined_cellType)
                     
                     curr_refine_index <- curr_refine_index + grep(paste0(c(paste0(gsub("\\+", "\\\\+", curr_refined_cellType), "$"),
                                                                            paste0(gsub("\\+", "\\\\+", curr_refined_cellType), " "),

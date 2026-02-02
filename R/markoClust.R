@@ -1,11 +1,128 @@
-library(Matrix)
-library(igraph)
-library(cli)
-library(data.table)
-library(dplyr)
-library(magrittr)
-
-#___________________________
+#' Evaluate and refine cell clusters using marker ranking and graph partitioning
+#'
+#' @description
+#' Performs marker-based evaluation and refinement of cell clusters, optionally
+#' identifying sub-clusters using Leiden community detection. Supports large
+#' datasets via uniform sketching with label transfer back to the full dataset.
+#'
+#' @details
+#' Exactly one of \code{so} or \code{data} must be provided.
+#'
+#' If \code{sketch = TRUE}, a representative subset of cells is sampled from
+#' each cluster and used for sub-clustering. Labels are transferred back to
+#' the full dataset using the method specified by \code{label_transfer_method}.
+#'
+#' @param so
+#' A \code{Seurat} object. Either \code{so} or \code{data} must be specified.
+#'
+#' @param assay
+#' Character; assay used for cluster evaluation.
+#'
+#' @param layer
+#' Character; assay layer used for cluster evaluation.
+#'
+#' @param norm_assay
+#' Character; assay containing normalized data for HVG detection.
+#'
+#' @param norm_layer
+#' Character; normalized layer used for HVG detection.
+#'
+#' @param data
+#' Numeric matrix with features on rows and cells on columns.
+#'
+#' @param cluster_labels
+#' Character; cluster labels corresponding to cells, or column name in
+#' \code{so@meta.data}.
+#'
+#' @param log1p
+#' Logical; whether to log1p-transform the data.
+#'
+#' @param remove_quiescent_cells
+#' Logical; whether to remove quiescent cells prior to analysis.
+#'
+#' @param high_quantile
+#' Numeric; EWCSR high quantile threshold.
+#'
+#' @param low_quantile
+#' Numeric; EWCSR low quantile threshold.
+#'
+#' @param subset_to_HVG
+#' Logical; whether to restrict analysis to HVGs.
+#'
+#' @param hvg_selection.method
+#' Character; HVG selection strategy.
+#'
+#' @param hvg_var_thresh
+#' Numeric; HVG variance threshold.
+#'
+#' @param gini_thresh
+#' Numeric; Gini coefficient threshold for detecting global markers.
+#'
+#' @param sketch
+#' Logical; whether to apply uniform sketching for sub-clustering.
+#'
+#' @param sketch_fraction
+#' Numeric between 0 and 1; fraction of cells per cluster to retain in sketch.
+#'
+#' @param label_transfer_method
+#' Character; method for transferring labels from sketched to full data.
+#' One of \code{"ewcsr-cor"}, \code{"count-project"},
+#' \code{"ewcsr-red-cor"}, or \code{"count-knn"}.
+#'
+#' @param sketch_pca_dims
+#' Integer; number of PCA dimensions used during label transfer.
+#'
+#' @param noise_feature_thresh
+#' Integer; threshold for identifying noise features.
+#'
+#' @param random_marker_thresh
+#' Integer; threshold for discarding weak markers.
+#'
+#' @param mr_thresh
+#' Numeric; mutual-rank threshold for filtering cell similarities.
+#'
+#' @param isolated_cluster_thresh
+#' Integer; clusters with fewer cells are treated as isolated.
+#'
+#' @param leiden_obj_function
+#' Character; Leiden objective function. One of \code{"modularity"} or \code{"CPM"}.
+#'
+#' @param leiden_resolution
+#' Numeric; Leiden resolution parameter.
+#'
+#' @param leiden_n_iterations
+#' Integer; number of Leiden iterations.
+#'
+#' @param identify_subclusters
+#' Logical; whether to identify sub-clusters.
+#'
+#' @param num_threads
+#' Integer; number of threads to use.
+#'
+#' @param seed
+#' Integer; random seed.
+#'
+#' @param verbose
+#' Logical; whether to display progress messages.
+#'
+#' @return
+#' An object of class \code{"ClustoCell"} containing refined clusters,
+#' sub-clusters, marker tables, and similarity structures.
+#'
+#' @seealso
+#' \code{\link{markoCell}}, 
+#' \code{\link{addClustoData}}
+#'
+#' @examples
+#' \dontrun{
+#' cc <- markoClust(
+#'   so = seurat_obj,
+#'   cluster_labels = "seurat_clusters"
+#' )
+#' }
+#' 
+#' @useDynLib celliverse, .registration = TRUE
+#' @export
 
 markoClust <- function(
     so = NULL, # A Seurat object. Either `so` or `data` argument should be specified, but not both.
@@ -24,12 +141,12 @@ markoClust <- function(
     hvg_var_thresh = 1, # The variance threshold for choosing HVGs (genes whose variability is more than this threshold standard deviation above the expected technical noise).
     gini_thresh = 0.5, # The Gini threshold for detecting non-specific (global) markers.
     sketch = FALSE, # Logical. Whether to perform data sketching (sampling) using Seurat’s uniform sketching method. Only applied if `identify_subclusters` is set to TRUE.
-    #'   Recommended for very large datasets or when system resources (e.g., RAM, number of cores) are limited. 
-    #'   If TRUE, sketching is applied using Seurat's 'uniform' sketching method after the initial filtering step.
+    #   Recommended for very large datasets or when system resources (e.g., RAM, number of cores) are limited. 
+    #   If TRUE, sketching is applied using Seurat's 'uniform' sketching method after the initial filtering step.
     sketch_fraction = 0.5, # A numeric value between 0 and 1 that controls the proportion of cells to sketch from each cluster when generating the sketched dataset. 
-    #' Values closer to 1 will select a larger proportion of data, while values closer to 0 will select a smaller proportion. For example, setting 
-    #' `sketch_fraction = 0.5` will sketch 50% of the cells in each cluster. This parameter allows for controlling the trade-off between 
-    #' data compression and representation in the sketched dataset. For small datasets (fewer than 10,000 cells), set this argument to at least 0.5.
+    # Values closer to 1 will select a larger proportion of data, while values closer to 0 will select a smaller proportion. For example, setting 
+    # `sketch_fraction = 0.5` will sketch 50% of the cells in each cluster. This parameter allows for controlling the trade-off between 
+    # data compression and representation in the sketched dataset. For small datasets (fewer than 10,000 cells), set this argument to at least 0.5.
     label_transfer_method = c("ewcsr-cor", 
                               "count-project",
                               "ewcsr-red-cor", 
@@ -612,12 +729,12 @@ markoClust <- function(
         rownames(curr_cluster_gini_scores) <- NULL
         curr_cluster_gini_scores
       } else {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       }
     })
   } else {
     major_cluster_pos_markers <- lapply(major_cluster_ids, function(cid) {
-      return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+      return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
     })
   }
   
@@ -714,12 +831,12 @@ markoClust <- function(
         rownames(curr_cluster_gini_scores) <- NULL
         curr_cluster_gini_scores
       } else {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       }
     })
   } else {
     major_cluster_neg_markers <- lapply(major_cluster_ids, function(cid) {
-      return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+      return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
     })
   }
   
@@ -816,12 +933,12 @@ markoClust <- function(
         rownames(curr_cluster_gini_scores) <- NULL
         curr_cluster_gini_scores
       } else {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       }
     })
   } else {
     major_cluster_med_markers <- lapply(major_cluster_ids, function(cid) {
-      return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+      return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
     })
   }
   
@@ -932,21 +1049,21 @@ markoClust <- function(
   #   major_cluster_pos_markers[[cur_cl]] <<- curr_pos_markers
   #   if(is.data.frame(major_cluster_pos_markers[[cur_cl]])) {
   #     if(nrow(major_cluster_pos_markers[[cur_cl]]) == 0) {
-  #       major_cluster_pos_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+  #       major_cluster_pos_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
   #     }
   #   }
   #   
   #   major_cluster_neg_markers[[cur_cl]] <<- curr_neg_markers
   #   if(is.data.frame(major_cluster_neg_markers[[cur_cl]])) {
   #     if(nrow(major_cluster_neg_markers[[cur_cl]]) == 0) {
-  #       major_cluster_neg_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+  #       major_cluster_neg_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
   #     }
   #   }
   #   
   #   major_cluster_med_markers[[cur_cl]] <<- curr_med_markers
   #   if(is.data.frame(major_cluster_med_markers[[cur_cl]])) {
   #     if(nrow(major_cluster_med_markers[[cur_cl]]) == 0) {
-  #       major_cluster_med_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+  #       major_cluster_med_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
   #     }
   #   }
   # })
@@ -1251,12 +1368,12 @@ markoClust <- function(
               rownames(curr_cluster_gini_scores) <- NULL
               curr_cluster_gini_scores
             } else {
-              return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+              return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
             }
           })
         } else {
           sub_cluster_pos_markers <- lapply(sub_cluster_ids, function(cid) {
-            return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+            return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
           })
         }
         
@@ -1300,12 +1417,12 @@ markoClust <- function(
               rownames(curr_cluster_gini_scores) <- NULL
               curr_cluster_gini_scores
             } else {
-              return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+              return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
             }
           })
         } else {
           sub_cluster_neg_markers <- lapply(sub_cluster_ids, function(cid) {
-            return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+            return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
           })
         }
         
@@ -1349,12 +1466,12 @@ markoClust <- function(
               rownames(curr_cluster_gini_scores) <- NULL
               curr_cluster_gini_scores
             } else {
-              return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+              return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
             }
           })
         } else {
           sub_cluster_med_markers <- lapply(sub_cluster_ids, function(cid) {
-            return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+            return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
           })
         }
         
@@ -1465,21 +1582,21 @@ markoClust <- function(
         #   sub_cluster_pos_markers[[cur_cl]] <<- curr_pos_markers
         #   if(is.data.frame(sub_cluster_pos_markers[[cur_cl]])) {
         #     if(nrow(sub_cluster_pos_markers[[cur_cl]]) == 0) {
-        #       sub_cluster_pos_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+        #       sub_cluster_pos_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
         #     }
         #   }
         #   
         #   sub_cluster_neg_markers[[cur_cl]] <<- curr_neg_markers
         #   if(is.data.frame(sub_cluster_neg_markers[[cur_cl]])) {
         #     if(nrow(sub_cluster_neg_markers[[cur_cl]]) == 0) {
-        #       sub_cluster_neg_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+        #       sub_cluster_neg_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
         #     }
         #   }
         #   
         #   sub_cluster_med_markers[[cur_cl]] <<- curr_med_markers
         #   if(is.data.frame(sub_cluster_med_markers[[cur_cl]])) {
         #     if(nrow(sub_cluster_med_markers[[cur_cl]]) == 0) {
-        #       sub_cluster_med_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+        #       sub_cluster_med_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
         #     }
         #   }
         # })
@@ -1502,7 +1619,7 @@ markoClust <- function(
         )
         )
       } else {
-        return(base::structure("❗ The corresponding cluster does not contain any sub-clusters!", class = "logMessage"))
+        return(base::structure("Note: The corresponding cluster does not contain any sub-clusters!", class = "logMessage"))
       }
     })
     
@@ -1577,12 +1694,18 @@ markoClust <- function(
     
     final_results_list$sketched_cells <- all_sketch_cells
     
+    if(!is.null(so) & label_transfer_method == "count-project") {
+      query_expr_mat <- so 
+    } else {
+      query_expr_mat <- original_expr_mat 
+    }
+    
     # Transferring the labels
     final_results_list <- clustoCell_TransferLabel(
       clustoCell = final_results_list,
       assay = assay, layer = layer, 
       query_ewcsr_mat = original_ewcsr_mat,
-      query_expr_mat = ifelse(!is.null(so) & label_transfer_method == "count-project", so, original_expr_mat),
+      query_expr_mat = query_expr_mat,
       method = label_transfer_method,
       inherit_major_clusters = TRUE,
       dims = sketch_pca_dims,

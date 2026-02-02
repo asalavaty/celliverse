@@ -3,58 +3,41 @@ Type: Package
 Title: An Ecosystem for Exploring the Universe of Single-Cell Data
 Language: en-US
 Version: 0.0.1
-Author: Abbas Salavaty [aut, cre]
+Author: Adrian Salavaty [aut, cre]
 Maintainer: Adrian Salavaty <abbas.salavaty@gmail.com>
-Description: Contains functions for single-cell RNA sequencing (scRNA-seq) data analysis. 
-It provides core functionalities for clustering cells, identifying markers for pre-defined clusters, 
-performing sub-clustering of major cell populations, and discovering markers within custom-selected subsets 
-of cells. CelliVerse also includes methods for analyzing cluster similarity and generating intuitive visualizations. 
-Designed to be independent of library size and other sample- or cell-level confounding effects, 
-CelliVerse ensures reliable and interpretable results across a wide range of datasets.
+Description: Contains functions for single-cell RNA sequencing (scRNA-seq) data analysis. It provides core functionalities for clustering cells, identifying markers for pre-defined clusters, performing sub-clustering of major cell populations, and discovering markers within custom-selected subsets of cells. CelliVerse also includes methods for analyzing cluster similarity and generating intuitive visualizations. Designed to be independent of library size and other sample- or cell-level confounding effects, CelliVerse ensures reliable and interpretable results across a wide range of datasets.
     Fred Viole and David Nawrocki (2013, ISBN:1490523995).
     Csardi G, Nepusz T (2006). "The igraph software package for complex network research." InterJournal, Complex Systems, 1695.
     Adopted algorithms and sources are referenced in function document.
 Imports:
-    Rcpp,
     Matrix,
+    Seurat,
+    SummarizedExperiment,
     scales,
-    
+    ggplot2,
+    magrittr,
     igraph,
-    janitor,
-    ranger,
-    coop,
-    foreach,
-    doParallel,
+    cli,
+    dplyr,
     data.table,
-    ggplot2
+    stringr,
+    tidyr,
+    RColorBrewer,
+    ggnewscale,
+    patchwork,
+    tidyselect
 LinkingTo:
     Rcpp,
     RcppEigen
 Suggests:
-    Hmisc (>= 4.3-0),
-    
-    SummarizedExperiment,
-    
-    mgcv (>= 1.8-31),
-    nortest (>= 1.0-4),
-    NNS (>= 0.4.7.1),
-    readr,
-    parallel,
-    shiny,
-    shinythemes,
-    shinyWidgets,
-    shinyjs,
-    shinycssloaders,
-    colourpicker,
-    magrittr,
-    DT,
     knitr,
     rmarkdown
-Depends: R (>= 2.10)
+Depends: 
+    R (>= 3.5)
 URL: https://github.com/asalavaty/celliverse, https://asalavaty.github.io/celliverse/
 BugReports: https://github.com/asalavaty/celliverse/issues
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3
 VignetteBuilder: knitr

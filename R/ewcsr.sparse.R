@@ -1,8 +1,30 @@
-# Calculating the expression-weighted centered scaled ranks of a binary matrix (per column (cell))
-
-library(Matrix)
-library(Rcpp)
-library(RcppEigen)
+#' Compute expression-weighted centered scaled ranks (EWCSR)
+#'
+#' @description
+#' Computes expression-weighted centered scaled ranks for a sparse or dense
+#' expression matrix, calculated per column (cell).
+#'
+#' @details
+#' EWCSR transformation emphasizes relatively high and low expression features
+#' within each cell while accounting for expression magnitude. The output matrix
+#' retains the same dimensions as the input.
+#'
+#' @param mat
+#' A matrix with features (genes) as rows and cells or samples as columns.
+#'
+#' @return
+#' A matrix of EWCSR-transformed values with the same dimensions as \code{mat}.
+#'
+#' @seealso
+#' \code{\link{gini.ewcsr.fs}}, \code{\link{markoCell}}
+#'
+#' @examples
+#' \dontrun{
+#' ewcsr_mat <- ewcsr.sparse(mat)
+#' }
+#' 
+#' @useDynLib celliverse, .registration = TRUE
+#' @export
 
 ewcsr.sparse <- function(mat # A matrix with cells/samples on columns and features/genes on rows
                            ){

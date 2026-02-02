@@ -1,7 +1,45 @@
-library(ineq)
-library(data.table)
-
-# Feature selection based on Gini impurity evaluation of expression weighted centered scaled rank (ewcsr)-transformed data
+#' Feature selection using Gini coefficient on EWCSR-transformed data
+#'
+#' @description
+#' Performs feature selection based on the Gini inequality coefficient computed
+#' on expression-weighted centered scaled rank (EWCSR) data.
+#'
+#' @details
+#' Features are categorized into specific, non-specific, and no-occurrence
+#' groups based on Gini thresholds and optional binarization of EWCSR values.
+#'
+#' @param mat
+#' A matrix with features as rows and cells as columns.
+#'
+#' @param gini_thresh
+#' Numeric; Gini threshold for selecting specific features.
+#'
+#' @param ewcsr_high_thresh
+#' Numeric; upper EWCSR threshold for binarization.
+#'
+#' @param ewcsr_low_thresh
+#' Numeric; lower EWCSR threshold for binarization.
+#'
+#' @param noise_thresh
+#' Integer; minimum number of cells required for a feature to be retained.
+#'
+#' @param num_threads
+#' Integer; number of threads to use. \code{-1} uses all available cores.
+#'
+#' @return
+#' A list containing \code{specific_features}, \code{non_specific_features},
+#' and \code{no_occurrence}.
+#'
+#' @seealso
+#' \code{\link{ewcsr.sparse}}, \code{\link{gini.rank.fs}}
+#'
+#' @examples
+#' \dontrun{
+#' fs <- gini.ewcsr.fs(mat)
+#' }
+#' 
+#' @useDynLib celliverse, .registration = TRUE
+#' @export
 
 gini.ewcsr.fs <- function(mat, # A matrix with cells/samples on columns and features/genes on rows
                       gini_thresh = 0.5, # The Gini threshold for selecting specific features.

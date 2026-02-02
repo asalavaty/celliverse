@@ -1,11 +1,136 @@
-library(Matrix)
-library(igraph)
-library(cli)
-library(data.table)
-library(dplyr)
-library(magrittr)
-
-#___________________________
+#' Clustering and marker discovery for single-cell data using EWCSR-based similarity
+#'
+#' @description
+#' Performs unsupervised clustering of single-cell data using expression-weighted
+#' centered scaled ranks (EWCSR), followed by identification of cluster-specific
+#' markers and optional sub-clustering. The function supports direct clustering
+#' on full datasets or scalable analysis via data sketching with subsequent
+#' label transfer to the full dataset.
+#'
+#' @param so A \code{Seurat} object. Either \code{so} or \code{data} must be provided,
+#'   but not both.
+#'
+#' @param assay Character string specifying the assay to use for clustering.
+#'
+#' @param layer Character string specifying the layer of \code{assay} to use
+#'   (e.g., \code{"counts"} or a normalized layer).
+#'
+#' @param norm_assay Character string specifying the assay used for selecting
+#'   highly variable genes (HVGs).
+#'
+#' @param norm_layer Character string specifying the normalized layer used for
+#'   HVG detection.
+#'
+#' @param data A numeric matrix with features (genes) as rows and cells as columns.
+#'   Recommended to provide at least library-size normalized data when
+#'   \code{subset_to_HVG = TRUE}.
+#'
+#' @param log1p Logical; whether to apply \code{log1p} transformation to the input data.
+#'
+#' @param subset_to_HVG Logical; whether to restrict the analysis to highly variable
+#'   genes or use all features.
+#'
+#' @param hvg_selection.method Character string specifying the HVG selection strategy.
+#'   One of \code{"vst"}, \code{"mean.var.plot"}, or \code{"dispersion"}.
+#'
+#' @param hvg_var_thresh Numeric; variance threshold (in standard deviations above
+#'   expected technical noise) for selecting HVGs.
+#'
+#' @param high_quantile Numeric; upper quantile threshold used for identifying
+#'   highly positive EWCSR values.
+#'
+#' @param low_quantile Numeric; lower quantile threshold used for identifying
+#'   highly negative EWCSR values.
+#'
+#' @param gini_thresh Numeric; Gini coefficient threshold for identifying
+#'   non-specific (global) markers.
+#'
+#' @param identify_subclusters Logical; whether to perform sub-clustering within
+#'   major clusters.
+#'
+#' @param sketch Logical; whether to apply Seurat's uniform sketching strategy
+#'   to subsample cells prior to clustering. Recommended for very large datasets.
+#'
+#' @param sketch_ncells Integer; number of cells to sample during sketching.
+#'   Must be smaller than the total number of cells in the dataset.
+#'
+#' @param label_transfer_method Character string specifying the strategy used to
+#'   transfer cluster labels from the sketched dataset back to the full dataset.
+#'   Only used when \code{sketch = TRUE}. Options include:
+#'   \itemize{
+#'     \item \code{"ewcsr-cor"}: Transfers labels by computing correlations between
+#'     EWCSR profiles of full-data cells and EWCSR centroids of sketched clusters
+#'     in the full (non-reduced) feature space.
+#'     \item \code{"count-project"}: Uses Seurat's \code{ProjectData} pipeline to
+#'     project full-resolution expression data onto the low-dimensional embedding
+#'     learned from the sketched dataset.
+#'     \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but performs
+#'     correlation in a reduced dimensional space (PCA embedding).
+#'     \item \code{"count-knn"}: Uses Seurat's \code{FindTransferAnchors} and
+#'     \code{TransferData} workflow based on shared features and k-nearest
+#'     neighbor matching in count space.
+#'   }
+#'
+#' @param sketch_pca_dims Integer; number of PCA dimensions used during label
+#'   transfer. Only applicable for \code{"ewcsr-red-cor"} and \code{"count-knn"}.
+#'
+#' @param refine_transferred_subClusters Logical; whether to re-evaluate and refine
+#'   transferred sub-cluster labels after label transfer.
+#'
+#' @param noise_feature_thresh Integer; features expressed in fewer than this
+#'   number of cells are treated as noise and excluded.
+#'
+#' @param random_marker_thresh Integer; markers detected in fewer than this number
+#'   of cells are discarded.
+#'
+#' @param mr_thresh Numeric; threshold applied to mutual rank similarity.
+#'   If \code{NULL}, defaults to \code{sqrt(number of cells)}.
+#'
+#' @param isolated_cluster_thresh Integer; clusters with fewer than this number
+#'   of cells are treated as isolated.
+#'
+#' @param leiden_obj_function Character string specifying the Leiden objective
+#'   function. One of \code{"modularity"} or \code{"CPM"}.
+#'
+#' @param leiden_resolution Numeric; resolution parameter controlling cluster
+#'   granularity.
+#'
+#' @param leiden_n_iterations Integer; number of Leiden algorithm iterations.
+#'
+#' @param subcluster_resolution_weight Numeric; multiplier applied to
+#'   \code{leiden_resolution} for sub-cluster detection.
+#'
+#' @param num_threads Integer; number of CPU threads to use. Default \code{-1}
+#'   uses all available cores.
+#'
+#' @param seed Integer; random seed for reproducibility.
+#'
+#' @param verbose Logical; whether to print progress messages.
+#'
+#' @return An object of class \code{ClustoCell} containing:
+#'   \itemize{
+#'     \item major and sub-cluster assignments
+#'     \item EWCSR-transformed data
+#'     \item cluster- and subcluster-specific marker tables
+#'     \item similarity and mutual-rank matrices
+#'   }
+#'   
+#' @seealso
+#' \code{\link{typoClust}}, \code{\link{markoClust}}
+#'
+#' @examples
+#' \dontrun{
+#' cc <- clustoCell(
+#'   so = seurat_obj,
+#'   subset_to_HVG = TRUE,
+#'   identify_subclusters = TRUE,
+#'   sketch = TRUE,
+#'   sketch_ncells = 10000
+#' )
+#' }
+#'
+#' @useDynLib celliverse, .registration = TRUE
+#' @export
 
 clustoCell <- function(
     so = NULL, # A Seurat object. Either `so` or `data` argument should be specified, but not both.
@@ -23,8 +148,8 @@ clustoCell <- function(
     gini_thresh = 0.5, # The Gini threshold for detecting non-specific (global) markers.
     identify_subclusters = TRUE, # Whether to identify subclusters as well or not
     sketch = FALSE, # Logical. Whether to perform data sketching (sampling) using Seurat’s uniform sketching method. 
-    #'   Recommended for very large datasets or when system resources (e.g., RAM, number of cores) are limited. 
-    #'   If TRUE, sketching is applied using Seurat's 'uniform' sketching method after the initial filtering step.
+    #   Recommended for very large datasets or when system resources (e.g., RAM, number of cores) are limited. 
+    #   If TRUE, sketching is applied using Seurat's 'uniform' sketching method after the initial filtering step.
     sketch_ncells = 5000L, # A positive integer specifying the number of cells to sample from the original data. Must be less than the total number of cells in the input dataset. For large datasets, a value between 5,000 and 20,000 is recommended, depending on the dataset size. For smaller datasets (fewer than 10,000 cells), set to at least half the total number of cells.
     label_transfer_method = c("ewcsr-cor", 
                               "count-project",
@@ -789,13 +914,13 @@ clustoCell <- function(
         rownames(curr_cluster_gini_scores) <- NULL
         curr_cluster_gini_scores
       } else {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       }
       
     })
   } else {
     major_cluster_pos_markers <- lapply(major_cluster_ids, function(cid) {
-      return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+      return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
     })
   }
   
@@ -892,13 +1017,13 @@ clustoCell <- function(
         rownames(curr_cluster_gini_scores) <- NULL
         curr_cluster_gini_scores
       } else {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       }
       
     })
   } else {
     major_cluster_neg_markers <- lapply(major_cluster_ids, function(cid) {
-      return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+      return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
     })
   }
   
@@ -994,13 +1119,13 @@ clustoCell <- function(
         rownames(curr_cluster_gini_scores) <- NULL
         curr_cluster_gini_scores
       } else {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       }
       
     })
   } else {
     major_cluster_med_markers <- lapply(major_cluster_ids, function(cid) {
-      return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+      return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
     })
   }
 
@@ -1111,21 +1236,21 @@ clustoCell <- function(
   #   major_cluster_pos_markers[[cur_cl]] <<- curr_pos_markers
   #   if(is.data.frame(major_cluster_pos_markers[[cur_cl]])) {
   #     if(nrow(major_cluster_pos_markers[[cur_cl]]) == 0) {
-  #       major_cluster_pos_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+  #       major_cluster_pos_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
   #     }
   #   }
   # 
   #   major_cluster_neg_markers[[cur_cl]] <<- curr_neg_markers
   #   if(is.data.frame(major_cluster_neg_markers[[cur_cl]])) {
   #     if(nrow(major_cluster_neg_markers[[cur_cl]]) == 0) {
-  #       major_cluster_neg_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+  #       major_cluster_neg_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
   #     }
   #   }
   # 
   #   major_cluster_med_markers[[cur_cl]] <<- curr_med_markers
   #   if(is.data.frame(major_cluster_med_markers[[cur_cl]])) {
   #     if(nrow(major_cluster_med_markers[[cur_cl]]) == 0) {
-  #       major_cluster_med_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+  #       major_cluster_med_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
   #     }
   #   }
   # })
@@ -1397,13 +1522,13 @@ clustoCell <- function(
               rownames(curr_cluster_gini_scores) <- NULL
               curr_cluster_gini_scores
             } else {
-              return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+              return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
             }
             
           })
         } else {
           sub_cluster_pos_markers <- lapply(sub_cluster_ids, function(cid) {
-            return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+            return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
           })
         }
         
@@ -1447,12 +1572,12 @@ clustoCell <- function(
               rownames(curr_cluster_gini_scores) <- NULL
               curr_cluster_gini_scores
             } else {
-              return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+              return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
             }
           })
         } else {
           sub_cluster_neg_markers <- lapply(sub_cluster_ids, function(cid) {
-            return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+            return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
           })
         }
         
@@ -1496,13 +1621,13 @@ clustoCell <- function(
               rownames(curr_cluster_gini_scores) <- NULL
               curr_cluster_gini_scores
             } else {
-              return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+              return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
             }
             
           })
         } else {
           sub_cluster_med_markers <- lapply(sub_cluster_ids, function(cid) {
-            return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+            return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
           })
         }
         
@@ -1613,21 +1738,21 @@ clustoCell <- function(
         #   sub_cluster_pos_markers[[cur_cl]] <<- curr_pos_markers
         #   if(is.data.frame(sub_cluster_pos_markers[[cur_cl]])) {
         #     if(nrow(sub_cluster_pos_markers[[cur_cl]]) == 0) {
-        #       sub_cluster_pos_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+        #       sub_cluster_pos_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
         #     }
         #   }
         #   
         #   sub_cluster_neg_markers[[cur_cl]] <<- curr_neg_markers
         #   if(is.data.frame(sub_cluster_neg_markers[[cur_cl]])) {
         #     if(nrow(sub_cluster_neg_markers[[cur_cl]]) == 0) {
-        #       sub_cluster_neg_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+        #       sub_cluster_neg_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
         #     }
         #   }
         #   
         #   sub_cluster_med_markers[[cur_cl]] <<- curr_med_markers
         #   if(is.data.frame(sub_cluster_med_markers[[cur_cl]])) {
         #     if(nrow(sub_cluster_med_markers[[cur_cl]]) == 0) {
-        #       sub_cluster_med_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+        #       sub_cluster_med_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
         #     }
         #   }
         # })
@@ -1650,7 +1775,7 @@ clustoCell <- function(
         )
         )
       } else {
-        return(base::structure("❗ The corresponding cluster does not contain any sub-clusters!", class = "logMessage"))
+        return(base::structure("Note: The corresponding cluster does not contain any sub-clusters!", class = "logMessage"))
       }
     })
     
@@ -1727,12 +1852,18 @@ clustoCell <- function(
   # Transferring the label of the sketched data to the original data.
   if(sketch) {
     
+    if(!is.null(so) & label_transfer_method == "count-project") {
+      query_expr_mat <- so 
+    } else {
+      query_expr_mat <- original_expr_mat 
+    }
+    
     # Transferring the labels
     final_results_list <- clustoCell_TransferLabel(
       clustoCell = final_results_list,
       assay = assay, layer = layer, 
       query_ewcsr_mat = original_ewcsr_mat,
-      query_expr_mat = ifelse(!is.null(so) & label_transfer_method == "count-project", so, original_expr_mat),
+      query_expr_mat = query_expr_mat,
       method = label_transfer_method,
       dims = sketch_pca_dims,
       num_threads = num_threads,

@@ -1,4 +1,30 @@
-# Calculating the mutual rank on top of a similarity matrix
+#' Compute mutual rank from a similarity matrix
+#'
+#' @description
+#' Computes the mutual rank (MR) for all pairs in a symmetric similarity
+#' or dissimilarity matrix, a robust measure frequently used to stabilize
+#' pairwise similarity relationships.
+#'
+#' @param mat
+#' Numeric symmetric matrix (dense or sparse) representing pairwise similarities
+#' or dissimilarities.
+#'
+#' @param num_threads
+#' Integer; number of threads to use. Default \code{-1} uses all available cores.
+#'
+#' @return
+#' A numeric matrix of mutual ranks with the same dimensions as \code{mat}.
+#'
+#' @seealso
+#' \code{\link{jaccard.sparse}}, \code{\link{markoClust}}
+#'
+#' @examples
+#' \dontrun{
+#' mr <- mutual.rank(similarity_matrix)
+#' }
+#' 
+#' @useDynLib celliverse, .registration = TRUE
+#' @export
 
 mutual.rank <- function(mat, # A symmetric similarity/dissimilarity matrix
                         num_threads = -1 # Integer. Number of threads (cores) to use. Default is -1, which uses all available cores.

@@ -1,4 +1,52 @@
-# A function for adding the major cluster and sub-cluster labels from an object of class ClustoCell to a Seurat object
+#' Add ClustoCell cluster annotations to a Seurat or SingleCellExperiment object
+#'
+#' @description
+#' Adds major cluster and/or sub-cluster labels stored in a \code{ClustoCell}
+#' object to the cell-level metadata of a Seurat or SingleCellExperiment object.
+#'
+#' @details
+#' This function transfers clustering results obtained using \code{clustoCell()}
+#' or \code{markoClust()} into an existing single-cell object by appending
+#' cluster labels as metadata columns. Major clusters and sub-clusters can be
+#' added independently and assigned custom column names.
+#'
+#' @param obj
+#' An object of class \code{Seurat} or \code{SingleCellExperiment}.
+#'
+#' @param clustoCell
+#' An object of class \code{ClustoCell}, generated via \code{clustoCell()} or
+#' \code{markoClust()}.
+#'
+#' @param add_major_clusters
+#' Logical; whether to add major cluster labels to the metadata of \code{obj}.
+#'
+#' @param add_sub_clusters
+#' Logical; whether to add sub-cluster labels to the metadata of \code{obj}.
+#'
+#' @param major_cluster_name
+#' Character; name of the metadata column to store major cluster labels.
+#'
+#' @param sub_cluster_name
+#' Character; name of the metadata column to store sub-cluster labels.
+#'
+#' @return
+#' The input object \code{obj} with additional metadata columns containing
+#' ClustoCell cluster annotations.
+#'
+#' @seealso
+#' \code{\link{clustoCell}}, \code{\link{markoClust}}
+#'
+#' @examples
+#' \dontrun{
+#' so <- addClustoData(
+#'   obj = so,
+#'   clustoCell = cc,
+#'   add_major_clusters = TRUE,
+#'   add_sub_clusters = TRUE
+#' )
+#' }
+#' 
+#' @export
 
 addClustoData <- function(
     obj, # An object of class Seurat or SingleCellExperiment (SCE)

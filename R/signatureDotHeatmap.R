@@ -1,48 +1,121 @@
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(scales)
-library(RColorBrewer)
-library(ggnewscale)
-library(patchwork)
-library(rlang)
-library(Seurat)
-library(tidyselect)
-
-
-#' signatureDotHeatmap
+#' Visualize per-signature marker expression across cell types
 #'
 #' @description
-#' Dot heatmap summarising per-signature marker expression across cell types.
+#' Generates a dot heatmap summarizing expression and detection frequency
+#' of signature-associated features across cell types.
 #'
-#' @param seurat_obj A Seurat object. Must have cell-level metadata column
-#'   named by `celltype_col` in `seurat_obj@meta.data`.
+#' @details
+#' Dot size typically encodes the percentage of cells expressing a feature,
+#' while color intensity reflects average expression.
 #'
-#' @param row_data A data.frame that maps each feature (gene) to a signature.
-#'   - One row per feature (no duplicates).
-#'   - Must contain at least two columns:
-#'       * a feature column (given by `features_col`)
-#'       * a signature column (given by `signature_col`)
-#'   Example structure:
-#'       Features   Signature
-#'       AR         AR-high
-#'       KLK3       AR-high
-#'       KLK2       AR-high
-#'       ACPP       AR-high
-#'       STEAP2     AR-high
-#'       VIM        AR-low-EMT
-#'       ZEB1       AR-low-EMT
-#'       ...
+#' @param seurat_obj
+#' A \code{Seurat} object containing expression data and metadata.
 #'
-#' @param celltype_col Name of the column in `seurat_obj@meta.data` storing
-#'   the cell type labels used on the y-axis.
+#' @param row_data
+#' Data frame mapping features to signatures. Must contain one row per feature.
 #'
-#' @param features_col Name of the column in `row_data` containing feature IDs
-#'   (e.g. gene symbols). Must be provided (no default).
+#' @param celltype_col
+#' Character; column in \code{seurat_obj@meta.data} containing cell types.
 #'
-#' @param signature_col Name of the column in `row_data` containing signature
-#'   labels (e.g. "B-Cell", "T-Cell"). Must be provided (no default).
+#' @param cell_type_colors
+#' Color specification for cell types.
 #'
+#' @param signature_colors
+#' Color specification for signatures.
+#'
+#' @param tag
+#' Optional plot tag.
+#'
+#' @param tile_palette
+#' Character vector defining tile fill colors.
+#'
+#' @param tile_alpha_range
+#' Numeric vector of length two defining alpha range.
+#'
+#' @param dot_size_factor
+#' Numeric; scaling factor for dot sizes.
+#'
+#' @param dot_range
+#' Numeric vector defining minimum and maximum dot sizes.
+#'
+#' @param signature_label_size
+#' Numeric; font size of signature labels.
+#'
+#' @param feature_label_size
+#' Numeric; font size of feature labels.
+#'
+#' @param feature_label_angle
+#' Numeric; angle of feature labels.
+#'
+#' @param show_celltype_labels
+#' Logical; whether to show cell type labels.
+#'
+#' @param show_signature_strip
+#' Logical; whether to show signature strip.
+#'
+#' @param show_signature_labels
+#' Logical; whether to show signature labels.
+#'
+#' @param show_celltype_strip
+#' Logical; whether to show cell type strip.
+#'
+#' @param show_celltype_legend
+#' Logical; whether to show cell type legend.
+#'
+#' @param show_signature_legend
+#' Logical; whether to show signature legend.
+#'
+#' @param legend_ncol
+#' Integer; number of legend columns.
+#'
+#' @param features_col
+#' Character; column in \code{row_data} containing feature IDs.
+#'
+#' @param signature_col
+#' Character; column in \code{row_data} containing signature labels.
+#'
+#' @param expression_legend_title
+#' Character; title for expression legend.
+#'
+#' @param percent_legend_title
+#' Character; title for percent expressed legend.
+#'
+#' @param tile_fill_legend_title
+#' Character; title for tile fill legend.
+#'
+#' @param signature_legend_title
+#' Character; title for signature legend.
+#'
+#' @param vline_color
+#' Character; color of vertical separator lines.
+#'
+#' @param vline_width
+#' Numeric; width of vertical separator lines.
+#'
+#' @param block_border_color
+#' Character; color of block borders.
+#'
+#' @param feature_label_face
+#' Character; font face for feature labels.
+#'
+#' @return
+#' A \code{ggplot2} object.
+#'
+#' @seealso
+#' \code{\link{typoClustVis}}, \code{\link{markoCell}}
+#'
+#' @examples
+#' \dontrun{
+#' p <- signatureDotHeatmap(
+#'   seurat_obj = so,
+#'   row_data = signatures,
+#'   features_col = "Features",
+#'   signature_col = "Signature"
+#' )
+#' }
+#' 
+#' @export
+
 signatureDotHeatmap <- function(
     seurat_obj,
     row_data,

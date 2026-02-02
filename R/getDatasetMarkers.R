@@ -1,3 +1,63 @@
+#' Collect marker genes from a ClustoCell object
+#'
+#' @description
+#' Extracts positive, negative, and/or medium markers from major clusters and
+#' sub-clusters stored in a \code{ClustoCell} object.
+#'
+#' @details
+#' Marker selection can be controlled using rank-based or fixed-size thresholds.
+#' Separate thresholds are applied for positive, negative, and medium markers.
+#'
+#' @param obj
+#' An object of class \code{ClustoCell}.
+#'
+#' @param clusters
+#' Logical; whether to collect markers from major clusters.
+#'
+#' @param sub_clusters
+#' Logical; whether to collect markers from sub-clusters.
+#'
+#' @param positive_markers
+#' Logical; whether to collect positive markers.
+#'
+#' @param negative_markers
+#' Logical; whether to collect negative markers.
+#'
+#' @param medium_markers
+#' Logical; whether to collect medium markers.
+#'
+#' @param thresh_mode
+#' Character; marker selection strategy. One of:
+#' \itemize{
+#'   \item \code{"rank"}: include all markers with ranks up to the threshold.
+#'   \item \code{"n"}: include only the top n markers (rows) in rank order..
+#' }
+#'
+#' @param pos_thresh
+#' Integer; threshold for positive markers.
+#'
+#' @param neg_thresh
+#' Integer; threshold for negative markers.
+#'
+#' @param med_thresh
+#' Integer; threshold for medium markers.
+#'
+#' @param verbose
+#' Logical; whether to display progress messages.
+#'
+#' @return
+#' An object of class \code{DatasetMarkers}.
+#'
+#' @seealso
+#' \code{\link{clustoCell}}, \code{\link{markoClust}}
+#'
+#' @examples
+#' \dontrun{
+#' markers <- getDatasetMarkers(cc)
+#' }
+#' 
+#' @export
+
 getDatasetMarkers <- function(obj, # an object of class "ClustoCell" generated via either clustoCell or markoClust function
                               clusters = TRUE, # logical, whether to collect the markers of major clusters or not
                               sub_clusters = TRUE, # logical, whether to collect the markers of sub-clusters or not
@@ -125,7 +185,7 @@ getDatasetMarkers <- function(obj, # an object of class "ClustoCell" generated v
     ## For Positive Markers
     if(positive_markers) {
       sub_clusters_pos_markers <- sapply(obj$markers$sub_clusters, function(i) {
-        if(class(i) == "list") {
+        if(inherits(i, "list")) {
           tmp_clust <- i$positive_markers
           tmp_marks <- 
             sapply(tmp_clust, function(j) {
@@ -153,7 +213,7 @@ getDatasetMarkers <- function(obj, # an object of class "ClustoCell" generated v
     ## For Negative Markers
     if(negative_markers) {
       sub_clusters_neg_markers <- sapply(obj$markers$sub_clusters, function(i) {
-        if(class(i) == "list") {
+        if(inherits(i, "list")) {
           tmp_clust <- i$negative_markers
           tmp_marks <- 
             sapply(tmp_clust, function(j) {
@@ -181,7 +241,7 @@ getDatasetMarkers <- function(obj, # an object of class "ClustoCell" generated v
     ## For Medium Markers
     if(medium_markers) {
       sub_clusters_med_markers <- sapply(obj$markers$sub_clusters, function(i) {
-        if(class(i) == "list") {
+        if(inherits(i, "list")) {
           tmp_clust <- i$medium_markers
           tmp_marks <- 
             sapply(tmp_clust, function(j) {

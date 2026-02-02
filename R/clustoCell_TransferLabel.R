@@ -1,15 +1,75 @@
-library(Matrix)
-library(igraph)
-library(cli)
-library(data.table)
-library(dplyr)
-library(magrittr)
-
-#______________________
+#' Transfer ClustoCell cluster labels to a full-resolution dataset
+#'
+#' @description
+#' Transfers major and sub-cluster labels from a \code{ClustoCell} object
+#' generated on a sketched (subsampled) dataset to a full-resolution dataset
+#' using EWCSR-based correlation or Seurat-based projection and anchor
+#' transfer strategies.
+#'
+#' @param clustoCell An object of class \code{ClustoCell} obtained by running
+#'   \code{clustoCell()} on a sketched dataset.
+#'
+#' @param query_ewcsr_mat A sparse matrix (\code{dgCMatrix}) containing EWCSR
+#'   values for the full dataset. Required for EWCSR-based methods and ignored
+#'   when \code{method = "count-knn"} or \code{method = "count-project"}.
+#'
+#' @param query_expr_mat Either a \code{Seurat} object or a sparse count matrix
+#'   (\code{dgCMatrix}) for the full dataset. Required for
+#'   \code{method = "count-knn"} or \code{method = "count-project"} and optional otherwise.
+#'
+#' @param assay Character string specifying the assay used in \code{query_expr_mat}
+#'   when a \code{Seurat} object is provided.
+#'
+#' @param layer Character string specifying the layer of \code{assay} to use
+#'   (e.g., \code{"counts"}).
+#'
+#' @param method Character string specifying the label transfer strategy.
+#'   Options include:
+#'   \itemize{
+#'     \item \code{"ewcsr-cor"}: Transfers labels by computing correlations between
+#'     EWCSR profiles of query cells and EWCSR centroids of sketched clusters in
+#'     the full feature space.
+#'     \item \code{"count-project"}: Uses Seurat's \code{ProjectData} pipeline to
+#'     project full-resolution expression data onto the low-dimensional embedding
+#'     of the sketched dataset.
+#'     \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but correlations
+#'     are computed in a reduced dimensional space (PCA embedding).
+#'     \item \code{"count-knn"}: Uses Seurat's \code{FindTransferAnchors} and
+#'     \code{TransferData} workflow based on k-nearest neighbor matching in
+#'     count space.
+#'   }
+#'
+#' @param dims Integer; number of dimensions used during sketching or PCA-based
+#'   label transfer.
+#'
+#' @param num_threads Integer; number of CPU threads to use. Default \code{-1}
+#'   uses all available cores.
+#'
+#' @param inherit_major_clusters Logical; whether to restrict sub-cluster label
+#'   transfer within inherited major clusters when such labels are available.
+#'
+#' @param seed Integer; random seed for reproducibility.
+#'
+#' @param verbose Logical; whether to print progress messages.
+#'
+#' @return An updated object of class \code{ClustoCell} containing transferred
+#'   major and sub-cluster labels for the full dataset.
+#'
+#' @examples
+#' \dontrun{
+#' cc_full <- clustoCell_TransferLabel(
+#'   clustoCell = cc_sketched,
+#'   query_expr_mat = expr_mat_full,
+#'   method = "count-knn"
+#' )
+#' }
+#'
+#' @useDynLib celliverse, .registration = TRUE
+#' @export
 
 clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell obtained by running clustoCell on a sketched (sampled) dataset.
-                                     query_ewcsr_mat, # A dgCMatrix matrix (Query EWCSR matrix). This is not required if method is set to 'count-knn' and mandatory otherwise. All cells in the clustoCell should be present in the query_ewcsr_mat.
-                                     query_expr_mat, # Either a Seurat object of the entire data or a dgCMatrix matrix (Query count matrix). This is mandatory if method is set to 'count-knn' and not required otherwise. All cells in the clustoCell should be present in the query_expr_mat.
+                                     query_ewcsr_mat = NULL, # A dgCMatrix matrix (Query EWCSR matrix). This is not required if method is set to 'count-knn' or 'count-project' and mandatory otherwise. All cells in the clustoCell should be present in the query_ewcsr_mat.
+                                     query_expr_mat = NULL, # Either a Seurat object of the entire data or a dgCMatrix matrix (Query count matrix). This is mandatory if method is set to 'count-knn' and not required otherwise. All cells in the clustoCell should be present in the query_expr_mat.
                                      assay = "RNA", # The desired assay corresponding to query_expr_mat.
                                      layer = "counts", # The desired layer corresponding to query_expr_mat.
                                      method = c("ewcsr-cor", 

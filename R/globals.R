@@ -1,0 +1,25 @@
+# CRAN global variables for NSE
+
+utils::globalVariables(c(
+  ".", ".data",
+  "Feature", "Rank", "Gini_Score", "Med_Freq", "Gini_Med_Freq_Combined",
+  "Avg_Pos_Purity", "Avg_Neg_Purity", "Avg_Purity",
+  "Avg_Wrong_Pos_Purity", "Avg_Wrong_Neg_Purity", 
+  "first_ranked_Combined_Score",
+  "Combined_Score", "Combined_Count", "Combined_Markers",
+  "CellType", "Cluster", "Tissue", "Condition", "Signature",
+  "Pos_Markers", "Neg_Markers",
+  "Pos_Count", "Neg_Count",
+  "Pos_Occurrence", "Neg_Occurrence",
+  "Wrong_Pos_Count", "Wrong_Neg_Count",
+  "Wrong_Pos_Occurrence", "Wrong_Neg_Occurrence",
+  "Wrong_Positive_Markers", "Wrong_Negative_Markers",
+  "Adjusted_Count", "Adjusted_Occurrence",
+  "pct_expr", "avg_expr",
+  "tile_fill", "tile_alpha",
+  "block_x", "global_x", "x_center", "x_pos", "y_pos", "y",
+  "tmpCluster", "tmpLevel",
+  "MainCluster", "last_pos",
+  "Input_Marker", "VariableFeatures",
+  "Expression", "median", "quantile", "na.omit", "cor", "desc", "setNames"
+))

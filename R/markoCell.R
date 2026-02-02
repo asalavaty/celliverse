@@ -1,11 +1,115 @@
-library(Matrix)
-library(igraph)
-library(cli)
-library(data.table)
-library(dplyr)
-library(magrittr)
-
-# A function for ranking the markers of a set of cells. This set of cells can be a cluster, a sub-cluster, a desired set of cells or even a single cell.
+#' Rank markers for clusters, cell subsets, or individual cells
+#'
+#' @description
+#' Identifies and ranks positive and negative marker genes for a specified
+#' set of cells, which may correspond to clusters, sub-clusters, arbitrary
+#' cell subsets, or even single cells. Marker ranking is based on
+#' expression-weighted centered scaled ranks (EWCSR), with optional filtering
+#' using highly variable genes (HVGs), Gini-based specificity assessment,
+#' and noise suppression.
+#'
+#' @details
+#' Exactly one of \code{so} or \code{data} must be provided.
+#' Exactly one of \code{desired_clusters} or \code{desired_cells} must be specified.
+#'
+#' When \code{subset_to_HVG = TRUE}, highly variable genes are detected using
+#' the normalized assay and layer specified by \code{norm_assay} and
+#' \code{norm_layer}. Gini-based filtering is applied to identify global
+#' (non-specific) versus specific markers.
+#'
+#' @param so
+#' A \code{Seurat} object. Either \code{so} or \code{data} must be specified,
+#' but not both.
+#'
+#' @param assay
+#' Character; assay used for marker ranking.
+#'
+#' @param layer
+#' Character; assay layer used for marker ranking. May be normalized.
+#'
+#' @param norm_assay
+#' Character; assay containing a normalized layer used for HVG detection.
+#'
+#' @param norm_layer
+#' Character; normalized layer used for HVG detection.
+#'
+#' @param data
+#' Numeric matrix with features on rows and cells on columns. Recommended to
+#' be normalized if \code{subset_to_HVG = TRUE}.
+#'
+#' @param cluster_labels
+#' Optional; column name in \code{so@meta.data} containing cluster labels,
+#' or a character vector of cluster labels with length equal to the number
+#' of cells in \code{data}. Required if \code{desired_clusters} is specified.
+#'
+#' @param desired_clusters
+#' Optional; character vector of cluster labels for which markers are ranked.
+#' Required if \code{desired_cells} is not specified.
+#'
+#' @param desired_cells
+#' Optional; named list of character vectors specifying cell names for each
+#' subset. Required if \code{desired_clusters} is not specified.
+#'
+#' @param log1p
+#' Logical; whether to apply log1p transformation to the data.
+#'
+#' @param remove_quiescent_cells
+#' Logical; whether to remove quiescent cells prior to marker ranking.
+#'
+#' @param high_quantile
+#' Numeric; quantile threshold defining highly positive EWCSR values.
+#'
+#' @param low_quantile
+#' Numeric; quantile threshold defining highly negative EWCSR values.
+#'
+#' @param subset_to_HVG
+#' Logical; whether to restrict analysis to highly variable genes.
+#'
+#' @param hvg_selection.method
+#' Character; HVG selection strategy. One of \code{"vst"},
+#' \code{"mean.var.plot"}, or \code{"dispersion"}.
+#'
+#' @param hvg_var_thresh
+#' Numeric; variance threshold for selecting HVGs.
+#'
+#' @param gini_thresh
+#' Numeric; Gini coefficient threshold for detecting non-specific markers.
+#'
+#' @param noise_feature_thresh
+#' Integer; features expressed in fewer than this number of cells are
+#' considered noise.
+#'
+#' @param random_marker_thresh
+#' Integer; markers detected in fewer than this number of cells are discarded.
+#'
+#' @param num_threads
+#' Integer; number of threads to use. Default \code{-1} uses all available cores.
+#'
+#' @param seed
+#' Integer; random seed for reproducibility.
+#'
+#' @param verbose
+#' Logical; whether to display progress messages.
+#'
+#' @return
+#' An object of class \code{"MarkoCell"} containing ranked marker tables and
+#' associated statistics for each requested cell set.
+#'
+#' @seealso
+#' \code{\link{markoClust}}, \code{\link{markerPurity}},
+#' \code{\link{gini.ewcsr.fs}}
+#'
+#' @examples
+#' \dontrun{
+#' mc <- markoCell(
+#'   so = seurat_obj,
+#'   cluster_labels = "seurat_clusters",
+#'   desired_clusters = c("0", "1")
+#' )
+#' }
+#' 
+#' @useDynLib celliverse, .registration = TRUE
+#' @export
 
 markoCell <- function(
     so = NULL, # A Seurat object. Either `so` or `data` argument should be specified, but not both.
@@ -523,12 +627,12 @@ markoCell <- function(
           rownames(curr_cluster_gini_scores) <- NULL
           curr_cluster_gini_scores
         } else {
-          return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+          return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
         }
       })
     } else {
       major_cluster_pos_markers <- lapply(major_cluster_ids, function(cid) {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       })
     }
     
@@ -576,12 +680,12 @@ markoCell <- function(
           rownames(curr_cluster_gini_scores) <- NULL
           curr_cluster_gini_scores
         } else {
-          return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+          return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
         }
       })
     } else {
       major_cluster_neg_markers <- lapply(major_cluster_ids, function(cid) {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       })
     }
     
@@ -629,12 +733,12 @@ markoCell <- function(
           rownames(curr_cluster_gini_scores) <- NULL
           curr_cluster_gini_scores
         } else {
-          return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+          return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
         }
       })
     } else {
       major_cluster_med_markers <- lapply(major_cluster_ids, function(cid) {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       })
     }
     
@@ -710,21 +814,21 @@ markoCell <- function(
     #   major_cluster_pos_markers[[cur_cl]] <<- curr_pos_markers
     #   if(is.data.frame(major_cluster_pos_markers[[cur_cl]])) {
     #     if(nrow(major_cluster_pos_markers[[cur_cl]]) == 0) {
-    #       major_cluster_pos_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+    #       major_cluster_pos_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
     #     }
     #   }
     #   
     #   major_cluster_neg_markers[[cur_cl]] <<- curr_neg_markers
     #   if(is.data.frame(major_cluster_neg_markers[[cur_cl]])) {
     #     if(nrow(major_cluster_neg_markers[[cur_cl]]) == 0) {
-    #       major_cluster_neg_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+    #       major_cluster_neg_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
     #     }
     #   }
     #   
     #   major_cluster_med_markers[[cur_cl]] <<- curr_med_markers
     #   if(is.data.frame(major_cluster_med_markers[[cur_cl]])) {
     #     if(nrow(major_cluster_med_markers[[cur_cl]]) == 0) {
-    #       major_cluster_med_markers[[cur_cl]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+    #       major_cluster_med_markers[[cur_cl]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
     #     }
     #   }
     # })
@@ -801,12 +905,12 @@ markoCell <- function(
           rownames(curr_subset_gini_scores) <- NULL
           curr_subset_gini_scores
         } else {
-          return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+          return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
         }
       })
     } else {
       cell_subset_pos_markers <- lapply(cell_subset_ids, function(cid) {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       })
     }
     
@@ -854,12 +958,12 @@ markoCell <- function(
           rownames(curr_subset_gini_scores) <- NULL
           curr_subset_gini_scores
         } else {
-          return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+          return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
         }
       })
     } else {
       cell_subset_neg_markers <- lapply(cell_subset_ids, function(cid) {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       })
     }
     
@@ -907,12 +1011,12 @@ markoCell <- function(
           rownames(curr_subset_gini_scores) <- NULL
           curr_subset_gini_scores
         } else {
-          return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+          return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
         }
       })
     } else {
       cell_subset_med_markers <- lapply(cell_subset_ids, function(cid) {
-        return(base::structure("❗ No specific marker was identified!", class = "logMessage"))
+        return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
       })
     }
     
@@ -988,21 +1092,21 @@ markoCell <- function(
     #   cell_subset_pos_markers[[cur_subset]] <<- curr_pos_markers
     #   if(is.data.frame(cell_subset_pos_markers[[cur_subset]])) {
     #     if(nrow(cell_subset_pos_markers[[cur_subset]]) == 0) {
-    #       cell_subset_pos_markers[[cur_subset]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+    #       cell_subset_pos_markers[[cur_subset]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
     #     }
     #   }
     #   
     #   cell_subset_neg_markers[[cur_subset]] <<- curr_neg_markers
     #   if(is.data.frame(cell_subset_neg_markers[[cur_subset]])) {
     #     if(nrow(cell_subset_neg_markers[[cur_subset]]) == 0) {
-    #       cell_subset_neg_markers[[cur_subset]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+    #       cell_subset_neg_markers[[cur_subset]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
     #     }
     #   }
     #   
     #   cell_subset_med_markers[[cur_subset]] <<- curr_med_markers
     #   if(is.data.frame(cell_subset_med_markers[[cur_subset]])) {
     #     if(nrow(cell_subset_med_markers[[cur_subset]]) == 0) {
-    #       cell_subset_med_markers[[cur_subset]] <<- base::structure("❗ No specific marker was identified!", class = "logMessage")
+    #       cell_subset_med_markers[[cur_subset]] <<- base::structure("Note: No specific marker was identified!", class = "logMessage")
     #     }
     #   }
     # })
