@@ -1,0 +1,288 @@
+---
+title: "Introduction to celliverse"
+subtitle: "EWCSR-based clustering, marker discovery, and cell type annotation for single-cell data"
+author: '`r paste("Adrian Salavaty", strftime(Sys.time(), format="%d-%b-%Y"))`'
+output:
+  rmarkdown::html_vignette:
+    css: celliverseVignette.css
+    toc: true
+    toc_depth: 2
+    df_print: paged
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{Introduction to celliverse}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+<style>
+body {
+  text-align: justify;
+}
+</style>
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5.5,
+  out.width = "90%"
+)
+options(width = 95)
+set.seed(2025)
+```
+
+```{r}
+spaces <- function(n) {
+  paste(rep("&nbsp;", n), collapse = "")
+}
+```
+
+# Overview
+
+**celliverse** is an R package for single-cell RNA-seq analysis that introduces a family of methods based on **Expression-Weighted Centered Scaled Ranks (EWCSR)**.
+
+The main goals of the package are:
+
+- High-quality unsupervised clustering (even on large datasets)
+- Discovery of specific positive and negative markers
+- Marker-based cluster evaluation and refinement
+- Cell type annotation using curated marker databases
+
+## Core workflows
+
+The core functions can be grouped into four main workflows:
+
+### 1. Clustering and initial marker discovery
+
+- `clustoCell()`
+
+### 2. Marker ranking and cluster refinement
+
+- `markoCell()`
+- `markoClust()`
+
+### 3. Cell type annotation
+
+- `typoClust()`
+- `typoClustVis()`
+
+### 4. Helper and visualization functions
+
+- `addClustoData()`
+- `addTypoData()`
+- `getDatasetMarkers()`
+- `markerPurity()`
+- `signatureDotHeatmap()`
+- `clustoCell_TransferLabel()`
+
+## Example workflow
+
+We will demonstrate the full workflow using the well-known **pbmc3k** dataset (3,000 PBMCs).
+
+## Loading packages and data
+
+```{r}
+library(celliverse)
+library(Seurat)
+library(patchwork)   # for combining plots
+library(ggplot2)
+
+# Load the built-in pbmc3k sparse count matrix
+data("pbmc3k", package = "celliverse")
+```
+
+Create a minimal Seurat object (we keep it very light for the vignette)
+
+```{r}
+so <- CreateSeuratObject(
+  counts = pbmc3k,
+  project = "pbmc3k",
+  min.cells = 3,
+  min.features = 200
+)
+
+so[["percent.mt"]] <- PercentageFeatureSet(so, pattern = "^MT-")
+
+so <- subset(so, subset = nFeature_RNA > 200 & nFeature_RNA < 3500 & percent.mt < 12)
+
+so <- NormalizeData(so)
+so <- FindVariableFeatures(so, nfeatures = 2000)
+so <- ScaleData(so)
+so <- RunPCA(so, npcs = 30)
+```
+
+We will not run the default Seurat clustering here; instead, we demonstrate **celliverse** clustering from the beginning.
+
+## Clustering with EWCSR — `clustoCell()`
+
+`clustoCell()` is the main entry point of the package. It performs the following steps:
+
+- (Optional) highly variable gene selection  
+- EWCSR transformation  
+- Leiden clustering  
+- Marker discovery  
+- (Optional) sub-clustering 
+
+```{r}
+cc_pbmc <- clustoCell(
+  so              = so,
+  assay           = "RNA",
+  layer           = "data",           # we use normalized data
+  norm_assay      = "RNA",
+  norm_layer      = "data",
+  
+  subset_to_HVG   = TRUE,
+  hvg_selection.method = "vst",
+  hvg_var_thresh  = 1.0,
+  
+  log1p           = TRUE,
+  
+  identify_subclusters = TRUE,
+  leiden_resolution    = 0.9,
+  subcluster_resolution_weight = 0.75,
+  
+  sketch          = FALSE,            # set TRUE for >50–100k cells
+  # sketch_ncells = 8000,
+  
+  seed            = 2025,
+  verbose         = TRUE
+)
+```
+
+Check what we received
+
+```{r}
+class(cc_pbmc)
+names(cc_pbmc)
+
+# Major clusters
+table(cc_pbmc$major_clusters)
+
+# Sub-clusters (if any were found)
+table(cc_pbmc$sub_clusters, useNA = "ifany")
+```
+
+Add cluster labels back to Seurat object
+
+```{r}
+so <- addClustoData(
+  obj         = so,
+  clustoCell  = cc_pbmc,
+  add_major_clusters = TRUE,
+  add_sub_clusters   = TRUE,
+  major_cluster_name = "ClustoCell",
+  sub_cluster_name   = "ClustoCell_sub"
+)
+
+DimPlot(so, group.by = "ClustoCell", label = TRUE, repel = TRUE) +
+  NoLegend() +
+  ggtitle("celliverse major clusters")
+
+DimPlot(so, group.by = "ClustoCell_sub", label = TRUE, repel = TRUE) +
+  NoLegend() +
+  ggtitle("celliverse sub-clusters (if any)")
+```
+
+Extracting and inspecting markers
+
+```{r}
+
+markers <- getDatasetMarkers(
+  obj = cc_pbmc,
+  clusters       = TRUE,
+  sub_clusters   = TRUE,
+  positive_markers = TRUE,
+  negative_markers = TRUE,
+  medium_markers   = FALSE,
+  thresh_mode    = "n",
+  pos_thresh     = 30,
+  neg_thresh     = 20
+)
+
+class(markers)
+names(markers)
+
+```
+
+# Cell type annotation — typoClust()
+
+We now try to annotate the clusters using curated marker databases.
+
+```{r}
+tc_pbmc <- typoClust(
+  objects     = list(cc_pbmc),
+  tissue      = c("Blood"),
+  condition   = c("Healthy"),
+  mode        = "markerDB",
+  species     = "human",
+  thresh_mode = "n",
+  thresh      = 25,
+  use_pos_markers = TRUE,
+  use_neg_markers = TRUE,
+  verbose     = TRUE
+)
+
+class(tc_pbmc)
+names(tc_pbmc)
+```
+
+Visualize annotation results
+
+```{r}
+p_anno <- typoClustVis(
+  typoClust   = tc_pbmc,
+  rank_thresh = 1,
+  refine      = TRUE,
+  refine_thresh = 1,
+  order_by    = "Combined Score",
+  flip        = FALSE,
+  title       = "celliverse cell type annotation — pbmc3k"
+)
+
+print(p_anno)
+```
+
+Add best cell type labels to Seurat object
+
+```{r}
+so <- addTypoData(
+  obj       = so,
+  typoClust = tc_pbmc,
+  clusters  = "ClustoCell",
+  rank_thresh = 1,
+  refine      = TRUE,
+  refine_thresh = 2,
+  outNames    = "celliverse_celltype"
+)
+
+```
+
+# Summary — recommended workflow
+
+1. Normalize & HVG selection (Seurat / sctransform / ...)
+
+   ↓
+
+2. clustoCell(..., subset_to_HVG = TRUE, identify_subclusters = TRUE)
+   → major + sub-clusters + markers
+
+   ↓
+
+3. addClustoData()   → put clusters into Seurat/SCE object
+
+   ↓
+
+4. typoClust()       → cell type annotation
+
+   ↓
+
+5. addTypoData()     → add cell type labels
+
+   ↓
+
+6. visualization:
+   • DimPlot( group.by = "celliverse_celltype" )
+   • typoClustVis()
+   • signatureDotHeatmap()

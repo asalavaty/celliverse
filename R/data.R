@@ -166,3 +166,47 @@ NULL
 #' @source
 #' Curated from public tissue ontologies and disease annotation resources.
 NULL
+
+#=============================================================================
+#
+#    pbmc3k
+#
+#=============================================================================
+
+#' PBMC 3k single-cell RNA-seq dataset
+#'
+#' A standard peripheral blood mononuclear cell (PBMC) single-cell RNA-seq
+#' dataset consisting of approximately 3,000 cells profiled using the
+#' 10x Genomics platform. The dataset is provided as a sparse gene-by-cell
+#' expression matrix and is intended for demonstration, benchmarking, and
+#' vignette examples within \pkg{celliverse}.
+#'
+#' @format
+#' A sparse matrix of class \code{dgCMatrix} with:
+#' \describe{
+#'   \item{rows}{13,714 genes}
+#'   \item{columns}{2,700 cells}
+#' }
+#'
+#' @details
+#' Rows correspond to genes and columns correspond to individual cells.
+#' Matrix entries represent UMI counts. The sparse representation minimizes
+#' memory usage and enables efficient downstream analysis.
+#'
+#' This dataset is commonly used in single-cell analysis workflows and is
+#' included here as a lightweight example for illustrating the functionality
+#' of \pkg{celliverse} without requiring external data downloads.
+#'
+#' @keywords datasets
+#'
+#' @name pbmc3k
+#' @docType data
+#'
+#' @seealso
+#' \code{\link{ClustoCell}}, \code{\link{typoClust}}
+#'
+#' @source
+#' Originally distributed via the \pkg{SeuratData} package and derived from
+#' 10x Genomics PBMC 3k data.
+NULL
+
