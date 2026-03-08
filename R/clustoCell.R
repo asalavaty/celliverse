@@ -162,7 +162,7 @@ clustoCell <- function(
     #   \item \code{"count-knn"}: Transfers labels using the Seurat \code{FindTransferAnchors} and \code{TransferData} pipeline, based on shared features in count-based expression data and k-nearest neighbor matching.
     sketch_pca_dims = 30, # Integer, number of dimensions used during the label transferring. Only used when label_transfer_method is one of 'ewcsr-red-cor' or 'count-knn'.
     refine_transferred_subClusters = FALSE, # Whether to refine the transferred sub-cluster labels by re-assessing each of the transferred major clusters or not. This will only be applied if identify_subclusters == TRUE.
-    noise_feature_thresh = 4, # The threshold for detecting noise features/genes (i.e. features that have non-zero expression in more than this number of samples/cells).
+    noise_feature_thresh = 4, # The threshold for detecting noise features/genes (i.e. features that don't have non-zero expression in more than this number of samples/cells).
     random_marker_thresh = 5, # Markers detected at lower than this number of cell are considered as non-marker genes
     mr_thresh = NULL, # The threshold for choosing the cell-to-cell similarities with lower than selected thresh (if it is null it will be set to the square root of the number of cells by default).
     isolated_cluster_thresh = 5, # Major clusters with lower than this number of cells (default is set to 5) will be considered as isolated cells.
