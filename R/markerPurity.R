@@ -8,8 +8,7 @@
 #' Marker purity is assessed using EWCSR-based filtering and supports both
 #' Seurat objects and matrix-based inputs.
 #'
-#' @param so
-#' A Seurat object. Either \code{so} or \code{data} must be provided.
+#' @param data Either a \code{Seurat} object or a numeric matrix with features (genes) as rows and cells as columns.
 #'
 #' @param assay
 #' Assay name used for marker purity assessment.
@@ -17,23 +16,20 @@
 #' @param layer
 #' Data layer used for assessment.
 #'
-#' @param data
-#' Matrix input used instead of \code{so}.
-#'
 #' @param desired_markers
 #' Character vector of markers to assess.
 #'
 #' @param cluster_labels
-#' Cluster labels corresponding to cells.
+#' Character vector. Required if `desired_clusters` is specified. Either the name of the column in data@meta.data containing cluster labels, or a character vector of cluster labels with length equal to the number of columns (cells) in the `data` argument.
 #'
 #' @param desired_clusters
-#' Character vector of clusters to assess.
+#' Character vector of clusters to assess. Required if `desired_cells` is not specified. If not provided, marker purity will be assessed solely within `desired_cells`.
 #'
 #' @param desired_cells
-#' Named list of vectors specifying desired cells.
+#' Named list of character vectors specifying the names of the desired cells. Required if `desired_clusters` is not specified.
 #'
 #' @param log1p
-#' Logical; whether to apply log1p transformation.
+#' Logical; whether to apply \code{log1p} transformation to the input \code{data}. It is recommended to set this argument to TRUE (default) if the data is not already on a log scale.
 #'
 #' @param remove_quiescent_cells
 #' Logical; whether to remove quiescent cells.
@@ -64,19 +60,18 @@
 #'
 #' @examples
 #' \dontrun{
-#' mp <- markerPurity(so = so, cluster_labels = "seurat_clusters")
+#' mp <- markerPurity(data = my_seurat_obj, cluster_labels = "seurat_clusters")
 #' }
 #' 
 #' @useDynLib celliverse, .registration = TRUE
 #' @export
 
 markerPurity <- function(
-    so = NULL, # A Seurat object. Either `so` or `data` argument should be specified, but not both.
+    data, # Either a Seurat object or a matrix.
     assay = "RNA", # The assay we want to use for assessing marker purities.
     layer = "counts", # The layer of the assay we want to use for assessing marker purities (this can be a normalized layer).
-    data = NULL, # matrix, the data to be used for assessing marker purity.
     desired_markers = NULL, # A character vector of the names of desired markers. If not specified, the purity of all features of the input data in each desired cluster and the desired cell subsets will be assessed. 
-    cluster_labels = NULL, # Optional. Mandatory if desired_clusters is specified. The column name of cluster labels in the meta.data of `so`, or a character vector of cluster labels with the same as the number of columns/cells of the `data` argument.
+    cluster_labels = NULL, # Optional. Mandatory if desired_clusters is specified. The column name of cluster labels in the meta.data of input Seurat object, or a character vector of cluster labels with the same as the number of columns/cells of the `data` argument.
     desired_clusters = NULL, # Optional. Mandatory if desired_cells is not specified. If not specified, the purity of desired markers will be assessed only in the desired_cells. 
     desired_cells = NULL, # Optional. Mandatory if desired_clusters is not specified. A named list of character vectors of the names of desired cells from the column names of the input data.
     log1p = TRUE, # Weather to log1p transform the data or not
@@ -136,6 +131,13 @@ markerPurity <- function(
   
   #________________________________________
   
+  # Checking arguments
+  
+  cluster_labels_missing <- missing(cluster_labels)
+  data_missing <- missing(data)
+  
+  #________________________________________
+  
   # Setting the seed
   set.seed(seed)
   
@@ -158,31 +160,31 @@ markerPurity <- function(
   
   log_progress_step("Inspecting the input data")
   
-  if((is.null(so) & is.null(data)) | (!is.null(so) & !is.null(data))) {
-    cli::cli_abort("Either 'data' or 'so' should be specified, not both or neither.")
+  if(data_missing) {
+    cli::cli_abort("The data cannot be left unspecified!")
+  }
+  
+  if(cluster_labels_missing) {
+    cli::cli_abort("The cluster_labels cannot be left unspecified!")
   }
   
   if(is.null(desired_markers)) {
-    if(is.null(data)) {
-      desired_markers <- rownames(so)
-    } else {
-      desired_markers <- rownames(data)
-    }
+    desired_markers <- rownames(data)
   }
   
-  if(!is.null(so)) {
+  if(inherits(data, "Seurat")) {
     if(length(cluster_labels) > 1 | !inherits(cluster_labels, "character")) {
-      cli::cli_abort("The 'cluster_labels' argument should be one of the column names in the meta.data of the specified 'so' object!")
+      cli::cli_abort("The 'cluster_labels' argument should be one of the column names in the meta.data of the specified 'Seurat' object!")
     }
   } else if(length(cluster_labels) != ncol(data) | !inherits(cluster_labels, "character")) {
     cli::cli_abort("The 'cluster_labels' argument should be a character vector with a length equal to the number of columns (or cells) in the input 'data' matrix!")
   }
   
   # SO quality control
-  if(!is.null(so)) {
-    if(length(grep(assay, Seurat::Assays(so))) != 1) {
-      cli::cli_abort("The specified 'assay' name is not among the list of assays of the Seurat object.\n\nYou can check the list of available assays using the command Seurat::Assays(so)")
-    } else if(nrow(so[[assay]][layer]) == 0) {
+  if(inherits(data, "Seurat")) {
+    if(length(grep(assay, Seurat::Assays(data))) != 1) {
+      cli::cli_abort("The specified 'assay' name is not among the list of assays of the Seurat object.\n\nYou can check the list of available assays using the command Seurat::Assays(data)")
+    } else if(nrow(data[[assay]][layer]) == 0) {
       cli::cli_abort("The specified 'layer' name is not among the list of layers of the specified 'assay' of the Seurat object.")
     }
   }
@@ -193,17 +195,17 @@ markerPurity <- function(
     qc_status_id <- cli::cli_status("Extracting expression matrix...")
   }
   
-  if(is.null(so)) {
+  if(!inherits(data, "Seurat")) {
     if(!inherits(data, c("matrix", "Matrix"))) {
       expr_mat <- as.matrix(data) # This will be treated both as the expr_mat and norm_expr_mat
     } else {
       expr_mat <- data
     }
   } else {
-    if(!inherits(so[[assay]][layer], c("matrix", "Matrix"))) {
-      expr_mat <- as.matrix(so[[assay]][layer]) # This will be treated both as the expr_mat and norm_expr_mat
+    if(!inherits(data[[assay]][layer], c("matrix", "Matrix"))) {
+      expr_mat <- as.matrix(data[[assay]][layer]) # This will be treated both as the expr_mat and norm_expr_mat
     } else {
-      expr_mat <- so[[assay]][layer]
+      expr_mat <- data[[assay]][layer]
     }
   }
   
@@ -234,11 +236,11 @@ markerPurity <- function(
   
   # Input clusters
   if(!is.null(cluster_labels) & !is.null(desired_clusters)) {
-    if(is.null(so)) {
+    if(!inherits(data, "Seurat")) {
       major_clusters <- cluster_labels %>% as.character() %>% setNames(colnames(expr_mat))
       major_clusters <- major_clusters[major_clusters %in% desired_clusters]
     } else {
-      major_clusters <- so[[cluster_labels]] %>% 
+      major_clusters <- data[[cluster_labels]] %>% 
         unlist() %>% as.vector() %>% as.character() %>% stats::setNames(colnames(expr_mat))
       major_clusters <- major_clusters[major_clusters %in% desired_clusters]
     }

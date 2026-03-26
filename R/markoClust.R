@@ -1,19 +1,18 @@
 #' Evaluate and refine cell clusters using marker ranking and graph partitioning
 #'
 #' @description
-#' Performs marker-based evaluation and refinement of cell clusters, optionally
+#' Identifies markers in predefined cell clusters, and optionally
 #' identifying sub-clusters using Leiden community detection. Supports large
 #' datasets via uniform sketching with label transfer back to the full dataset.
 #'
 #' @details
-#' Exactly one of \code{so} or \code{data} must be provided.
-#'
 #' If \code{sketch = TRUE}, a representative subset of cells is sampled from
 #' each cluster and used for sub-clustering. Labels are transferred back to
 #' the full dataset using the method specified by \code{label_transfer_method}.
 #'
-#' @param so
-#' A \code{Seurat} object. Either \code{so} or \code{data} must be specified.
+#' @param data Either a \code{Seurat} object or a numeric matrix with features (genes) as rows and cells as columns.
+#'   Recommended to provide at least library-size normalized data when
+#'   \code{subset_to_HVG = TRUE}.
 #'
 #' @param assay
 #' Character; assay used for cluster evaluation.
@@ -27,15 +26,11 @@
 #' @param norm_layer
 #' Character; normalized layer used for HVG detection.
 #'
-#' @param data
-#' Numeric matrix with features on rows and cells on columns.
-#'
 #' @param cluster_labels
-#' Character; cluster labels corresponding to cells, or column name in
-#' \code{so@meta.data}.
+#' Character vector. Either the name of the column in data@meta.data containing cluster labels, or a character vector of cluster labels with length equal to the number of columns (cells) in the `data` argument.
 #'
 #' @param log1p
-#' Logical; whether to log1p-transform the data.
+#' Logical; whether to apply \code{log1p} transformation to the input \code{data}. It is recommended to set this argument to TRUE (default) if the data is not already on a log scale.
 #'
 #' @param remove_quiescent_cells
 #' Logical; whether to remove quiescent cells prior to analysis.
@@ -47,7 +42,7 @@
 #' Numeric; EWCSR low quantile threshold.
 #'
 #' @param subset_to_HVG
-#' Logical; whether to restrict analysis to HVGs.
+#' Logical; whether to restrict analysis to highly variable genes (HVGs).
 #'
 #' @param hvg_selection.method
 #' Character; HVG selection strategy.
@@ -116,7 +111,7 @@
 #' @examples
 #' \dontrun{
 #' cc <- markoClust(
-#'   so = seurat_obj,
+#'   data = seurat_obj,
 #'   cluster_labels = "seurat_clusters"
 #' )
 #' }
@@ -125,13 +120,12 @@
 #' @export
 
 markoClust <- function(
-    so = NULL, # A Seurat object. Either `so` or `data` argument should be specified, but not both.
+    data, # Either a Seurat object or a matrix. It is recommended to input normalized data (at least lib size normalized) if you have set the subset_to_HVG = TRUE.
     assay = "RNA", # The assay we want to use for evaluating the clusters.
     layer = "counts", # The layer of the assay we want to use for evaluating the clusters (this can be a normalized layer).
     norm_assay = "RNA", # The assay that include a normalized layer and we want to use for the detection of highly variable genes (HVGs). This can be the same as the 'assay'.
     norm_layer = "data", # The normalized layer of the assay that we want to use for the detection of highly variable genes (HVGs).
-    data = NULL, # matrix, It is recommended to input normalized data (at least lib size normalized) if you have set the subset_to_HVG = TRUE.
-    cluster_labels, # A character vector of cluster labels (its length should be the same as the number of columns/cells of the data) or the column name of cluster labels in the meta.data of so.
+    cluster_labels, # A character vector of cluster labels (its length should be the same as the number of columns/cells of the data) or the column name of cluster labels in the meta.data of input Seurat object.
     log1p = TRUE, # Weather to log1p transform the data or not.
     remove_quiescent_cells = TRUE, # Whether to remove quiescent_cells before marker identification or not.
     high_quantile = 0.25, # The quantile threshold for choosing highly positive expression-weighted centered scaled ranks required for filtering the data and for selecting the positive markers. Higher values label more features as features with high expression-weighted centered scaled ranks.
@@ -228,6 +222,7 @@ markoClust <- function(
   # Checking arguments
   
   cluster_labels_missing <- missing(cluster_labels)
+  data_missing <- missing(data)
   
   #________________________________________
   
@@ -245,32 +240,32 @@ markoClust <- function(
   
   log_progress_step("Inspecting the input data")
   
-  if((is.null(so) & is.null(data)) | (!is.null(so) & !is.null(data))) {
-    cli::cli_abort("Either 'data' or 'so' should be specified, not both or neither.")
+  if(data_missing) {
+    cli::cli_abort("The data cannot be left unspecified!")
   }
   
   if(cluster_labels_missing) {
     cli::cli_abort("The cluster_labels cannot be left unspecified!")
   }
   
-  if(!is.null(so)) {
+  if(inherits(data, "Seurat")) {
     if(length(cluster_labels) > 1 | !inherits(cluster_labels, "character")) {
-      cli::cli_abort("The 'cluster_labels' argument should be one of the column names in the meta.data of the specified 'so' object!")
+      cli::cli_abort("The 'cluster_labels' argument should be one of the column names in the meta.data of the specified 'Seurat' object!")
     }
   } else if(length(cluster_labels) != ncol(data) | !inherits(cluster_labels, "character")) {
     cli::cli_abort("The 'cluster_labels' argument should be a character vector with a length equal to the number of columns (or cells) in the input 'data' matrix!")
   }
   
   # SO quality control
-  if(!is.null(so)) {
-    if(length(grep(assay, Seurat::Assays(so))) != 1) {
-      cli::cli_abort("The specified 'assay' name is not among the list of assays of the Seurat object.\n\nYou can check the list of available assays using the command Seurat::Assays(so)")
-    } else if(nrow(so[[assay]][layer]) == 0) {
+  if(inherits(data, "Seurat")) {
+    if(length(grep(assay, Seurat::Assays(data))) != 1) {
+      cli::cli_abort("The specified 'assay' name is not among the list of assays of the Seurat object.\n\nYou can check the list of available assays using the command Seurat::Assays(data)")
+    } else if(nrow(data[[assay]][layer]) == 0) {
       cli::cli_abort("The specified 'layer' name is not among the list of layers of the specified 'assay' of the Seurat object.")
     } else if(subset_to_HVG) {
-      if(length(grep(norm_assay, Seurat::Assays(so))) != 1) {
-        cli::cli_abort("The specified 'norm_assay' name is not among the list of assays of the Seurat object.\n\nYou can check the list of available assays using the command Seurat::Assays(so)")
-      } else if(nrow(so[[norm_assay]][norm_layer]) == 0) {
+      if(length(grep(norm_assay, Seurat::Assays(data))) != 1) {
+        cli::cli_abort("The specified 'norm_assay' name is not among the list of assays of the Seurat object.\n\nYou can check the list of available assays using the command Seurat::Assays(data)")
+      } else if(nrow(data[[norm_assay]][norm_layer]) == 0) {
         cli::cli_abort("The specified 'norm_layer' name is not among the list of layers of the specified 'norm_assay' of the Seurat object.")
       }
     }
@@ -282,23 +277,23 @@ markoClust <- function(
     qc_status_id <- cli::cli_status("Extracting expression matrix...")
   }
   
-  if(is.null(so)) {
+  if(!inherits(data, "Seurat")) {
     if(!inherits(data, c("matrix", "Matrix"))) {
       expr_mat <- as.matrix(data) # This will be treated both as the expr_mat and norm_expr_mat
     } else {
       expr_mat <- data
     }
   } else {
-    if(!inherits(so[[assay]][layer], c("matrix", "Matrix"))) {
-      expr_mat <- as.matrix(so[[assay]][layer]) # This will be treated both as the expr_mat and norm_expr_mat
+    if(!inherits(data[[assay]][layer], c("matrix", "Matrix"))) {
+      expr_mat <- as.matrix(data[[assay]][layer]) # This will be treated both as the expr_mat and norm_expr_mat
     } else {
-      expr_mat <- so[[assay]][layer]
+      expr_mat <- data[[assay]][layer]
     }
     if(subset_to_HVG) {
-      if(!inherits(so[[norm_assay]][norm_layer], c("matrix", "Matrix"))) {
-        norm_expr_mat <- as.matrix(so[[norm_assay]][norm_layer])
+      if(!inherits(data[[norm_assay]][norm_layer], c("matrix", "Matrix"))) {
+        norm_expr_mat <- as.matrix(data[[norm_assay]][norm_layer])
       } else {
-        norm_expr_mat <- so[[norm_assay]][norm_layer]
+        norm_expr_mat <- data[[norm_assay]][norm_layer]
       }
     }
   }
@@ -308,10 +303,10 @@ markoClust <- function(
   }
   
   # Input clusters
-  if(is.null(so)) {
+  if(!inherits(data, "Seurat")) {
     major_clusters <- cluster_labels %>% as.character() %>% setNames(colnames(expr_mat))
   } else {
-    major_clusters <- so[[cluster_labels]] %>% 
+    major_clusters <- data[[cluster_labels]] %>% 
       unlist() %>% as.vector() %>% as.character() %>% stats::setNames(colnames(expr_mat))
   }
   
@@ -355,7 +350,7 @@ markoClust <- function(
     log_progress_step("Finding highly variable genes (HVGs)...")
     
     # Detection of highly variable genes (HVGs)
-    if(is.null(so)) {
+    if(!inherits(data, "Seurat")) {
       base::suppressWarnings(
         hvgs <- Seurat::FindVariableFeatures(expr_mat, selection.method = hvg_selection.method, nfeatures = nrow(expr_mat), verbose = FALSE)
       )
@@ -1694,8 +1689,8 @@ markoClust <- function(
     
     final_results_list$sketched_cells <- all_sketch_cells
     
-    if(!is.null(so) & label_transfer_method == "count-project") {
-      query_expr_mat <- so 
+    if(inherits(data, "Seurat") & label_transfer_method == "count-project") {
+      query_expr_mat <- data
     } else {
       query_expr_mat <- original_expr_mat 
     }

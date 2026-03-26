@@ -5,12 +5,11 @@
 \title{Clustering and marker discovery for single-cell data using EWCSR-based similarity}
 \usage{
 clustoCell(
-  so = NULL,
+  data,
   assay = "RNA",
   layer = "counts",
   norm_assay = "RNA",
   norm_layer = "data",
-  data = NULL,
   log1p = TRUE,
   subset_to_HVG = FALSE,
   hvg_selection.method = c("vst", "mean.var.plot", "dispersion"),
@@ -38,8 +37,9 @@ clustoCell(
 )
 }
 \arguments{
-\item{so}{A \code{Seurat} object. Either \code{so} or \code{data} must be provided,
-but not both.}
+\item{data}{Either a \code{Seurat} object or a numeric matrix with features (genes) as rows and cells as columns.
+Recommended to provide at least library-size normalized data when
+\code{subset_to_HVG = TRUE}.}
 
 \item{assay}{Character string specifying the assay to use for clustering.}
 
@@ -52,14 +52,9 @@ highly variable genes (HVGs).}
 \item{norm_layer}{Character string specifying the normalized layer used for
 HVG detection.}
 
-\item{data}{A numeric matrix with features (genes) as rows and cells as columns.
-Recommended to provide at least library-size normalized data when
-\code{subset_to_HVG = TRUE}.}
+\item{log1p}{Logical; whether to apply \code{log1p} transformation to the input \code{data}. It is recommended to set this argument to TRUE (default) if the data is not already on a log scale.}
 
-\item{log1p}{Logical; whether to apply \code{log1p} transformation to the input data.}
-
-\item{subset_to_HVG}{Logical; whether to restrict the analysis to highly variable
-genes or use all features.}
+\item{subset_to_HVG}{Logical; whether to restrict the analysis to highly variable genes (HVGs) or use all features.}
 
 \item{hvg_selection.method}{Character string specifying the HVG selection strategy.
 One of \code{"vst"}, \code{"mean.var.plot"}, or \code{"dispersion"}.}
@@ -154,10 +149,15 @@ markers and optional sub-clustering. The function supports direct clustering
 on full datasets or scalable analysis via data sketching with subsequent
 label transfer to the full dataset.
 }
+\details{
+If \code{sketch = TRUE}, a representative subset of cells is sampled from
+the input data and used for clustering. Labels are transferred back to
+the full dataset using the method specified by \code{label_transfer_method}.
+}
 \examples{
 \dontrun{
 cc <- clustoCell(
-  so = seurat_obj,
+  data = seurat_obj,
   subset_to_HVG = TRUE,
   identify_subclusters = TRUE,
   sketch = TRUE,

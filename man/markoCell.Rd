@@ -5,12 +5,11 @@
 \title{Rank markers for clusters, cell subsets, or individual cells}
 \usage{
 markoCell(
-  so = NULL,
+  data,
   assay = "RNA",
   layer = "counts",
   norm_assay = "RNA",
   norm_layer = "data",
-  data = NULL,
   cluster_labels = NULL,
   desired_clusters = NULL,
   desired_cells = NULL,
@@ -30,8 +29,9 @@ markoCell(
 )
 }
 \arguments{
-\item{so}{A \code{Seurat} object. Either \code{so} or \code{data} must be specified,
-but not both.}
+\item{data}{Either a \code{Seurat} object or a numeric matrix with features (genes) as rows and cells as columns.
+Recommended to provide at least library-size normalized data when
+\code{subset_to_HVG = TRUE}.}
 
 \item{assay}{Character; assay used for marker ranking.}
 
@@ -41,10 +41,7 @@ but not both.}
 
 \item{norm_layer}{Character; normalized layer used for HVG detection.}
 
-\item{data}{Numeric matrix with features on rows and cells on columns. Recommended to
-be normalized if \code{subset_to_HVG = TRUE}.}
-
-\item{cluster_labels}{Optional; column name in \code{so@meta.data} containing cluster labels,
+\item{cluster_labels}{Optional; column name in \code{data@meta.data} containing cluster labels,
 or a character vector of cluster labels with length equal to the number
 of cells in \code{data}. Required if \code{desired_clusters} is specified.}
 
@@ -54,7 +51,7 @@ Required if \code{desired_cells} is not specified.}
 \item{desired_cells}{Optional; named list of character vectors specifying cell names for each
 subset. Required if \code{desired_clusters} is not specified.}
 
-\item{log1p}{Logical; whether to apply log1p transformation to the data.}
+\item{log1p}{Logical; whether to apply \code{log1p} transformation to the input \code{data}. It is recommended to set this argument to TRUE (default) if the data is not already on a log scale.}
 
 \item{remove_quiescent_cells}{Logical; whether to remove quiescent cells prior to marker ranking.}
 
@@ -62,7 +59,7 @@ subset. Required if \code{desired_clusters} is not specified.}
 
 \item{low_quantile}{Numeric; quantile threshold defining highly negative EWCSR values.}
 
-\item{subset_to_HVG}{Logical; whether to restrict analysis to highly variable genes.}
+\item{subset_to_HVG}{Logical; whether to restrict analysis to highly variable genes (HVGs).}
 
 \item{hvg_selection.method}{Character; HVG selection strategy. One of \code{"vst"},
 \code{"mean.var.plot"}, or \code{"dispersion"}.}
@@ -95,9 +92,6 @@ using highly variable genes (HVGs), Gini-based specificity assessment,
 and noise suppression.
 }
 \details{
-Exactly one of \code{so} or \code{data} must be provided.
-Exactly one of \code{desired_clusters} or \code{desired_cells} must be specified.
-
 When \code{subset_to_HVG = TRUE}, highly variable genes are detected using
 the normalized assay and layer specified by \code{norm_assay} and
 \code{norm_layer}. Gini-based filtering is applied to identify global
@@ -106,7 +100,7 @@ the normalized assay and layer specified by \code{norm_assay} and
 \examples{
 \dontrun{
 mc <- markoCell(
-  so = seurat_obj,
+  data = seurat_obj,
   cluster_labels = "seurat_clusters",
   desired_clusters = c("0", "1")
 )

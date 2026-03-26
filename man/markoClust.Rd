@@ -5,12 +5,11 @@
 \title{Evaluate and refine cell clusters using marker ranking and graph partitioning}
 \usage{
 markoClust(
-  so = NULL,
+  data,
   assay = "RNA",
   layer = "counts",
   norm_assay = "RNA",
   norm_layer = "data",
-  data = NULL,
   cluster_labels,
   log1p = TRUE,
   remove_quiescent_cells = TRUE,
@@ -38,7 +37,9 @@ markoClust(
 )
 }
 \arguments{
-\item{so}{A \code{Seurat} object. Either \code{so} or \code{data} must be specified.}
+\item{data}{Either a \code{Seurat} object or a numeric matrix with features (genes) as rows and cells as columns.
+Recommended to provide at least library-size normalized data when
+\code{subset_to_HVG = TRUE}.}
 
 \item{assay}{Character; assay used for cluster evaluation.}
 
@@ -48,12 +49,9 @@ markoClust(
 
 \item{norm_layer}{Character; normalized layer used for HVG detection.}
 
-\item{data}{Numeric matrix with features on rows and cells on columns.}
+\item{cluster_labels}{Character vector. Either the name of the column in data@meta.data containing cluster labels, or a character vector of cluster labels with length equal to the number of columns (cells) in the `data` argument.}
 
-\item{cluster_labels}{Character; cluster labels corresponding to cells, or column name in
-\code{so@meta.data}.}
-
-\item{log1p}{Logical; whether to log1p-transform the data.}
+\item{log1p}{Logical; whether to apply \code{log1p} transformation to the input \code{data}. It is recommended to set this argument to TRUE (default) if the data is not already on a log scale.}
 
 \item{remove_quiescent_cells}{Logical; whether to remove quiescent cells prior to analysis.}
 
@@ -61,7 +59,7 @@ markoClust(
 
 \item{low_quantile}{Numeric; EWCSR low quantile threshold.}
 
-\item{subset_to_HVG}{Logical; whether to restrict analysis to HVGs.}
+\item{subset_to_HVG}{Logical; whether to restrict analysis to highly variable genes (HVGs).}
 
 \item{hvg_selection.method}{Character; HVG selection strategy.}
 
@@ -106,13 +104,11 @@ An object of class \code{"ClustoCell"} containing refined clusters,
 sub-clusters, marker tables, and similarity structures.
 }
 \description{
-Performs marker-based evaluation and refinement of cell clusters, optionally
+Identifies markers in predefined cell clusters, and optionally
 identifying sub-clusters using Leiden community detection. Supports large
 datasets via uniform sketching with label transfer back to the full dataset.
 }
 \details{
-Exactly one of \code{so} or \code{data} must be provided.
-
 If \code{sketch = TRUE}, a representative subset of cells is sampled from
 each cluster and used for sub-clustering. Labels are transferred back to
 the full dataset using the method specified by \code{label_transfer_method}.
@@ -120,7 +116,7 @@ the full dataset using the method specified by \code{label_transfer_method}.
 \examples{
 \dontrun{
 cc <- markoClust(
-  so = seurat_obj,
+  data = seurat_obj,
   cluster_labels = "seurat_clusters"
 )
 }

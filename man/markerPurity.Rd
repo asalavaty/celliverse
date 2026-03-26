@@ -5,10 +5,9 @@
 \title{Assess marker purity across clusters or cell subsets}
 \usage{
 markerPurity(
-  so = NULL,
+  data,
   assay = "RNA",
   layer = "counts",
-  data = NULL,
   desired_markers = NULL,
   cluster_labels = NULL,
   desired_clusters = NULL,
@@ -24,23 +23,21 @@ markerPurity(
 )
 }
 \arguments{
-\item{so}{A Seurat object. Either \code{so} or \code{data} must be provided.}
+\item{data}{Either a \code{Seurat} object or a numeric matrix with features (genes) as rows and cells as columns.}
 
 \item{assay}{Assay name used for marker purity assessment.}
 
 \item{layer}{Data layer used for assessment.}
 
-\item{data}{Matrix input used instead of \code{so}.}
-
 \item{desired_markers}{Character vector of markers to assess.}
 
-\item{cluster_labels}{Cluster labels corresponding to cells.}
+\item{cluster_labels}{Character vector. Required if `desired_clusters` is specified. Either the name of the column in data@meta.data containing cluster labels, or a character vector of cluster labels with length equal to the number of columns (cells) in the `data` argument.}
 
-\item{desired_clusters}{Character vector of clusters to assess.}
+\item{desired_clusters}{Character vector of clusters to assess. Required if `desired_cells` is not specified. If not provided, marker purity will be assessed solely within `desired_cells`.}
 
-\item{desired_cells}{Named list of vectors specifying desired cells.}
+\item{desired_cells}{Named list of character vectors specifying the names of the desired cells. Required if `desired_clusters` is not specified.}
 
-\item{log1p}{Logical; whether to apply log1p transformation.}
+\item{log1p}{Logical; whether to apply \code{log1p} transformation to the input \code{data}. It is recommended to set this argument to TRUE (default) if the data is not already on a log scale.}
 
 \item{remove_quiescent_cells}{Logical; whether to remove quiescent cells.}
 
@@ -69,7 +66,7 @@ Seurat objects and matrix-based inputs.
 }
 \examples{
 \dontrun{
-mp <- markerPurity(so = so, cluster_labels = "seurat_clusters")
+mp <- markerPurity(data = my_seurat_obj, cluster_labels = "seurat_clusters")
 }
 
 }
