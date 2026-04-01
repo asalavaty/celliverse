@@ -1280,7 +1280,7 @@ clustoCell <- function(
   
   # Detecting sub-clusters
   
-  if(identify_subclusters) {
+  if(identify_subclusters & (!sketch | (sketch & !refine_transferred_subClusters))) {
     
     log_space()
     
@@ -1795,7 +1795,7 @@ clustoCell <- function(
   # Preparing the Results Lists
   final_clusters_list <- list(major_clusters = major_clusters)
   
-  if(identify_subclusters) {
+  if(identify_subclusters & (!sketch | (sketch & !refine_transferred_subClusters))) {
     final_clusters_list$sub_clusters <- subcluster_list
     final_clusters_list$merged_sub_clusters <- merged_sub_clusters
   }
@@ -1817,7 +1817,7 @@ clustoCell <- function(
     )
   )
   
-  if(identify_subclusters) {
+  if(identify_subclusters & (!sketch | (sketch & !refine_transferred_subClusters))) {
     final_markers_list$sub_clusters <- subcluster_markers_list
   }
   

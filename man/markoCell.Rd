@@ -87,8 +87,7 @@ associated statistics for each requested cell set.
 Identifies and ranks positive and negative marker genes for a specified
 set of cells, which may correspond to clusters, sub-clusters, arbitrary
 cell subsets, or even single cells. Marker ranking is based on
-expression-weighted centered scaled ranks (EWCSR), with optional filtering
-using highly variable genes (HVGs), Gini-based specificity assessment,
+expression-weighted centered scaled ranks (EWCSR), with Gini-based specificity assessment,
 and noise suppression.
 }
 \details{

@@ -1,8 +1,7 @@
-#' Visualize per-signature marker expression across cell types
+#' Visualize per-signature marker expression across clusters
 #'
 #' @description
-#' Generates a dot heatmap summarizing expression and detection frequency
-#' of signature-associated features across cell types.
+#' Generates a dot heatmap summarizing expression of signature-associated features across clusters.
 #'
 #' @details
 #' Dot size typically encodes the percentage of cells expressing a feature,
@@ -11,11 +10,17 @@
 #' @param seurat_obj
 #' A \code{Seurat} object containing expression data and metadata.
 #'
+#' @param cluster_col
+#' Character; column in \code{seurat_obj@meta.data} containing cluster labels. These could correspond to user defined clusters or cell types.
+#'
 #' @param row_data
 #' Data frame mapping features to signatures. Must contain one row per feature.
 #'
-#' @param celltype_col
-#' Character; column in \code{seurat_obj@meta.data} containing cell types.
+#' @param features_col
+#' Character; column in \code{row_data} containing feature (e.g. gene) IDs corresponding to the row names of the \code{seurat_obj}.
+#'
+#' @param signature_col
+#' Character; column in \code{row_data} containing signature labels.
 #'
 #' @param cell_type_colors
 #' Color specification for cell types.
@@ -47,8 +52,8 @@
 #' @param feature_label_angle
 #' Numeric; angle of feature labels.
 #'
-#' @param show_celltype_labels
-#' Logical; whether to show cell type labels.
+#' @param show_cluster_labels
+#' Logical; whether to show cluster labels.
 #'
 #' @param show_signature_strip
 #' Logical; whether to show signature strip.
@@ -56,23 +61,17 @@
 #' @param show_signature_labels
 #' Logical; whether to show signature labels.
 #'
-#' @param show_celltype_strip
-#' Logical; whether to show cell type strip.
+#' @param show_cluster_strip
+#' Logical; whether to show cluster strip.
 #'
-#' @param show_celltype_legend
-#' Logical; whether to show cell type legend.
+#' @param show_cluster_legend
+#' Logical; whether to show cluster legend.
 #'
 #' @param show_signature_legend
 #' Logical; whether to show signature legend.
 #'
 #' @param legend_ncol
 #' Integer; number of legend columns.
-#'
-#' @param features_col
-#' Character; column in \code{row_data} containing feature IDs.
-#'
-#' @param signature_col
-#' Character; column in \code{row_data} containing signature labels.
 #'
 #' @param expression_legend_title
 #' Character; title for expression legend.
@@ -118,8 +117,10 @@
 
 signatureDotHeatmap <- function(
     seurat_obj,
+    cluster_col,
     row_data,
-    celltype_col = "CellType",
+    features_col  = NULL,
+    signature_col = NULL,
     
     # ----- Colors -----
     cell_type_colors = NULL, # A scale specification for coloring cell types. Can be specified in one of two forms: 
@@ -146,15 +147,13 @@ signatureDotHeatmap <- function(
     feature_label_angle = 45,
     
     # ----- Layout -----
-    show_celltype_labels   = FALSE,
+    show_cluster_labels   = FALSE,
     show_signature_strip   = TRUE,
     show_signature_labels  = TRUE,
-    show_celltype_strip    = TRUE,
-    show_celltype_legend   = FALSE,
+    show_cluster_strip    = TRUE,
+    show_cluster_legend   = TRUE,
     show_signature_legend  = FALSE,
     legend_ncol            = 2,
-    features_col           = NULL,
-    signature_col          = NULL,
     expression_legend_title = "Expression",
     percent_legend_title    = "Percent\nExpressed",
     tile_fill_legend_title  = NULL,
@@ -175,16 +174,37 @@ signatureDotHeatmap <- function(
   
   #________________________________________
   
+  # Checking arguments
+  
+  row_data_missing <- missing(row_data)
+  seurat_obj_missing <- missing(seurat_obj)
+  cluster_col_missing <- missing(cluster_col)
+  
+  #________________________________________
+  
   # =======================================================
   # Input checks
   # =======================================================
-  if (is.null(features_col) || is.null(signature_col)) {
-    base::stop("`features_col` and `signature_col` must be provided (no defaults).")
+  
+  if(seurat_obj_missing) {
+    cli::cli_abort("The seurat_obj cannot be left unspecified!")
   }
   
-  if (!celltype_col %in% base::colnames(seurat_obj@meta.data)) {
-    base::stop("`celltype_col` = ", celltype_col,
+  if(cluster_col_missing) {
+    cli::cli_abort("The cluster_col cannot be left unspecified!")
+  }
+  
+  if (!cluster_col %in% base::colnames(seurat_obj@meta.data)) {
+    base::stop("`cluster_col` = ", cluster_col,
                " not found in seurat_obj@meta.data.")
+  }
+  
+  if(row_data_missing) {
+    cli::cli_abort("The row_data cannot be left unspecified!")
+  }
+  
+  if (is.null(features_col) || is.null(signature_col)) {
+    base::stop("`features_col` and `signature_col` must be provided (no defaults).")
   }
   
   if (!features_col %in% base::colnames(row_data)) {
@@ -224,7 +244,7 @@ signatureDotHeatmap <- function(
   # =======================================================
   dot_raw <- Seurat::FetchData(
     seurat_obj,
-    vars = base::c(features, celltype_col)
+    vars = base::c(features, cluster_col)
   ) %>%
     dplyr::mutate(Cell = base::rownames(.))
   
@@ -234,11 +254,11 @@ signatureDotHeatmap <- function(
       names_to = "Feature",
       values_to = "Expression"
     ) %>%
-    dplyr::mutate(CellType = .data[[celltype_col]])
+    dplyr::mutate(Cluster = .data[[cluster_col]])
   
-  if (!base::identical(celltype_col, "CellType")) {
+  if (!base::identical(cluster_col, "Cluster")) {
     dot_long_raw <- dot_long_raw %>%
-      dplyr::select(-tidyselect::all_of(celltype_col))
+      dplyr::select(-tidyselect::all_of(cluster_col))
   }
   
   # =======================================================
@@ -246,7 +266,7 @@ signatureDotHeatmap <- function(
   # =======================================================
   dot_long <- dot_long_raw %>%
     dplyr::left_join(row_data_map, by = "Feature") %>%
-    dplyr::group_by(CellType, Feature, Signature) %>%
+    dplyr::group_by(Cluster, Feature, Signature) %>%
     dplyr::summarise(
       pct_expr = base::mean(Expression > 0),
       avg_expr = dplyr::if_else(
@@ -294,7 +314,7 @@ signatureDotHeatmap <- function(
   # =======================================================
   gg_dot <- ggplot2::ggplot(
     dot_plot_df,
-    ggplot2::aes(x = global_x, y = CellType)
+    ggplot2::aes(x = global_x, y = Cluster)
   ) +
     ggplot2::geom_tile(
       ggplot2::aes(fill = tile_fill, alpha = tile_alpha),
@@ -372,7 +392,7 @@ signatureDotHeatmap <- function(
       legend.key.width = grid::unit(0.25, "cm"),
       legend.key.height= grid::unit(0.5, "cm"),
       axis.title.y     = ggplot2::element_blank(),
-      axis.text.y      = if(show_celltype_labels) ggplot2::element_text(size = 7) else ggplot2::element_blank(),
+      axis.text.y      = if(show_cluster_labels) ggplot2::element_text(size = 7) else ggplot2::element_blank(),
       panel.grid       = ggplot2::element_blank(),
       axis.text.x      = ggplot2::element_text(
         angle = feature_label_angle,
@@ -420,7 +440,7 @@ signatureDotHeatmap <- function(
     ggplot2::theme(
       plot.margin = ggplot2::margin(
         t = 2,
-        r = base::ifelse(show_celltype_strip, -4, 0.5),
+        r = base::ifelse(show_cluster_strip, -4, 0.5),
         b = base::ifelse(show_signature_legend, -18, -7),
         l = 0
       ),
@@ -472,47 +492,47 @@ signatureDotHeatmap <- function(
     ggplot2::theme(
       plot.margin = ggplot2::margin(
         t = base::ifelse(show_signature_legend, -10, -12),
-        r = base::ifelse(show_celltype_strip, -4, 0.5),
+        r = base::ifelse(show_cluster_strip, -4, 0.5),
         b = base::ifelse(show_signature_legend, -20, -10),
         l = 0
       )
     )
   
   # =======================================================
-  # Left strip for CellTypes (color-encoded bar)
+  # Left strip for Clusters (color-encoded bar)
   # =======================================================
-  celltypes <- base::sort(base::unique(dot_plot_df$CellType))
+  celltypes <- base::sort(base::unique(dot_plot_df$Cluster))
   
   if (!base::is.null(cell_type_colors)) {
     if (base::is.character(cell_type_colors)) {
-      celltype_cols <- stats::setNames(cell_type_colors, celltypes)
+      cluster_cols <- stats::setNames(cell_type_colors, celltypes)
     } else {
-      celltype_cols <- stats::setNames(
+      cluster_cols <- stats::setNames(
         cell_type_colors(base::length(celltypes)),
         celltypes
       )
     }
   } else {
-    celltype_cols <- stats::setNames(
+    cluster_cols <- stats::setNames(
       scales::hue_pal()(base::length(celltypes)),
       celltypes
     )
   }
   
   left_strip <- dot_plot_df %>%
-    dplyr::distinct(CellType) %>%
+    dplyr::distinct(Cluster) %>%
     dplyr::mutate(x_pos = 1L) %>%
     ggplot2::ggplot(
-      ggplot2::aes(x = x_pos, y = CellType, fill = CellType)
+      ggplot2::aes(x = x_pos, y = Cluster, fill = Cluster)
     ) +
     ggplot2::geom_tile(width = 1, height = 0.95) +
-    ggplot2::scale_fill_manual(values = celltype_cols) +
+    ggplot2::scale_fill_manual(values = cluster_cols) +
     ggplot2::labs(tag = tag) +
     ggplot2::theme_void() +
     ggplot2::theme(
       plot.tag        = ggplot2::element_text(size = 7, face = "bold"),
       plot.margin     = ggplot2::margin(0, 0, 0, 0),
-      legend.position = if (show_celltype_legend) "right" else "none",
+      legend.position = if (show_cluster_legend) "right" else "none",
       legend.margin   = ggplot2::margin(0, 0, 0, 0),
       legend.box.margin = ggplot2::margin(0, 0, 0, 5),
       legend.box.spacing= grid::unit(0, "pt"),
@@ -531,7 +551,7 @@ signatureDotHeatmap <- function(
   # =======================================================
   # FINAL PATCHWORK LAYOUT
   # =======================================================
-  if (show_signature_strip && show_signature_labels && show_celltype_strip) {
+  if (show_signature_strip && show_signature_labels && show_cluster_strip) {
     
     final_plot <-
       patchwork::wrap_plots(
@@ -584,7 +604,7 @@ signatureDotHeatmap <- function(
         legend.box       = "vertical"
       )
     
-  } else if (show_signature_strip && show_celltype_strip) {
+  } else if (show_signature_strip && show_cluster_strip) {
     
     final_plot <-
       patchwork::wrap_plots(
@@ -611,7 +631,7 @@ signatureDotHeatmap <- function(
         legend.box       = "vertical"
       )
     
-  } else if (show_signature_labels && show_celltype_strip) {
+  } else if (show_signature_labels && show_cluster_strip) {
     
     final_plot <-
       patchwork::wrap_plots(
@@ -686,7 +706,7 @@ signatureDotHeatmap <- function(
         legend.box       = "vertical"
       )
     
-  } else if (show_celltype_strip) {
+  } else if (show_cluster_strip) {
     
     final_plot <-
       (left_strip + gg_dot +

@@ -173,6 +173,10 @@ markoClustVis <- function(
   sub_clusters <- NULL
   cell_subsets <- NULL
   panels <- NULL
+  all_clusters <- NULL
+  all_sub_clusters <- NULL
+  MarkoCell_clusters <- NULL
+  MarkoCell_cell_subset <- NULL
   all_clusters_pos <- NULL
   all_clusters_neg <- NULL
   all_clusters_med <- NULL
@@ -317,9 +321,11 @@ markoClustVis <- function(
       
       if(any(grepl("cell_subset_markers", names(obj)))) {
         MarkoCell_cell_subset <- obj$cell_subset_markers$positive_markers %>% names()
+        MarkoCell_cell_subset <- unique(MarkoCell_cell_subset)
+      } else {
+        MarkoCell_cell_subset <- NULL
       }
-      MarkoCell_cell_subset <- unique(MarkoCell_cell_subset)
-    
+
       if(any(grepl("cell_subset_markers", names(obj)))) {
         MarkoCell_cell_subset_pos <- obj$cell_subset_markers$positive_markers
       } else {
@@ -482,9 +488,10 @@ markoClustVis <- function(
   # Plotting the data ----
   
   combined_panels_plt <- 
-    ggplot(combined_panels_purity_list, 
-           aes(Rank, Feature_ordered, fill = if (show_purity) Purity else Class)) + 
-    geom_dotplot(dotsize = dotsize)
+    ggplot2::ggplot(combined_panels_purity_list, 
+                    ggplot2::aes(Rank, Feature_ordered, fill = if (show_purity) Purity else Class)) + 
+    ggplot2::geom_dotplot(dotsize = dotsize) +
+    ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(n = length(unique(combined_panels_purity_list$Rank))))
   
   if(show_purity) {
     combined_panels_plt <- combined_panels_plt +
@@ -523,16 +530,16 @@ markoClustVis <- function(
                   title = title, subtitle = subtitle, tag = tag)
   
   if(length(unique(combined_panels_purity_list$Class)) > 1 & length(unique(combined_panels_purity_list$Name)) > 1) {
-    combined_panels_plt <- combined_panels_plt + facet_wrap(. ~ Name + Class, nrow = nrow_panels, scales = "free_y")
+    combined_panels_plt <- combined_panels_plt + ggplot2::facet_wrap(. ~ Name + Class, nrow = nrow_panels, scales = "free_y")
   } else if(length(unique(combined_panels_purity_list$Class)) > 1) {
-    combined_panels_plt <- combined_panels_plt + facet_wrap(. ~ Class, nrow = nrow_panels, scales = "free_y")
+    combined_panels_plt <- combined_panels_plt + ggplot2::facet_wrap(. ~ Class, nrow = nrow_panels, scales = "free_y")
   } else if(length(unique(combined_panels_purity_list$Name)) > 1) {
-    combined_panels_plt <- combined_panels_plt + facet_wrap(. ~ Name, nrow = nrow_panels, scales = "free_y")
+    combined_panels_plt <- combined_panels_plt + ggplot2::facet_wrap(. ~ Name, nrow = nrow_panels, scales = "free_y")
   }
   
   combined_panels_plt <- combined_panels_plt +
-    theme(
-      strip.background = element_rect(fill = "grey95")
+    ggplot2::theme(
+      strip.background = ggplot2::element_rect(fill = "grey95")
     )
   
   if(!show_legend) {

@@ -2,12 +2,14 @@
 % Please edit documentation in R/signatureDotHeatmap.R
 \name{signatureDotHeatmap}
 \alias{signatureDotHeatmap}
-\title{Visualize per-signature marker expression across cell types}
+\title{Visualize per-signature marker expression across clusters}
 \usage{
 signatureDotHeatmap(
   seurat_obj,
+  cluster_col,
   row_data,
-  celltype_col = "CellType",
+  features_col = NULL,
+  signature_col = NULL,
   cell_type_colors = NULL,
   signature_colors = NULL,
   tag = NULL,
@@ -18,15 +20,13 @@ signatureDotHeatmap(
   signature_label_size = 3.3,
   feature_label_size = 6,
   feature_label_angle = 45,
-  show_celltype_labels = FALSE,
+  show_cluster_labels = FALSE,
   show_signature_strip = TRUE,
   show_signature_labels = TRUE,
-  show_celltype_strip = TRUE,
-  show_celltype_legend = FALSE,
+  show_cluster_strip = TRUE,
+  show_cluster_legend = TRUE,
   show_signature_legend = FALSE,
   legend_ncol = 2,
-  features_col = NULL,
-  signature_col = NULL,
   expression_legend_title = "Expression",
   percent_legend_title = "Percent\\nExpressed",
   tile_fill_legend_title = NULL,
@@ -40,9 +40,13 @@ signatureDotHeatmap(
 \arguments{
 \item{seurat_obj}{A \code{Seurat} object containing expression data and metadata.}
 
+\item{cluster_col}{Character; column in \code{seurat_obj@meta.data} containing cluster labels. These could correspond to user defined clusters or cell types.}
+
 \item{row_data}{Data frame mapping features to signatures. Must contain one row per feature.}
 
-\item{celltype_col}{Character; column in \code{seurat_obj@meta.data} containing cell types.}
+\item{features_col}{Character; column in \code{row_data} containing feature (e.g. gene) IDs corresponding to the row names of the \code{seurat_obj}.}
+
+\item{signature_col}{Character; column in \code{row_data} containing signature labels.}
 
 \item{cell_type_colors}{Color specification for cell types.}
 
@@ -64,23 +68,19 @@ signatureDotHeatmap(
 
 \item{feature_label_angle}{Numeric; angle of feature labels.}
 
-\item{show_celltype_labels}{Logical; whether to show cell type labels.}
+\item{show_cluster_labels}{Logical; whether to show cluster labels.}
 
 \item{show_signature_strip}{Logical; whether to show signature strip.}
 
 \item{show_signature_labels}{Logical; whether to show signature labels.}
 
-\item{show_celltype_strip}{Logical; whether to show cell type strip.}
+\item{show_cluster_strip}{Logical; whether to show cluster strip.}
 
-\item{show_celltype_legend}{Logical; whether to show cell type legend.}
+\item{show_cluster_legend}{Logical; whether to show cluster legend.}
 
 \item{show_signature_legend}{Logical; whether to show signature legend.}
 
 \item{legend_ncol}{Integer; number of legend columns.}
-
-\item{features_col}{Character; column in \code{row_data} containing feature IDs.}
-
-\item{signature_col}{Character; column in \code{row_data} containing signature labels.}
 
 \item{expression_legend_title}{Character; title for expression legend.}
 
@@ -102,8 +102,7 @@ signatureDotHeatmap(
 A \code{ggplot2} object.
 }
 \description{
-Generates a dot heatmap summarizing expression and detection frequency
-of signature-associated features across cell types.
+Generates a dot heatmap summarizing expression of signature-associated features across clusters.
 }
 \details{
 Dot size typically encodes the percentage of cells expressing a feature,
