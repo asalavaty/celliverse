@@ -15,10 +15,10 @@
 #' Numeric; Gini threshold for selecting specific features.
 #'
 #' @param ewcsr_high_thresh
-#' Numeric; upper EWCSR threshold for binarization.
+#' Numeric; upper EWCSR threshold for binarization. EWCSR values higher than this threshold will be converted to TRUE.
 #'
 #' @param ewcsr_low_thresh
-#' Numeric; lower EWCSR threshold for binarization.
+#' Numeric; lower EWCSR threshold for binarization. EWCSR values lower than this threshold will be converted to TRUE.
 #'
 #' @param noise_thresh
 #' Integer; minimum number of cells required for a feature to be retained.

@@ -18,9 +18,9 @@ gini.ewcsr.fs(
 
 \item{gini_thresh}{Numeric; Gini threshold for selecting specific features.}
 
-\item{ewcsr_high_thresh}{Numeric; upper EWCSR threshold for binarization.}
+\item{ewcsr_high_thresh}{Numeric; upper EWCSR threshold for binarization. EWCSR values higher than this threshold will be converted to TRUE.}
 
-\item{ewcsr_low_thresh}{Numeric; lower EWCSR threshold for binarization.}
+\item{ewcsr_low_thresh}{Numeric; lower EWCSR threshold for binarization. EWCSR values lower than this threshold will be converted to TRUE.}
 
 \item{noise_thresh}{Integer; minimum number of cells required for a feature to be retained.}
 
