@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# CelliVerse <a href='https://youtu.be/DaWosjBNvmw'><img src='man/figures/Symbol.png' align="right" height="221" /></a>
+# CelliVerse <a href='https://youtu.be/DaWosjBNvmw' target="_blank" rel="noopener noreferrer"><img src='man/figures/Symbol.png' align="right" height="221" /></a>
 
 <!-- badges: start -->
 
