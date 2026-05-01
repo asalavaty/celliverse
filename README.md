@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# CelliVerse <a href='https://github.com/asalavaty/celliverse'><img src='man/figures/Symbol.png' align="right" height="221" /></a>
+# CelliVerse <a href='https://youtu.be/DaWosjBNvmw'><img src='man/figures/Symbol.png' align="right" height="221" /></a>
 
 <!-- badges: start -->
 
@@ -22,18 +22,6 @@ includes methods for analyzing cluster similarity and generating
 intuitive visualizations. Designed to be independent of library size and
 other sample- or cell-level confounding effects, CelliVerse ensures
 reliable and interpretable results across a wide range of datasets.
-
-<div style="width: 100%; height: 410px; overflow: hidden; position: relative;">
-
-<iframe 
-    style="position: absolute; top: -60px; left: 0; width: 100%; height: 520px;" 
-    src="https://www.youtube.com/embed/3A9Cf_JHYX4?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0" 
-    frameborder="0" 
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-    allowfullscreen 
-    data-external="1"> </iframe>
-
-</div>
 
 ## Author
 
