@@ -1,5 +1,5 @@
 ---
-title: "Introduction to celliverse"
+title: "Introduction to CelliVerse"
 subtitle: "EWCSR-based clustering, marker discovery, and cell type annotation for single-cell data"
 author: '`r paste("Adrian Salavaty", strftime(Sys.time(), format="%d-%b-%Y"))`'
 output:
@@ -15,14 +15,6 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{=html}
-<style>
-body {
-  text-align: justify;
-}
-</style>
-```
-
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -31,6 +23,10 @@ knitr::opts_chunk$set(
   fig.height = 5.5,
   out.width = "90%"
 )
+
+library(celliverse)
+library(magrittr)
+
 options(width = 95)
 options(tibble.print_min = 4L, tibble.print_max = 4L)
 options(rmarkdown.html_vignette.check_title = FALSE)
@@ -58,6 +54,22 @@ The main goals of the package are:
 -   Marker purity evaluation
 -   Feature (marker) selection across the entire dataset for dimension reduction and visualization
 -   Cell type annotation using CelliVerse Marker DB
+
+<div class="celliverse-note">
+<strong>In brief:</strong> CelliVerse provides an integrated workflow for reference-free clustering, marker discovery, marker evaluation, and marker-based cell type annotation in single-cell RNA-seq datasets.
+</div>
+
+## What you will learn
+
+In this vignette, you will learn how to:
+
+- Run `clustoCell()` for unsupervised clustering and marker discovery
+- Add ClustoCell labels back to a Seurat object
+- Select informative dataset-level features for visualization
+- Identify and visualize cluster-specific and cell-subset-specific markers
+- Assess marker purity
+- Annotate cell types using CelliVerse Marker DB
+- Scale ClustoCell to large datasets using sketching and label transfer
 
 # **Core Workflows**    
 
@@ -95,6 +107,10 @@ The core functions can be grouped into four main workflows:
 
 -   [signatureDotHeatmap](#signatureDotHeatmap) (`signatureDotHeatmap()`) generates a dot heatmap summarizing expression of signature-associated features across clusters.
 
+<div class="celliverse-tip">
+<strong>Recommended workflow:</strong> Start with <code>clustoCell()</code> for data-driven clustering and marker discovery, use <code>addClustoData()</code> to add the results back to the dataset, apply <code>markoClust()</code> or <code>markoCell()</code> for focused marker analysis, and then use <code>typoClust()</code> for cell type annotation.
+</div>
+
 <a href="#top">Back to top</a>
 
 # Example Workflow
@@ -116,6 +132,10 @@ library(data.table)
 data("pbmc3k", package = "celliverse")
 ```
 
+<div class="celliverse-note">
+<strong>Input format:</strong> In this vignette, the example dataset is converted into a Seurat object and analyzed from the raw count matrix. Most CelliVerse functions are designed to work naturally with Seurat-based single-cell workflows.
+</div>
+
 Create a Seurat object. You may adjust the thresholds for the initial cell and feature (gene) filtration and perform additional quality checks such as the percentage of mitochondrial DNA.
 
 ```{r, message=FALSE, warning=FALSE}
@@ -130,6 +150,10 @@ pbmc3k_so <- CreateSeuratObject(
 ```
 
 ## Running ClustoCell {#clustoCell}
+
+<div class="celliverse-note">
+<strong>Conceptual note:</strong> ClustoCell uses expression-weighted centered scaled ranks (EWCSR) to capture within-cell transcriptional structure and identify biologically coherent cell populations without relying on predefined reference labels.
+</div>
 
 We will not run the default Seurat clustering here; instead, we demonstrate **celliverse** clustering using *clustoCell* from the beginning.
 
@@ -204,6 +228,10 @@ pbmc3k_so <- addClustoData(
 
 ## Dataset feature selection {#getDatasetMarkers}
 
+<div class="celliverse-tip">
+<strong>Tip:</strong> <code>getDatasetMarkers()</code> can be used to select informative dataset-level features before dimensionality reduction and visualization. This provides a CelliVerse-driven alternative to relying only on highly variable genes.
+</div>
+
 To visualize the data, you can first perform feature selection as shown below, and then run dimensionality reduction using the selected features (markers), rather than highly variable genes (HVGs).
 
 You can choose to select features based on **major clusters**, **sub-clusters**, or both. You can also decide whether to include **positive**, **negative**, or **medium** markers, or any combination of these.
@@ -241,6 +269,9 @@ pbmc3k_so <- RunPCA(pbmc3k_so, npcs = 10,
 pbmc3k_so <- RunUMAP(pbmc3k_so, dims = 1:10, 
                      reduction = "clustoCell_pca", 
                      reduction.name = "clustoCell_umap")
+```
+
+```{r, message=FALSE, warning=FALSE}
 
 # UMAP visualization of major clusters
 DimPlot(pbmc3k_so, reduction = "clustoCell_umap", 
@@ -255,6 +286,12 @@ DimPlot(pbmc3k_so, reduction = "clustoCell_umap",
          length(pbmc3k_markers$combined_markers),
          " features"
        ))
+
+```
+
+The UMAP shows the major ClustoCell populations identified from the EWCSR-based clustering workflow.
+
+```{r, message=FALSE, warning=FALSE}
 
 # UMAP visualization of sub-clusters
 DimPlot(pbmc3k_so, reduction = "clustoCell_umap", 
@@ -271,6 +308,8 @@ DimPlot(pbmc3k_so, reduction = "clustoCell_umap",
        ))
 
 ```
+
+The sub-cluster visualization provides a finer-resolution view of transcriptionally distinct cell states within the major ClustoCell clusters.
 
 <a href="#top">Back to top</a>
 
@@ -365,6 +404,10 @@ table(pbmc3k_so$seurat_clusters, pbmc3k_so$ClustoCell_Clusters) %>%
   theme_minimal()
 
 ```
+
+<div class="celliverse-tip">
+<strong>Use case:</strong> <code>markoCell()</code> is especially useful for investigating small or ambiguous subsets of cells, such as cells assigned differently by two clustering methods.
+</div>
 
 In this example, Seurat cluster 1 contains 500 cells and is annotated as **memory CD4+ T cells** based on its markers. Of these, 475 cells match ClustoCell cluster C3, while 25 cells match ClustoCell cluster C1.
 
@@ -483,6 +526,10 @@ head(clustoCell_pbmc_typoClust$cell_types$C1[,c("Tissue", "Condition", "CellType
 knitr::kable(head(clustoCell_pbmc_typoClust$cell_types$C1[,c("Tissue", "Condition", "CellType", "Combined_Score", "Rank")]))
 
 ```
+
+<div class="celliverse-tip">
+<strong>Tip:</strong> Custom marker panels are useful when you already have a candidate cell state, subtype, or manually curated marker set and want to query it against CelliVerse Marker DB.
+</div>
 
 As mentioned above, you can also provide your own sets of positive and/or negative markers.
 
@@ -614,7 +661,13 @@ signatureDotHeatmap(
 
 ## Running ClustoCell on large datasets {#clustoCell_TransferLabel}
 
+<div class="celliverse-warning">
+<strong>Large dataset recommendation:</strong> For datasets with hundreds of thousands to millions of cells, consider using sketching or the decoupled sketching plus label-transfer workflow. This can substantially reduce memory use and runtime while preserving the ability to annotate the full dataset.
+</div>
+
 ClustoCell can take longer to run on large single-cell datasets with hundreds of thousands or millions of cells. If you run into memory or performance issues, or simply want to speed up the analysis, you can enable the **sketching** option by setting `sketch = TRUE`.
+
+Sketching is intended as a scalability strategy. It reduces runtime and memory requirements by clustering a representative subset of cells, while label transfer allows the final annotations to be mapped back to the complete dataset.
 
 When sketching is enabled, `ClustoCell` (and `markoClust`) first performs preprocessing and feature filtration on the full dataset. It then creates a smaller sketched dataset, performs clustering and sub-clustering on this subset, and finally transfers the cluster labels back to the full dataset using an internal label transfer step. You can control the size of the sketched dataset using the `sketch_ncells` argument (default is 5000).
 
@@ -764,6 +817,10 @@ The results show very high agreement, indicating that sketching with refinement 
 <a href="#top">Back to top</a>
 
 ### Decoupling sketching and label transfer
+
+<div class="celliverse-tip">
+<strong>When to decouple:</strong> Use the built-in <code>sketch = TRUE</code> workflow for moderate-to-large datasets. For very large datasets or limited computational resources, first create a sketched object externally, run <code>clustoCell()</code> only on the sketch, and then transfer labels back to the full dataset.
+</div>
 
 As mentioned earlier, when running `clustoCell` or `markoClust` with `sketch = TRUE`, the functions still perform preprocessing and feature filtration on the full dataset before sketching. For very large datasets, this initial step can still be slow and resource-intensive.
 
