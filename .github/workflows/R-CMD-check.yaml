@@ -47,11 +47,16 @@ jobs:
             bioc::SummarizedExperiment
           needs: check
           
-      - name: Render vignette directly for debugging
+      - name: Install package before Windows vignette debug
         if: runner.os == 'Windows'
         run: |
-          Rscript -e "rmarkdown::render('vignettes/Vignettes.Rmd', output_format = 'html_document', clean = FALSE, quiet = FALSE)"
+          R CMD INSTALL --no-multiarch --with-keep.source .
 
+      - name: Render vignette directly for Windows debugging
+        if: runner.os == 'Windows'
+        run: |
+          Rscript -e "rmarkdown::render('vignettes/Vignettes.Rmd', clean = FALSE, quiet = FALSE)"
+      
       - uses: r-lib/actions/check-r-package@v2
         with:
           args: 'c("--no-manual", "--as-cran")'
