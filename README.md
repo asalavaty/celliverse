@@ -5,10 +5,9 @@
 
 <!-- badges: start -->
 
-[![AppVeyor build
-status](https://ci.appveyor.com/api/projects/status/github/asalavaty/CelliVerse?branch=master&svg=true)](https://ci.appveyor.com/project/asalavaty/CelliVerse)
-[![](https://www.r-pkg.org/badges/version/CelliVerse?color=blue)](https://cran.r-project.org/package=CelliVerse)
-[![](http://cranlogs.r-pkg.org/badges/grand-total/CelliVerse?color=green)](https://cran.r-project.org/package=CelliVerse)
+[![R-CMD-check](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml)
+[![](https://www.r-pkg.org/badges/version/celliverse?color=blue)](https://cran.r-project.org/package=celliverse)
+[![](https://cranlogs.r-pkg.org/badges/grand-total/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse)
 <!-- badges: end -->
 
 ## Overview

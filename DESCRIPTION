@@ -3,8 +3,11 @@ Type: Package
 Title: An Ecosystem for Exploring the Universe of Single-Cell Data
 Language: en-US
 Version: 0.0.1
-Author: Adrian Salavaty [aut, cre]
-Maintainer: Adrian Salavaty <abbas.salavaty@gmail.com>
+Authors@R:
+    person("Adrian", "Salavaty",
+      role = c("aut", "cre"),
+      email = "abbas.salavaty@gmail.com",
+      comment = c(ORCID = "0000-0001-9320-5889"))
 Description: Contains functions for single-cell RNA sequencing (scRNA-seq) data analysis. It provides core functionalities for clustering cells, identifying markers for pre-defined clusters, performing sub-clustering of major cell populations, and discovering markers within custom-selected subsets of cells. CelliVerse also includes methods for analyzing cluster similarity and generating intuitive visualizations. Designed to be independent of library size and other sample- or cell-level confounding effects, CelliVerse ensures reliable and interpretable results across a wide range of datasets.
     Fred Viole and David Nawrocki (2013, ISBN:1490523995).
     Csardi G, Nepusz T (2006). "The igraph software package for complex network research." InterJournal, Complex Systems, 1695.
@@ -25,7 +28,8 @@ Imports:
     RColorBrewer,
     ggnewscale,
     patchwork,
-    tidyselect
+    tidyselect,
+    Rcpp
 LinkingTo:
     Rcpp,
     RcppEigen
@@ -33,7 +37,8 @@ Suggests:
     knitr,
     rmarkdown
 Depends: 
-    R (>= 3.5)
+    R (>= 4.0.0)
+Additional_repositories: https://bioconductor.org/packages/release/bioc
 URL: https://github.com/asalavaty/celliverse, https://asalavaty.github.io/celliverse/
 BugReports: https://github.com/asalavaty/celliverse/issues
 License: GPL-3
