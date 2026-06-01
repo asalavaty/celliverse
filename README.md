@@ -57,7 +57,7 @@ remotes::install_github("asalavaty/celliverse", build_vignettes = TRUE)
 
 A comprehensive introduction to `CelliVerse` and all of its functions is
 available in the
-[vignette](https://cran.r-project.org/package=celliverse/vignettes/Vignettes.html).
+[vignette](https://asalavaty.github.io/celliverse/articles/Vignettes.html).
 
 You may browse Vignettes from within R using the following code.
 
