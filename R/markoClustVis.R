@@ -493,11 +493,33 @@ markoClustVis <- function(
     marker_tables_to_plot <- Filter(Negate(is.null), marker_tables_to_plot)
     
     if(length(marker_tables_to_plot) == 0) {
-      cli::cli_abort(
+      
+      cli::cli_warn(
         c(
           "No marker table was available for visualization after filtering.",
-          "i" = "Try increasing {.arg thresh}, changing {.arg thresh_mode}, or enabling additional marker classes with {.arg show_neg_markers} or {.arg show_med_markers}."
+          "i" = "Try increasing {.arg thresh}, changing {.arg thresh_mode}, lowering marker-filtering thresholds in the upstream marker-ranking function, or enabling additional marker classes with {.arg show_neg_markers} or {.arg show_med_markers}."
         )
+      )
+      
+      return(
+        ggplot2::ggplot() +
+          ggplot2::annotate(
+            geom = "text",
+            x = 0,
+            y = 0,
+            label = paste(
+              "No marker table was available for visualization.",
+              "Try increasing 'thresh' or enabling additional marker classes.",
+              sep = "\n"
+            ),
+            size = 4
+          ) +
+          ggplot2::theme_void() +
+          ggplot2::labs(
+            title = ifelse(is.null(title), "No markers available", title),
+            subtitle = subtitle,
+            tag = tag
+          )
       )
     }
     

@@ -6,10 +6,12 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml)
-[![](https://www.r-pkg.org/badges/version/celliverse?color=blue)](https://cran.r-project.org/package=celliverse)
-[![](https://cranlogs.r-pkg.org/badges/grand-total/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse)
-![CRAN
-Downloads](https://cranlogs.r-pkg.org/badges/celliverse?color=8B0000)
+[![CRAN
+Version](https://www.r-pkg.org/badges/version/celliverse?color=blue)](https://cran.r-project.org/package=celliverse)
+[![Total CRAN
+Downloads](https://cranlogs.r-pkg.org/badges/grand-total/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse)
+[![Monthly CRAN
+Downloads](https://cranlogs.r-pkg.org/badges/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse)
 
 <!-- badges: end -->
 
