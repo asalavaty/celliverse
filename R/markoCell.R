@@ -532,6 +532,9 @@ markoCell <- function(
     neg_mat <- neg_mat[-global_neg_random_markers,]
   }
   
+  # Saving the global matrix for marker detection
+  global_neg_mat <- neg_mat
+  
   if(nrow(neg_mat) < 10) {
     cli::cli_abort("The selected low_quantile is too high and less than 10 features met the selected arguments! You may consider decreasing the low_quantile.")
   }
@@ -560,6 +563,9 @@ markoCell <- function(
   if(length(global_med_random_markers) > 0) {
     med_mat <- med_mat[-global_med_random_markers,]
   }
+  
+  # Saving the global matrix for marker detection
+  global_med_mat <- med_mat
   
   ### Detecting and removing no_med_cells cells 
   no_med_cells <- colnames(med_mat)[which(Matrix::colSums(med_mat) == 0)]
@@ -642,7 +648,7 @@ markoCell <- function(
     }
     
     ### Ensure only clustered cells are used
-    neg_mat_major_clustered <- neg_mat[, which(colnames(neg_mat) %in% names(major_clusters)), drop = FALSE]
+    neg_mat_major_clustered <- global_neg_mat[, which(colnames(global_neg_mat) %in% names(major_clusters)), drop = FALSE]
     
     #______
     
@@ -656,7 +662,7 @@ markoCell <- function(
         
         curr_neg_mat <- neg_mat_major_clustered[, cells, drop = FALSE]
         
-        if(ncol(curr_neg_mat) > 1) {
+        if(ncol(curr_neg_mat) > 1 & any(curr_neg_mat)) {
           # curr_cluster_gini_scores <- apply(curr_neg_mat, 1, function(x) ineq::Gini(x))
           curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_neg_mat@i, curr_neg_mat@p, curr_neg_mat@x, 
                                                                  nrow(curr_neg_mat), ncol(curr_neg_mat), 
@@ -695,7 +701,7 @@ markoCell <- function(
     }
     
     ### Ensure only clustered cells are used
-    med_mat_major_clustered <- med_mat[, which(colnames(med_mat) %in% names(major_clusters)), drop = FALSE]
+    med_mat_major_clustered <- global_med_mat[, which(colnames(global_med_mat) %in% names(major_clusters)), drop = FALSE]
     
     #______
     
@@ -709,7 +715,7 @@ markoCell <- function(
         
         curr_med_mat <- med_mat_major_clustered[, cells, drop = FALSE]
         
-        if(ncol(curr_med_mat) > 1) {
+        if(ncol(curr_med_mat) > 1 & any(curr_med_mat)) {
           # curr_cluster_gini_scores <- apply(curr_med_mat, 1, function(x) ineq::Gini(x))
           curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_med_mat@i, curr_med_mat@p, curr_med_mat@x, 
                                                                  nrow(curr_med_mat), ncol(curr_med_mat), 
