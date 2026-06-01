@@ -21,5 +21,8 @@ utils::globalVariables(c(
   "tmpCluster", "tmpLevel",
   "MainCluster", "last_pos",
   "Input_Marker", "VariableFeatures",
-  "Expression", "median", "quantile", "na.omit", "cor", "desc", "setNames"
+  "Expression", "median", "quantile", "na.omit", "cor", "desc", "setNames",
+  "Class",
+  "Feature_ordered",
+  "Purity"
 ))

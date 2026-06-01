@@ -32,6 +32,6 @@ included here as a lightweight example for illustrating the functionality
 of \pkg{celliverse} without requiring external data downloads.
 }
 \seealso{
-\code{\link{ClustoCell}}, \code{\link{typoClust}}
+\code{\link{clustoCell}}, \code{\link{typoClust}}
 }
 \keyword{datasets}

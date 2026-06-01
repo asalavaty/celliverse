@@ -43,4 +43,6 @@
 #' Individual algorithms and data sources are documented at the function level.
 #'
 #' @keywords internal
+#' @useDynLib celliverse, .registration = TRUE
+#' @importFrom Rcpp sourceCpp
 "_PACKAGE"

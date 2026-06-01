@@ -203,7 +203,7 @@ NULL
 #' @docType data
 #'
 #' @seealso
-#' \code{\link{ClustoCell}}, \code{\link{typoClust}}
+#' \code{\link{clustoCell}}, \code{\link{typoClust}}
 #'
 #' @source
 #' Originally distributed via the \pkg{SeuratData} package and derived from

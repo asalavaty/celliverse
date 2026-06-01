@@ -18,3 +18,4 @@ logo.png
 ^\.Rproj\.user$
 ^doc$
 ^Meta$
+^\.github$

@@ -387,101 +387,134 @@ markoClustVis <- function(
       all_clusters_med <- all_clusters_med[names(all_clusters_med) %in% desired_sets]
     }
     
-    combined_panels_list <- list(pos_panels = all_clusters_pos, neg_panels = all_clusters_neg, med_panels = all_clusters_med)
+    combined_panels_list <- list(
+      pos_panels = all_clusters_pos,
+      neg_panels = all_clusters_neg,
+      med_panels = all_clusters_med
+    )
     
-    # Process purity and panels in one nested lapply, combining operations
-    combined_panels_purity_list <- lapply(combined_panels_list, function(i) {
-      lapply(i, function(j) {
-        if (thresh_mode == "n") {
-          j <- j[seq_len(min(thresh, nrow(j))), , drop = FALSE]  # Use base slicing for speed
-        } else if (thresh_mode == "rank") {
-          j <- j[j$Rank < thresh, , drop = FALSE]
-        }
-        if ("Purity" %in% colnames(j)) {
-          j[, c("Feature", "Purity", "Rank"), drop = FALSE]
-        } else if ("EWCSR" %in% colnames(j)) {
-          j <- j[, c("Feature", "EWCSR", "Rank"), drop = FALSE]
-          j$EWCSR <- abs(j$EWCSR)
-          colnames(j)[colnames(j) == "EWCSR"] <- "Purity"
-          j
-        } else {
-          j  # Fallback
-        }
-      })
-    })
+    # -------------------------------------------------------------------------
+    # Prepare marker tables for visualization
+    # -------------------------------------------------------------------------
     
-    combined_panels_list <- lapply(combined_panels_list, function(i) {
-      lapply(i, function(j) {
-        if (thresh_mode == "n") {
-          j$Feature[seq_len(min(thresh, nrow(j)))]  # Base extraction
-        } else if (thresh_mode == "rank") {
-          j$Feature[j$Rank < thresh]
-        }
+    .keep_valid_marker_tables <- function(x) {
+      
+      if(is.null(x) || length(x) == 0) {
+        return(list())
+      }
+      
+      x[vapply(
+        x,
+        function(i) is.data.frame(i) && nrow(i) > 0,
+        logical(1)
+      )]
+    }
+    
+    .standardize_marker_table <- function(j, set_name, marker_class) {
+      
+      if(!is.data.frame(j) || nrow(j) == 0) {
+        return(NULL)
+      }
+      
+      if(thresh_mode == "n") {
+        j <- j[seq_len(min(thresh, nrow(j))), , drop = FALSE]
+      } else if(thresh_mode == "rank") {
+        j <- j[j$Rank < thresh, , drop = FALSE]
+      }
+      
+      if(!is.data.frame(j) || nrow(j) == 0) {
+        return(NULL)
+      }
+      
+      if("Purity" %in% colnames(j)) {
+        j <- j[, c("Feature", "Purity", "Rank"), drop = FALSE]
+      } else if("EWCSR" %in% colnames(j)) {
+        j <- j[, c("Feature", "EWCSR", "Rank"), drop = FALSE]
+        j$EWCSR <- abs(j$EWCSR)
+        colnames(j)[colnames(j) == "EWCSR"] <- "Purity"
+      } else {
+        return(NULL)
+      }
+      
+      j$Name <- set_name
+      j$Class <- marker_class
+      
+      j
+    }
+    
+    .prepare_marker_class <- function(panel_list, marker_class) {
+      
+      panel_list <- .keep_valid_marker_tables(panel_list)
+      
+      if(length(panel_list) == 0) {
+        return(NULL)
+      }
+      
+      out <- lapply(names(panel_list), function(set_name) {
+        .standardize_marker_table(
+          j = panel_list[[set_name]],
+          set_name = set_name,
+          marker_class = marker_class
+        )
       })
-    })
-  
-  #____________
-  
-  # Finalizing cluster/subset names and markers ----
-  
-  combined_cell_set_names <- unique(combined_cell_set_names)
-  combined_panels_list <- combined_panels_list[!is.null(combined_panels_list)]
-  combined_panels_purity_list <- combined_panels_purity_list[!is.null(combined_panels_purity_list)]
-  
-  # Keeping only desired marker classes
-  if(!show_pos_markers) {
-    combined_panels_list$pos_panels <- NULL
-    combined_panels_purity_list$pos_panels <- NULL
-  } else {
-    combined_panels_purity_list$pos_panels <- lapply(combined_panels_purity_list$pos_panels, function(i) {
-      i$Class <- "Positive"
-      i
-    })
-  }
-  
-  if(!show_neg_markers) {
-    combined_panels_list$neg_panels <- NULL
-    combined_panels_purity_list$neg_panels <- NULL
-  } else {
-    combined_panels_purity_list$neg_panels <- lapply(combined_panels_purity_list$neg_panels, function(i) {
-      i$Class <- "Negative"
-      i
-    })
-  }
-  
-  if(!show_med_markers) {
-    combined_panels_list$med_panels <- NULL
-    combined_panels_purity_list$med_panels <- NULL
-  } else {
-    combined_panels_purity_list$med_panels <- lapply(combined_panels_purity_list$med_panels, function(i) {
-      i$Class <- "Medium"
-      i
-    })
-  }
-  
-  #____________________
-  
-  # Merging the datasets ----
-  
-  combined_panels_purity_list <- lapply(combined_panels_purity_list, function(i) {
-    curr_list_names <- names(i)
-    curr_list <- lapply(curr_list_names, function(j) {
-      i[[j]]$Name <- j
-      i[[j]]
-    })
-    names(curr_list) <- curr_list_names
-    curr_list <- Reduce(function(x, y) merge(x, y, all = TRUE), curr_list)
-  })
-  
-  combined_panels_purity_list <- Reduce(function(x, y) merge(x, y, all = TRUE), combined_panels_purity_list)
-  
-  combined_panels_purity_list$Class <- factor(combined_panels_purity_list$Class, levels = c("Negative", "Medium", "Positive"))
-  
-  combined_panels_purity_list <- combined_panels_purity_list %>%
-    dplyr::group_by(Class) %>%
-    dplyr::arrange(Rank, .by_group = TRUE) %>%
-    dplyr::mutate(Feature_ordered = factor(Feature, levels = unique(Feature))) %>%
-    dplyr::ungroup()
+      
+      out <- Filter(Negate(is.null), out)
+      
+      if(length(out) == 0) {
+        return(NULL)
+      }
+      
+      dplyr::bind_rows(out)
+    }
+    
+    marker_tables_to_plot <- list()
+    
+    if(show_pos_markers) {
+      marker_tables_to_plot$Positive <- .prepare_marker_class(
+        panel_list = combined_panels_list$pos_panels,
+        marker_class = "Positive"
+      )
+    }
+    
+    if(show_neg_markers) {
+      marker_tables_to_plot$Negative <- .prepare_marker_class(
+        panel_list = combined_panels_list$neg_panels,
+        marker_class = "Negative"
+      )
+    }
+    
+    if(show_med_markers) {
+      marker_tables_to_plot$Medium <- .prepare_marker_class(
+        panel_list = combined_panels_list$med_panels,
+        marker_class = "Medium"
+      )
+    }
+    
+    marker_tables_to_plot <- Filter(Negate(is.null), marker_tables_to_plot)
+    
+    if(length(marker_tables_to_plot) == 0) {
+      cli::cli_abort(
+        c(
+          "No marker table was available for visualization after filtering.",
+          "i" = "Try increasing {.arg thresh}, changing {.arg thresh_mode}, or enabling additional marker classes with {.arg show_neg_markers} or {.arg show_med_markers}."
+        )
+      )
+    }
+    
+    combined_panels_purity_list <- dplyr::bind_rows(marker_tables_to_plot)
+    
+    combined_panels_purity_list$Class <- factor(
+      combined_panels_purity_list$Class,
+      levels = c("Negative", "Medium", "Positive")
+    )
+    
+    combined_panels_purity_list <- combined_panels_purity_list %>%
+      dplyr::group_by(.data$Class) %>%
+      dplyr::arrange(.data$Rank, .by_group = TRUE) %>%
+      dplyr::mutate(
+        Feature_ordered = factor(.data$Feature, levels = unique(.data$Feature))
+      ) %>%
+      dplyr::ungroup()
   
   #____________________
   
