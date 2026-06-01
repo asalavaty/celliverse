@@ -19,7 +19,7 @@ jobs:
         config:
           - { os: ubuntu-latest, r: 'release' }
           - { os: macos-latest, r: 'release' }
-          - { os: windows-latest, r: 'release' }
+          - { os: windows-2022, r: 'release' }
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -44,28 +44,12 @@ jobs:
             any::rcmdcheck
             any::knitr
             any::rmarkdown
+            any::pkgbuild
             bioc::SummarizedExperiment
           needs: check
 
-      - name: Clean compiled objects before Windows install
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          if exist src\*.o del /Q src\*.o
-          if exist src\*.dll del /Q src\*.dll
-
-      - name: Install package before Windows vignette debug
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          R CMD INSTALL --preclean --no-multiarch --with-keep.source .
-
-      - name: Render vignette directly for Windows debugging
-        if: runner.os == 'Windows'
-        run: |
-          Rscript -e "rmarkdown::render('vignettes/Vignettes.Rmd', clean = FALSE, quiet = FALSE)"
-
-      - uses: r-lib/actions/check-r-package@v2
+      - name: Check package
+        uses: r-lib/actions/check-r-package@v2
         with:
           args: 'c("--no-manual", "--as-cran")'
           error-on: '"warning"'
