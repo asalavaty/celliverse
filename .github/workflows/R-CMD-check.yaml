@@ -47,11 +47,18 @@ jobs:
             bioc::SummarizedExperiment
           needs: check
 
+      - name: Clean compiled objects before Windows install
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          if exist src\*.o del /Q src\*.o
+          if exist src\*.dll del /Q src\*.dll
+
       - name: Install package before Windows vignette debug
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          R CMD INSTALL --no-multiarch --with-keep.source .
+          R CMD INSTALL --preclean --no-multiarch --with-keep.source .
 
       - name: Render vignette directly for Windows debugging
         if: runner.os == 'Windows'

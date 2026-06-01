@@ -19,3 +19,8 @@ logo.png
 ^doc$
 ^Meta$
 ^\.github$
+^src/.*\.o$
+^src/.*\.so$
+^src/.*\.dll$
+^src/.*\.dylib$
+^src/.*\.dSYM$
