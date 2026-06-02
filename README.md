@@ -6,6 +6,8 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml)
+[![Hugging Face
+Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/asalavaty/celliverse)
 [![CRAN
 Version](https://www.r-pkg.org/badges/version/celliverse?color=blue)](https://cran.r-project.org/package=celliverse)
 [![Total CRAN
@@ -26,6 +28,16 @@ includes methods for analyzing cluster similarity and generating
 intuitive visualizations. Designed to be independent of library size and
 other sample- or cell-level confounding effects, CelliVerse ensures
 reliable and interpretable results across a wide range of datasets.
+
+## 🤗 Interactive demo
+
+A lightweight browser-based demo of selected `CelliVerse` functionality
+is available as a [Hugging Face
+Space](https://huggingface.co/spaces/asalavaty/celliverse). The current
+demo provides an interactive ClustoCell PBMC3K mini-demo using
+precomputed outputs, allowing users to explore UMAP visualizations,
+ClustoCell clusters/subclusters, and marker tables without installing
+the package locally.
 
 ## Author
 

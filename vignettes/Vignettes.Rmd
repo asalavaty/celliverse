@@ -59,6 +59,10 @@ The main goals of the package are:
 <strong>In brief:</strong> CelliVerse provides an integrated workflow for reference-free clustering, marker discovery, marker evaluation, and marker-based cell type annotation in single-cell RNA-seq datasets.
 </div>
 
+<div class="celliverse-note">
+<strong>🤗 Interactive demo:</strong> A lightweight browser-based demo of selected CelliVerse functionality is available as a <a href="https://huggingface.co/spaces/asalavaty/celliverse" target="_blank" rel="noopener noreferrer">Hugging Face Space</a>. The current demo provides an interactive ClustoCell PBMC3K mini-demo using precomputed outputs.
+</div>
+
 ## What you will learn
 
 In this vignette, you will learn how to:
@@ -140,6 +144,7 @@ Create a Seurat object. You may adjust the thresholds for the initial cell and f
 
 ```{r, message=FALSE, warning=FALSE}
 
+set.seed(121)
 pbmc3k_so <- CreateSeuratObject(
   counts = pbmc3k,
   project = "pbmc3k",
@@ -172,8 +177,10 @@ If you want to use already normalized data (e.g. the *data* layer), make sure to
 
 ```{r, message=FALSE}
 
+set.seed(121)
 pbmc_clustoCell <- clustoCell(
   data            = pbmc3k_so,
+  seed = 121,
   verbose         = FALSE
 )
 
@@ -185,6 +192,7 @@ However, it is recommended to use a sparse matrix of class `dgCMatrix`, as it is
 
 ```{r, eval=FALSE}
 
+set.seed(121)
 pbmc3k_mat <- pbmc3k_so[["RNA"]]$counts
 # Or pbmc3k_mat <- pbmc3k_so[["RNA"]]$counts %>% as.matrix()
 
@@ -255,6 +263,7 @@ We then use the selected features (i.e., `pbmc3k_markers$combined_markers`) as i
 # Running Seurat pipeline for dimension reduction 
 # while using ClustoCell-based selected features
 
+set.seed(121)
 pbmc3k_so <- NormalizeData(pbmc3k_so,
                            normalization.method = "LogNormalize", 
                            scale.factor = 10000)
@@ -262,11 +271,11 @@ pbmc3k_so <- NormalizeData(pbmc3k_so,
 pbmc3k_so <- ScaleData(pbmc3k_so, 
                        features = pbmc3k_markers$combined_markers)
 
-pbmc3k_so <- RunPCA(pbmc3k_so, npcs = 10, 
+pbmc3k_so <- RunPCA(pbmc3k_so, npcs = 10, seed.use = 121,
                     features = pbmc3k_markers$combined_markers, 
                     reduction.name = "clustoCell_pca")
 
-pbmc3k_so <- RunUMAP(pbmc3k_so, dims = 1:10, 
+pbmc3k_so <- RunUMAP(pbmc3k_so, dims = 1:10, seed.use = 121,
                      reduction = "clustoCell_pca", 
                      reduction.name = "clustoCell_umap")
 ```
@@ -341,20 +350,22 @@ In the example below, we first run the standard Seurat clustering pipeline on th
 ```{r, message=FALSE, warning=FALSE}
 
 # Running the standard Seurat clustering pipeline
+set.seed(121)
 pbmc3k_so <- FindVariableFeatures(pbmc3k_so, 
                                   selection.method = "vst", 
                                   nfeatures = 2000)
 pbmc3k_so <- ScaleData(pbmc3k_so)
 
-pbmc3k_so <- RunPCA(pbmc3k_so, npcs = 10)
+pbmc3k_so <- RunPCA(pbmc3k_so, npcs = 10, seed.use = 121)
 
-pbmc3k_so <- FindNeighbors(pbmc3k_so, dims = 1:10,
+pbmc3k_so <- FindNeighbors(pbmc3k_so, dims = 1:10, 
                            verbose = FALSE)
 
-pbmc3k_so <- FindClusters(pbmc3k_so, resolution = 0.5,
+pbmc3k_so <- FindClusters(pbmc3k_so, resolution = 0.5, 
+                          random.seed = 121,
                           verbose = FALSE)
 
-pbmc3k_so <- RunUMAP(pbmc3k_so, dims = 1:10)
+pbmc3k_so <- RunUMAP(pbmc3k_so, dims = 1:10, seed.use = 121)
 
 # UMAP visualization of sub-clusters
 DimPlot(pbmc3k_so, reduction = "umap", 
@@ -362,7 +373,7 @@ DimPlot(pbmc3k_so, reduction = "umap",
   labs(x = NULL, y = NULL)
 
 # Running markoClust on Seurat generated clusters (seurat_clusters)
-pbmc3k_markoClust <- markoClust(data = pbmc3k_so, 
+pbmc3k_markoClust <- markoClust(data = pbmc3k_so, seed = 121,
                                 cluster_labels = "seurat_clusters",
                                 identify_subclusters = FALSE,
                                 verbose = FALSE)
@@ -420,7 +431,7 @@ To better understand their identity, you can use `markoCell` to identify the key
 seurat_1_clustoCell_C1 <- colnames(pbmc3k_so)[pbmc3k_so$seurat_clusters == 1 & pbmc3k_so$ClustoCell_Clusters == "C1"]
 length(seurat_1_clustoCell_C1)
 
-pbmc3k_1_C1_markoCell <- markoCell(data = pbmc3k_so, 
+pbmc3k_1_C1_markoCell <- markoCell(data = pbmc3k_so, seed = 121,
                                    desired_cells = list(
                                      "s_1_cc_C1" = seurat_1_clustoCell_C1
                                      ), 
@@ -451,7 +462,7 @@ For example, you can use `markerPurity` to examine how purely the gene *NKG7* is
 ```{r, message=FALSE, warning=FALSE}
 
 pbmc3k_6_NKG7_markerPurity <-
-  markerPurity(data = pbmc3k_so, 
+  markerPurity(data = pbmc3k_so, seed = 121,
                desired_markers = "NKG7", 
                cluster_labels = "seurat_clusters", 
                desired_clusters = "6", 
@@ -676,7 +687,7 @@ In the example below, we run ClustoCell with sketching enabled on the pbmc3k dat
 ```{r, message=FALSE}
 
 pbmc_clustoCell_withSketch <- clustoCell(
-  data = pbmc3k_so, 
+  data = pbmc3k_so, seed = 121,
   sketch = TRUE, 
   sketch_ncells = 1500, 
   identify_subclusters = FALSE,
@@ -753,7 +764,7 @@ In the example below, we demonstrate this sub-cluster refinement approach on the
 ```{r, message=FALSE}
 
 pbmc_clustoCell_withSketch <- clustoCell(
-  data = pbmc3k_so, 
+  data = pbmc3k_so, seed = 121,
   sketch = TRUE, 
   sketch_ncells = 1500, 
   identify_subclusters = TRUE, 
@@ -853,7 +864,7 @@ pbmc3k_so <- SketchData(
 
 # Running clustoCell
 sketched_pbmc_clustoCell <- clustoCell(
-  data = pbmc3k_so,
+  data = pbmc3k_so, seed = 121,
   assay = "sketch", 
   verbose = FALSE
 )
@@ -862,6 +873,7 @@ sketched_pbmc_clustoCell <- clustoCell(
 sketched_pbmc_clustoCell <- 
   clustoCell_TransferLabel(
     clustoCell = sketched_pbmc_clustoCell, 
+    seed = 121,
     query_expr_mat = pbmc3k_so, 
     assay = "RNA",
     method = "count-project")
