@@ -905,7 +905,7 @@ clustoCell <- function(
       
       curr_pos_mat <- pos_mat_major_clustered[, cells, drop = FALSE]
       
-      if(ncol(curr_pos_mat) > 1) {
+      if(ncol(curr_pos_mat) > 1 & any(curr_pos_mat)) {
         # curr_cluster_gini_scores <- apply(curr_pos_mat, 1, function(x) ineq::Gini(x))
         curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_pos_mat@i, curr_pos_mat@p, curr_pos_mat@x, 
                                                                nrow(curr_pos_mat), ncol(curr_pos_mat), 
@@ -918,7 +918,7 @@ clustoCell <- function(
           dplyr::filter(!is.na(Gini_Score))
         rownames(curr_cluster_gini_scores) <- NULL
         curr_cluster_gini_scores
-      } else if(length(cells) == 1) {
+      } else if(length(cells) == 1 & any(curr_pos_mat)) {
         curr_cluster_gini_scores <- ewcsr_mat[rownames(curr_pos_mat)[as.vector(curr_pos_mat)], cells, drop = FALSE]
         curr_cluster_gini_scores <- data.frame(Feature = rownames(curr_cluster_gini_scores), 
                                                EWCSR = curr_cluster_gini_scores[,1],
@@ -1021,7 +1021,7 @@ clustoCell <- function(
           dplyr::filter(!is.na(Gini_Score))
         rownames(curr_cluster_gini_scores) <- NULL
         curr_cluster_gini_scores
-      } else if(length(cells) == 1) {
+      } else if(length(cells) == 1 & any(curr_neg_mat)) {
         curr_cluster_gini_scores <- ewcsr_mat[rownames(curr_neg_mat)[as.vector(curr_neg_mat)], cells, drop = FALSE]
         curr_cluster_gini_scores <- data.frame(Feature = rownames(curr_cluster_gini_scores), 
                                                EWCSR = curr_cluster_gini_scores[,1],
@@ -1123,7 +1123,7 @@ clustoCell <- function(
           dplyr::filter(!is.na(Gini_Score))
         rownames(curr_cluster_gini_scores) <- NULL
         curr_cluster_gini_scores
-      } else if(length(cells) == 1) {
+      } else if(length(cells) == 1 & any(curr_med_mat)) {
         curr_cluster_gini_scores <- ewcsr_mat[rownames(curr_med_mat)[as.vector(curr_med_mat)], cells, drop = FALSE]
         curr_cluster_gini_scores <- data.frame(Feature = rownames(curr_cluster_gini_scores), 
                                                EWCSR = curr_cluster_gini_scores[,1],
@@ -1273,8 +1273,49 @@ clustoCell <- function(
                                                         med_markers = major_cluster_med_markers)
 
   major_cluster_pos_markers <- cpp_major_markers_list$pos
+  
+  major_cluster_pos_markers <- 
+    lapply(major_cluster_pos_markers, function(i) {
+      if(is.data.frame(i)) {
+        if(nrow(i) == 0) {
+          return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
+        } else {
+          return(i)
+        }
+      } else {
+        return(i)
+      }
+    })
+  
   major_cluster_neg_markers <- cpp_major_markers_list$neg
+  
+  major_cluster_neg_markers <- 
+    lapply(major_cluster_neg_markers, function(i) {
+      if(is.data.frame(i)) {
+        if(nrow(i) == 0) {
+          return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
+        } else {
+          return(i)
+        }
+      } else {
+        return(i)
+      }
+    })
+  
   major_cluster_med_markers <- cpp_major_markers_list$med
+  
+  major_cluster_med_markers <- 
+    lapply(major_cluster_med_markers, function(i) {
+      if(is.data.frame(i)) {
+        if(nrow(i) == 0) {
+          return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
+        } else {
+          return(i)
+        }
+      } else {
+        return(i)
+      }
+    })
 
   log_progress_done()
   
@@ -1513,7 +1554,7 @@ clustoCell <- function(
             
             curr_pos_mat <- pos_mat_sub_clustered[, cells, drop = FALSE]
             
-            if(ncol(curr_pos_mat) > 1) {
+            if(ncol(curr_pos_mat) > 1 & any(curr_pos_mat)) {
               # curr_cluster_gini_scores <- apply(curr_pos_mat, 1, function(x) ineq::Gini(x))
               curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_pos_mat@i, curr_pos_mat@p, curr_pos_mat@x, 
                                                                      nrow(curr_pos_mat), ncol(curr_pos_mat), 
@@ -1526,7 +1567,7 @@ clustoCell <- function(
                 dplyr::filter(!is.na(Gini_Score))
               rownames(curr_cluster_gini_scores) <- NULL
               curr_cluster_gini_scores
-            } else if(length(cells) == 1) {
+            } else if(length(cells) == 1 & any(curr_pos_mat)) {
               curr_cluster_gini_scores <- ewcsr_mat[rownames(curr_pos_mat)[as.vector(curr_pos_mat)], cells, drop = FALSE]
               curr_cluster_gini_scores <- data.frame(Feature = rownames(curr_cluster_gini_scores), 
                                                      EWCSR = curr_cluster_gini_scores[,1],
@@ -1563,7 +1604,7 @@ clustoCell <- function(
             
             curr_neg_mat <- neg_mat_sub_clustered[, cells, drop = FALSE]
             
-            if(ncol(curr_neg_mat) > 1) {
+            if(ncol(curr_neg_mat) > 1 & any(curr_neg_mat)) {
               # curr_cluster_gini_scores <- apply(curr_neg_mat, 1, function(x) ineq::Gini(x)) %>% na.omit()
               curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_neg_mat@i, curr_neg_mat@p, curr_neg_mat@x, 
                                                                      nrow(curr_neg_mat), ncol(curr_neg_mat), 
@@ -1576,7 +1617,7 @@ clustoCell <- function(
                 dplyr::filter(!is.na(Gini_Score))
               rownames(curr_cluster_gini_scores) <- NULL
               curr_cluster_gini_scores
-            } else if(length(cells) == 1) {
+            } else if(length(cells) == 1 & any(curr_neg_mat)) {
               curr_cluster_gini_scores <- ewcsr_mat[rownames(curr_neg_mat)[as.vector(curr_neg_mat)], cells, drop = FALSE]
               curr_cluster_gini_scores <- data.frame(Feature = rownames(curr_cluster_gini_scores), 
                                                      EWCSR = curr_cluster_gini_scores[,1],
@@ -1612,7 +1653,7 @@ clustoCell <- function(
             
             curr_med_mat <- med_mat_sub_clustered[, cells, drop = FALSE]
             
-            if(ncol(curr_med_mat) > 1) {
+            if(ncol(curr_med_mat) > 1 & any(curr_med_mat)) {
               # curr_cluster_gini_scores <- apply(curr_med_mat, 1, function(x) ineq::Gini(x))
               curr_cluster_gini_scores <- gini_rows_lg_marker_matrix(curr_med_mat@i, curr_med_mat@p, curr_med_mat@x, 
                                                                      nrow(curr_med_mat), ncol(curr_med_mat), 
@@ -1625,7 +1666,7 @@ clustoCell <- function(
                 dplyr::filter(!is.na(Gini_Score))
               rownames(curr_cluster_gini_scores) <- NULL
               curr_cluster_gini_scores
-            } else if(length(cells) == 1) {
+            } else if(length(cells) == 1 & any(curr_med_mat)) {
               curr_cluster_gini_scores <- ewcsr_mat[rownames(curr_med_mat)[as.vector(curr_med_mat)], cells, drop = FALSE]
               curr_cluster_gini_scores <- data.frame(Feature = rownames(curr_cluster_gini_scores), 
                                                      EWCSR = curr_cluster_gini_scores[,1],
@@ -1775,8 +1816,49 @@ clustoCell <- function(
                                                            med_markers = sub_cluster_med_markers)
         
         sub_cluster_pos_markers <- cpp_sub_markers_list$pos
+        
+        sub_cluster_pos_markers <- 
+          lapply(sub_cluster_pos_markers, function(i) {
+            if(is.data.frame(i)) {
+              if(nrow(i) == 0) {
+                return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
+              } else {
+                return(i)
+              }
+            } else {
+              return(i)
+            }
+          })
+        
         sub_cluster_neg_markers <- cpp_sub_markers_list$neg
+        
+        sub_cluster_neg_markers <- 
+          lapply(sub_cluster_neg_markers, function(i) {
+            if(is.data.frame(i)) {
+              if(nrow(i) == 0) {
+                return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
+              } else {
+                return(i)
+              }
+            } else {
+              return(i)
+            }
+          })
+        
         sub_cluster_med_markers <- cpp_sub_markers_list$med
+        
+        sub_cluster_med_markers <- 
+          lapply(sub_cluster_med_markers, function(i) {
+            if(is.data.frame(i)) {
+              if(nrow(i) == 0) {
+                return(base::structure("Note: No specific marker was identified!", class = "logMessage"))
+              } else {
+                return(i)
+              }
+            } else {
+              return(i)
+            }
+          })
         
         #____________________
         

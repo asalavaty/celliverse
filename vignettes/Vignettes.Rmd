@@ -243,7 +243,7 @@ In addition, you can adjust the threshold for marker selection using the corresp
 # Performing feature selection
 pbmc3k_markers <- getDatasetMarkers(
   obj = pbmc_clustoCell,
-  pos_thresh = 87
+  pos_thresh = 85
 )
 
 ```
