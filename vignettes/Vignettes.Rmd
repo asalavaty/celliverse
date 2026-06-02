@@ -420,9 +420,9 @@ table(pbmc3k_so$seurat_clusters, pbmc3k_so$ClustoCell_Clusters) %>%
 <strong>Use case:</strong> <code>markoCell()</code> is especially useful for investigating small or ambiguous subsets of cells, such as cells assigned differently by two clustering methods.
 </div>
 
-In this example, Seurat cluster 1 contains 500 cells and is annotated as **memory CD4+ T cells** based on its markers. Of these, 475 cells match ClustoCell cluster C3, while 25 cells match ClustoCell cluster C1.
+In this example, Seurat cluster 1 contains 502 cells and is annotated as **memory CD4+ T cells** based on its markers. Of these, 478 cells match ClustoCell cluster C3, while 24 cells match ClustoCell cluster C1.
 
-ClustoCell cluster C3 mostly corresponds to Seurat cluster 1 (memory CD4+ T cells), whereas ClustoCell cluster C1 mainly corresponds to Seurat cluster 4 (**CD8+ cytotoxic T cells**). This makes the 25 cells of interest, as they are assigned differently by the two methods.
+ClustoCell cluster C3 mostly corresponds to Seurat cluster 0/1 (naive/memory CD4+ T cells), whereas ClustoCell cluster C1 mainly corresponds to Seurat cluster 4 (**CD8+ cytotoxic T cells**). This makes the 23 cells of interest, as they are assigned differently by the two methods.
 
 To better understand their identity, you can use `markoCell` to identify the key markers for this subset and compare them with the markers of ClustoCell clusters C3 and C1, as well as Seurat clusters 1 and 4.
 
@@ -447,7 +447,7 @@ markoClustVis(obj = pbmc3k_1_C1_markoCell)
 
 ```
 
-The results show that the top 5 markers of these 25 cells closely match those of Seurat cluster 4 (CD8+ cytotoxic T cells) and ClustoCell cluster C1. This suggests that ClustoCell has more accurately grouped these cells with cytotoxic cells, while Seurat has placed them with memory CD4+ T cells.
+The results show that the top 5 markers of these 24 cells closely match those of Seurat cluster 4 (CD8+ cytotoxic T cells) and ClustoCell cluster C1. This suggests that ClustoCell has more accurately grouped these cells with cytotoxic cells, while Seurat has placed them with memory CD4+ T cells.
 
 <a href="#top">Back to top</a>
 
