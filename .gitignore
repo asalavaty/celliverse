@@ -16,3 +16,4 @@ src/*.dylib
 src/*.dSYM
 *.Rcheck/
 *.tar.gz
+docs

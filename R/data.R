@@ -169,44 +169,41 @@ NULL
 
 #=============================================================================
 #
-#    pbmc3k
+#    celliverse_vignette_results
 #
 #=============================================================================
 
-#' PBMC 3k single-cell RNA-seq dataset
+#' Precomputed CelliVerse vignette results
 #'
-#' A standard peripheral blood mononuclear cell (PBMC) single-cell RNA-seq
-#' dataset consisting of approximately 3,000 cells profiled using the
-#' 10x Genomics platform. The dataset is provided as a sparse gene-by-cell
-#' expression matrix and is intended for demonstration, benchmarking, and
-#' vignette examples within \pkg{celliverse}.
+#' A list of precomputed objects used to generate the CelliVerse vignette.
+#' These results were generated from the PBMC3K single-cell RNA-seq example
+#' workflow and are included to make the vignette fast, reproducible, and
+#' suitable for package checks across operating systems.
 #'
 #' @format
-#' A sparse matrix of class \code{dgCMatrix} with:
+#' A named list containing precomputed objects used in the vignette. Depending
+#' on the vignette version, elements may include:
 #' \describe{
-#'   \item{rows}{13,714 genes}
-#'   \item{columns}{2,700 cells}
+#'   \item{pbmc3k_so}{A processed \code{Seurat} object used for CelliVerse examples.}
+#'   \item{pbmc_clustoCell}{A precomputed \code{ClustoCell} result object.}
+#'   \item{pbmc3k_1_C1_markoCell}{A precomputed \code{MarkoCell} result object for a selected cell subset.}
 #' }
 #'
 #' @details
-#' Rows correspond to genes and columns correspond to individual cells.
-#' Matrix entries represent UMI counts. The sparse representation minimizes
-#' memory usage and enables efficient downstream analysis.
-#'
-#' This dataset is commonly used in single-cell analysis workflows and is
-#' included here as a lightweight example for illustrating the functionality
-#' of \pkg{celliverse} without requiring external data downloads.
+#' The corresponding code used to generate these objects is shown in the
+#' vignette. The precomputed objects are loaded during vignette building so
+#' that all figures and outputs remain available without requiring repeated
+#' computationally intensive single-cell analyses during package checks.
 #'
 #' @keywords datasets
 #'
-#' @name pbmc3k
+#' @name celliverse_vignette_results
 #' @docType data
 #'
 #' @seealso
-#' \code{\link{clustoCell}}, \code{\link{typoClust}}
+#' \code{\link{clustoCell}}, \code{\link{markoCell}},
+#' \code{\link{markoClustVis}}, \code{\link{typoClust}}
 #'
 #' @source
-#' Originally distributed via the \pkg{SeuratData} package and derived from
-#' 10x Genomics PBMC 3k data.
+#' Generated from the PBMC3K single-cell RNA-seq example workflow.
 NULL
-

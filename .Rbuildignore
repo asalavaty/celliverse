@@ -24,6 +24,6 @@ logo.png
 ^src/.*\.dll$
 ^src/.*\.dylib$
 ^src/.*\.dSYM$
-^_pkgdown\.yml$
 ^pkgdown$
 ^docs$
+^_pkgdown\.yml$
