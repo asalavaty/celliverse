@@ -674,15 +674,20 @@ markoClust <- function(
       pos_cluster_gini_scores <- gini_rows_freq_mat(pos_marker_freq_mat)
       pos_clusters_specific_features <- names(pos_cluster_gini_scores)[pos_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       pos_clusters_non_specific_features <- pos_cluster_gini_scores[pos_cluster_gini_scores < gini_thresh] %>% na.omit()
-      pos_clusters_non_specific_features <- data.frame(Feature = names(pos_clusters_non_specific_features), 
-                                                       Gini_Score = pos_clusters_non_specific_features) %>% 
-        dplyr::filter(!is.na(Gini_Score)) %>% 
-        dplyr::mutate(Med_Freq = apply(pos_marker_freq_mat[Feature,], 1, median),
-                      Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
-                      Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
-        ) %>% dplyr::arrange(Rank) 
-      rownames(pos_clusters_non_specific_features) <- NULL
       
+      if(length(pos_clusters_non_specific_features) > 0) {
+        pos_clusters_non_specific_features <- data.frame(Feature = names(pos_clusters_non_specific_features), 
+                                                         Gini_Score = pos_clusters_non_specific_features) %>% 
+          dplyr::filter(!is.na(Gini_Score)) %>% 
+          dplyr::mutate(Med_Freq = apply(pos_marker_freq_mat[Feature,], 1, median),
+                        Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
+                        Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
+          ) %>% dplyr::arrange(Rank) 
+        rownames(pos_clusters_non_specific_features) <- NULL
+      } else {
+        pos_clusters_non_specific_features <- NULL
+      }
+
       ### Filtering the pos_mat_major_clustered
       pos_mat_major_clustered <- pos_mat_major_clustered[pos_clusters_specific_features, , drop = FALSE]
       pos_marker_freq_mat <- pos_marker_freq_mat[pos_clusters_specific_features, , drop = FALSE]
@@ -776,15 +781,22 @@ markoClust <- function(
       neg_cluster_gini_scores <- gini_rows_freq_mat(neg_marker_freq_mat)
       neg_clusters_specific_features <- names(neg_cluster_gini_scores)[neg_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       neg_clusters_non_specific_features <- neg_cluster_gini_scores[neg_cluster_gini_scores < gini_thresh] %>% na.omit()
-      neg_clusters_non_specific_features <- data.frame(Feature = names(neg_clusters_non_specific_features), 
-                                                       Gini_Score = neg_clusters_non_specific_features) %>% 
-        dplyr::filter(!is.na(Gini_Score)) %>% 
-        dplyr::mutate(Med_Freq = apply(neg_marker_freq_mat[Feature,], 1, median),
-                      Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
-                      Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
-        ) %>% dplyr::arrange(Rank) 
-      rownames(neg_clusters_non_specific_features) <- NULL
       
+      if(length(neg_clusters_non_specific_features) > 0) {
+        
+        neg_clusters_non_specific_features <- data.frame(Feature = names(neg_clusters_non_specific_features), 
+                                                         Gini_Score = neg_clusters_non_specific_features) %>% 
+          dplyr::filter(!is.na(Gini_Score)) %>% 
+          dplyr::mutate(Med_Freq = apply(neg_marker_freq_mat[Feature,], 1, median),
+                        Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
+                        Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
+          ) %>% dplyr::arrange(Rank) 
+        rownames(neg_clusters_non_specific_features) <- NULL
+        
+      } else {
+        neg_clusters_non_specific_features <- NULL
+      }
+
       ### Filtering the neg_mat_major_clustered
       neg_mat_major_clustered <- neg_mat_major_clustered[neg_clusters_specific_features, , drop = FALSE]
       neg_marker_freq_mat <- neg_marker_freq_mat[neg_clusters_specific_features, , drop = FALSE]
@@ -878,15 +890,20 @@ markoClust <- function(
       med_cluster_gini_scores <- gini_rows_freq_mat(med_marker_freq_mat)
       med_clusters_specific_features <- names(med_cluster_gini_scores)[med_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
       med_clusters_non_specific_features <- med_cluster_gini_scores[med_cluster_gini_scores < gini_thresh] %>% na.omit()
-      med_clusters_non_specific_features <- data.frame(Feature = names(med_clusters_non_specific_features), 
-                                                       Gini_Score = med_clusters_non_specific_features) %>% 
-        dplyr::filter(!is.na(Gini_Score)) %>% 
-        dplyr::mutate(Med_Freq = apply(med_marker_freq_mat[Feature,], 1, median),
-                      Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
-                      Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
-        ) %>% dplyr::arrange(Rank) 
-      rownames(med_clusters_non_specific_features) <- NULL
       
+      if(length(med_clusters_non_specific_features) > 0) {
+        med_clusters_non_specific_features <- data.frame(Feature = names(med_clusters_non_specific_features), 
+                                                         Gini_Score = med_clusters_non_specific_features) %>% 
+          dplyr::filter(!is.na(Gini_Score)) %>% 
+          dplyr::mutate(Med_Freq = apply(med_marker_freq_mat[Feature,], 1, median),
+                        Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
+                        Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
+          ) %>% dplyr::arrange(Rank) 
+        rownames(med_clusters_non_specific_features) <- NULL
+      } else {
+        med_clusters_non_specific_features <- NULL
+      }
+
       ### Filtering the med_mat_major_clustered
       med_mat_major_clustered <- med_mat_major_clustered[med_clusters_specific_features, , drop = FALSE]
       med_marker_freq_mat <- med_marker_freq_mat[med_clusters_specific_features, , drop = FALSE]
