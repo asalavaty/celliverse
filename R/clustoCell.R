@@ -681,7 +681,7 @@ clustoCell <- function(
       pos_cell_names <- colnames(pos_adj_mat_trimmed)  # same as rownames
       
       ## Convert to edge list (faster than using full adjacency matrix)
-      pos_edge_list <- which(pos_adj_mat_trimmed, arr.ind = TRUE)
+      pos_edge_list <- Matrix::which(pos_adj_mat_trimmed, arr.ind = TRUE)
       
       ## Remove duplicates since it's undirected (i < j)
       pos_edge_list <- pos_edge_list[pos_edge_list[,1] < pos_edge_list[,2], , drop = FALSE]
@@ -741,7 +741,7 @@ clustoCell <- function(
       med_cell_names <- colnames(med_adj_mat_trimmed)  # same as rownames
       
       ## Convert to edge list (faster than using full adjacency matrix)
-      med_edge_list <- which(med_adj_mat_trimmed, arr.ind = TRUE)
+      med_edge_list <- Matrix::which(med_adj_mat_trimmed, arr.ind = TRUE)
       
       ## Remove duplicates since it's undirected (i < j)
       med_edge_list <- med_edge_list[med_edge_list[,1] < med_edge_list[,2], , drop = FALSE]
@@ -869,13 +869,13 @@ clustoCell <- function(
       # pos_cluster_gini_scores <- apply(pos_marker_freq_mat, 1, function(x) ineq::Gini(x))
       pos_cluster_gini_scores <- gini_rows_freq_mat(pos_marker_freq_mat)
       pos_clusters_specific_features <- names(pos_cluster_gini_scores)[pos_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
-      pos_clusters_non_specific_features <- pos_cluster_gini_scores[pos_cluster_gini_scores < gini_thresh] %>% na.omit()
+      pos_clusters_non_specific_features <- pos_cluster_gini_scores[pos_cluster_gini_scores < gini_thresh/2] %>% na.omit()
       
       if(length(pos_clusters_non_specific_features) > 0) {
         pos_clusters_non_specific_features <- data.frame(Feature = names(pos_clusters_non_specific_features), 
                                                          Gini_Score = pos_clusters_non_specific_features) %>% 
           dplyr::filter(!is.na(Gini_Score)) %>% 
-          dplyr::mutate(Med_Freq = apply(pos_marker_freq_mat[Feature,], 1, median),
+          dplyr::mutate(Med_Freq = apply(pos_marker_freq_mat[Feature, ,drop = FALSE], 1, median),
                         Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
                         Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
           ) %>% dplyr::arrange(Rank) 
@@ -977,14 +977,14 @@ clustoCell <- function(
       # neg_cluster_gini_scores <- apply(neg_marker_freq_mat, 1, function(x) ineq::Gini(x))
       neg_cluster_gini_scores <- gini_rows_freq_mat(neg_marker_freq_mat)
       neg_clusters_specific_features <- names(neg_cluster_gini_scores)[neg_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
-      neg_clusters_non_specific_features <- neg_cluster_gini_scores[neg_cluster_gini_scores < gini_thresh] %>% na.omit()
+      neg_clusters_non_specific_features <- neg_cluster_gini_scores[neg_cluster_gini_scores < gini_thresh/2] %>% na.omit()
       
       if(length(neg_clusters_non_specific_features) > 0) {
         
         neg_clusters_non_specific_features <- data.frame(Feature = names(neg_clusters_non_specific_features), 
                                                          Gini_Score = neg_clusters_non_specific_features) %>% 
           dplyr::filter(!is.na(Gini_Score)) %>% 
-          dplyr::mutate(Med_Freq = apply(neg_marker_freq_mat[Feature,], 1, median),
+          dplyr::mutate(Med_Freq = apply(neg_marker_freq_mat[Feature, ,drop = FALSE], 1, median),
                         Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
                         Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
           ) %>% dplyr::arrange(Rank) 
@@ -1087,14 +1087,14 @@ clustoCell <- function(
       # med_cluster_gini_scores <- apply(med_marker_freq_mat, 1, function(x) ineq::Gini(x))
       med_cluster_gini_scores <- gini_rows_freq_mat(med_marker_freq_mat)
       med_clusters_specific_features <- names(med_cluster_gini_scores)[med_cluster_gini_scores >= gini_thresh/2] %>% na.omit()
-      med_clusters_non_specific_features <- med_cluster_gini_scores[med_cluster_gini_scores < gini_thresh] %>% na.omit()
+      med_clusters_non_specific_features <- med_cluster_gini_scores[med_cluster_gini_scores < gini_thresh/2] %>% na.omit()
       
       if(length(med_clusters_non_specific_features) > 0) {
         
         med_clusters_non_specific_features <- data.frame(Feature = names(med_clusters_non_specific_features), 
                                                          Gini_Score = med_clusters_non_specific_features) %>% 
           dplyr::filter(!is.na(Gini_Score)) %>% 
-          dplyr::mutate(Med_Freq = apply(med_marker_freq_mat[Feature,], 1, median),
+          dplyr::mutate(Med_Freq = apply(med_marker_freq_mat[Feature, ,drop = FALSE], 1, median),
                         Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
                         Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
           ) %>% dplyr::arrange(Rank) 
@@ -1426,7 +1426,7 @@ clustoCell <- function(
           pos_adj_mat_trimmed <- pos_adj_mat[pos_connected_nodes, pos_connected_nodes]
           sim_pos_trimmed <- sim_pos[pos_connected_nodes, pos_connected_nodes]
           pos_cell_names <- colnames(pos_adj_mat_trimmed)  # same as rownames
-          pos_edge_list <- which(pos_adj_mat_trimmed, arr.ind = TRUE)
+          pos_edge_list <- Matrix::which(pos_adj_mat_trimmed, arr.ind = TRUE)
           pos_edge_list <- pos_edge_list[pos_edge_list[,1] < pos_edge_list[,2], , drop = FALSE]
           colnames(pos_edge_list) <- rownames(pos_edge_list) <- NULL
           pos_edge_weights <- sim_pos_trimmed[pos_edge_list]
@@ -1457,7 +1457,7 @@ clustoCell <- function(
           med_adj_mat_trimmed <- med_adj_mat[med_connected_nodes, med_connected_nodes]
           sim_med_trimmed <- sim_med[med_connected_nodes, med_connected_nodes]
           med_cell_names <- colnames(med_adj_mat_trimmed)  # same as rownames
-          med_edge_list <- which(med_adj_mat_trimmed, arr.ind = TRUE)
+          med_edge_list <- Matrix::which(med_adj_mat_trimmed, arr.ind = TRUE)
           med_edge_list <- med_edge_list[med_edge_list[,1] < med_edge_list[,2], , drop = FALSE]
           colnames(med_edge_list) <- rownames(med_edge_list) <- NULL
           med_edge_weights <- sim_med_trimmed[med_edge_list]
