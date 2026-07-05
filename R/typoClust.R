@@ -150,6 +150,12 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
   
   #_____________
   
+  log_warning <- function(...) {
+    if (verbose) cli::cli_alert_warning(...)
+  }
+  
+  #_____________
+  
   log_progress_step <- function(...) {
     if (verbose) cli::cli_progress_step(..., spinner = TRUE)
   }
@@ -967,7 +973,29 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
                       Adjusted_Count, Adjusted_Occurrence, Combined_Score) %>%
         dplyr::arrange(desc(Combined_Score), desc(Adjusted_Count), desc(Adjusted_Occurrence), desc(Pos_Count), desc(Neg_Count)) %>%
         dplyr::mutate(Rank = dplyr::row_number())
-      return(df)
+      
+      if(nrow(df) > 0) {
+        return(df)
+      } else {
+        log_warning(paste0(
+          "No specific cell type was identified for ", curr_set, " cell subset! ",
+          "This may be because the cell subset is of low quality (e.g. it contains a mixture of cell types), ",
+          "or because its corresponding cell type is not present in the specified `tissue` and/or `condition`. ",
+          "If you specified the `tissue` and/or `condition` argument, try changing them or relaxing one or both ",
+          "by setting them to NULL so that the cell subset is evaluated against the entire database. ",
+          "To perform this relaxed analysis only for this cell subset, rerun `typoClust` with ",
+          "`desired_sets = ", curr_set, "`."
+        ))
+        return(base::structure(paste0(
+          "No specific cell type was identified for ", curr_set, " cell subset! ",
+          "This may be because the cell subset is of low quality (e.g. it contains a mixture of cell types), ",
+          "or because its corresponding cell type is not present in the specified `tissue` and/or `condition`. ",
+          "If you specified the `tissue` and/or `condition` argument, try changing them or relaxing one or both ",
+          "by setting them to NULL so that the cell subset is evaluated against the entire database. ",
+          "To perform this relaxed analysis only for this cell subset, rerun `typoClust` with ",
+          "`desired_sets = ", curr_set, "`."
+        ), class = "logMessage"))
+      }
     })
     
     names(set_celltype_list) <- combined_cell_set_names

@@ -273,6 +273,9 @@ typoClustVis <- function(
   final_clusters <- if(!is.null(desired_sets)) desired_sets[desired_sets %in% names(typoClust$cell_types)] else names(typoClust$cell_types)
   
   final_list <- lapply(final_clusters, function(curr_cluster) {
+    
+    if(inherits(typoClust$cell_types[[curr_cluster]], "data.frame")) {
+    
     tmp_df <- typoClust$cell_types[[curr_cluster]] %>% 
       dplyr::mutate(Cluster = curr_cluster)
     
@@ -387,7 +390,8 @@ typoClustVis <- function(
 
     tmp_df <- tmp_df[,-grep("Adjusted|Wrong|Occurrence", colnames(tmp_df,))]
     
-    tmp_df
+    return(tmp_df)
+    }
   })
   
   final_df <- do.call(rbind, final_list)
