@@ -576,9 +576,14 @@ typoClustVis <- function(
   # Label plot
   if(flip) {
     
-    final_df$Cluster <- paste0(paste0(rep("   ", 1000), collapse = ""), 
-                               final_df$Cluster, 
-                               paste0(rep("   ", 1000), collapse = ""))
+    final_df$Cluster <- factor(
+      paste0(paste0(rep("   ", 1000), collapse = ""), 
+             final_df$Cluster, 
+             paste0(rep("   ", 1000), collapse = "")), 
+      levels = paste0(paste0(rep("   ", 1000), collapse = ""), 
+                      levels(final_df$Cluster), 
+                      paste0(rep("   ", 1000), collapse = ""))
+    )
     
     label_plot <- ggplot2::ggplot(final_df,
                                   ggplot2::aes(y = Cluster)) +
