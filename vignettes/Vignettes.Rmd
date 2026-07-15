@@ -427,7 +427,7 @@ While `clustoCell` performs clustering together with marker detection, most clus
 
 For example, you may have identified clusters using the Seurat clustering pipeline and want to find the top markers for each cluster to help determine their cell types or subtypes.
 
-By default, `markoClust` will also identify sub-clusters within your clusters while detecting markers (`identify_subclusters = TRUE`). You can change this behavior if needed.
+Optionally, `markoClust` can also identify sub-clusters within each cluster while simultaneously detecting their markers (`identify_subclusters = TRUE`).
 
 In the example below, we first run the standard Seurat clustering pipeline on the pbmc3k dataset, and then use `markoClust` to identify the top markers for each cluster.
 
@@ -465,7 +465,6 @@ DimPlot(pbmc3k_so, reduction = "umap",
 # Running markoClust on Seurat generated clusters (seurat_clusters)
 pbmc3k_markoClust <- markoClust(data = pbmc3k_so, 
                                 cluster_labels = "seurat_clusters",
-                                identify_subclusters = FALSE,
                                 seed = 121,
                                 verbose = FALSE)
 
