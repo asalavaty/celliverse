@@ -645,6 +645,10 @@ knitr::kable(pbmc3k_6_NKG7_markerPurity$within_clusters$positive_markers$`6`)
 
 You can annotate clusters, sub-clusters, or any selected group of cells using the **CelliVerse Marker DB**. This is a curated database of positive and negative marker genes for human and mouse, stored in a sparse matrix format. It combines data from several major resources, including Cell Marker Accordion, CellMarker2, DISCO, PanglaoDB, ScTypeDB, and singleCellBase.
 
+<div class="celliverse-warning">
+<strong>Important:</strong> The primary goal of <strong>ClustoCell</strong> is to accurately identify biologically meaningful clusters and robust cluster-specific marker genes. We recommend relying primarily on these results for cell type and cell state interpretation. Automatic annotation using <code>typoClust()</code> and the CelliVerse Marker Database provides a convenient starting point but may not always accurately resolve closely related cell subtypes or transient cell states. Whenever possible, automatic annotations should be verified using the identified marker genes, prior biological knowledge, or manual inspection.
+</div>
+
 ### Performing cell type annotation {#typoClust}
 
 To perform cell type annotation, use the `typoClust` function. You can run annotation using marker results stored in **ClustoCell** or **MarkoCell** objects, or by providing your own sets of positive and/or negative markers.
@@ -653,6 +657,8 @@ To perform cell type annotation, use the `typoClust` function. You can run annot
 - **Negative markers** are genes that should have low or no expression in that cell type.
 
 You can choose to use only positive markers, only negative markers, or both (default is both).
+
+While `typoClust()` provides a rapid and convenient first-pass annotation, its predictions should be considered supportive rather than definitive, particularly when distinguishing closely related cell subtypes or cell states. The cluster-specific markers identified by ClustoCell should remain the primary evidence for biological interpretation.
 
 The `typoClust` function also allows you to annotate multiple ClustoCell and/or MarkoCell objects at once, as long as they come from the same tissue type and disease/healthy condition. When providing objects, you can control how many top markers are used by setting the `thresh` argument (default is 20).
 
