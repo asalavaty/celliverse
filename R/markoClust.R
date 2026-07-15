@@ -166,7 +166,7 @@ markoClust <- function(
     leiden_obj_function = c("modularity", "CPM"), # Whether to use the Constant Potts Model (CPM) or modularity.
     leiden_resolution = 0.75, # The resolution parameter to use. Higher resolutions lead to more smaller communities, while lower resolutions lead to fewer larger communities.
     leiden_n_iterations = 5, # the number of iterations to iterate the Leiden algorithm. Each iteration may improve the partition further.
-    identify_subclusters = TRUE, # Whether to identify subclusters as well or not
+    identify_subclusters = FALSE, # Whether to identify subclusters as well or not
     num_threads = -1, # Integer. Number of threads (cores) to use. Default is -1, which uses all available cores.
     seed = 121, # The seed for randomization and making consistent results
     verbose = TRUE # Logical, whether to show progress messages
