@@ -30,7 +30,7 @@ markoClust(
   leiden_obj_function = c("modularity", "CPM"),
   leiden_resolution = 0.75,
   leiden_n_iterations = 5,
-  identify_subclusters = TRUE,
+  identify_subclusters = FALSE,
   num_threads = -1,
   seed = 121,
   verbose = TRUE
