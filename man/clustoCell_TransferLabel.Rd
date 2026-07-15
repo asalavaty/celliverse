@@ -10,7 +10,7 @@ clustoCell_TransferLabel(
   query_expr_mat = NULL,
   assay = "RNA",
   layer = "counts",
-  method = c("ewcsr-cor", "count-project", "ewcsr-red-cor", "count-knn"),
+  method = c("ewcsr-cor", "seurat-project", "ewcsr-red-cor", "seurat-knn"),
   dims = 30,
   num_threads = -1,
   inherit_major_clusters = TRUE,
@@ -24,11 +24,11 @@ clustoCell_TransferLabel(
 
 \item{query_ewcsr_mat}{A sparse matrix (\code{dgCMatrix}) containing EWCSR
 values for the full dataset. Required for EWCSR-based methods and ignored
-when \code{method = "count-knn"} or \code{method = "count-project"}.}
+when \code{method = "seurat-knn"} or \code{method = "seurat-project"}.}
 
 \item{query_expr_mat}{Either a \code{Seurat} object or a sparse count matrix
 (\code{dgCMatrix}) for the full dataset. Required for
-\code{method = "count-knn"} or \code{method = "count-project"} and optional otherwise.}
+\code{method = "seurat-knn"} or \code{method = "seurat-project"} and optional otherwise.}
 
 \item{assay}{Character string specifying the assay used in \code{query_expr_mat}
 when a \code{Seurat} object is provided.}
@@ -42,14 +42,14 @@ Options include:
   \item \code{"ewcsr-cor"}: Transfers labels by computing correlations between
   EWCSR profiles of query cells and EWCSR centroids of sketched clusters in
   the full feature space.
-  \item \code{"count-project"}: Uses Seurat's \code{ProjectData} pipeline to
-  project full-resolution expression data onto the low-dimensional embedding
-  of the sketched dataset.
+  \item \code{"seurat-project"}: Uses Seurat's \code{ProjectData()} workflow to transfer 
+  labels by projecting the full expression dataset (raw counts, log-normalized, or 
+  SCT-normalized) onto the low-dimensional embedding learned from the sketched dataset.
   \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but correlations
   are computed in a reduced dimensional space (PCA embedding).
-  \item \code{"count-knn"}: Uses Seurat's \code{FindTransferAnchors} and
-  \code{TransferData} workflow based on k-nearest neighbor matching in
-  count space.
+  \item \code{"seurat-knn"}: Uses Seurat's \code{FindTransferAnchors()} and
+  \code{TransferData()} workflow to transfer labels from the sketched dataset to the full dataset using 
+  nearest-neighbor matching. Supports standard Seurat normalization workflows (e.g., LogNormalize and SCTransform).
 }}
 
 \item{dims}{Integer; number of dimensions used during sketching or PCA-based
@@ -75,12 +75,22 @@ generated on a sketched (subsampled) dataset to a full-resolution dataset
 using EWCSR-based correlation or Seurat-based projection and anchor
 transfer strategies.
 }
+\details{
+The \code{"seurat-project"} and \code{"seurat-knn"} methods operate on the
+original expression matrix (`query_expr_mat`) rather than the EWCSR representation. The supplied
+expression data may consist of raw counts, log-normalized expression values,
+or SCTransform-normalized data, provided that the sketched and full datasets
+were processed using the same normalization strategy. These methods leverage
+Seurat's native label transfer workflows (\code{\link[Seurat]{ProjectData}},
+\code{\link[Seurat]{FindTransferAnchors}}, and
+\code{\link[Seurat]{TransferData}}) and do not require integer count matrices.
+}
 \examples{
 \dontrun{
 cc_full <- clustoCell_TransferLabel(
   clustoCell = cc_sketched,
   query_expr_mat = expr_mat_full,
-  method = "count-knn"
+  method = "seurat-knn"
 )
 }
 

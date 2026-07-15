@@ -21,7 +21,7 @@ markoClust(
   gini_thresh = 0.5,
   sketch = FALSE,
   sketch_fraction = 0.5,
-  label_transfer_method = c("ewcsr-cor", "count-project", "ewcsr-red-cor", "count-knn"),
+  label_transfer_method = c("ewcsr-cor", "seurat-project", "ewcsr-red-cor", "seurat-knn"),
   sketch_pca_dims = 30,
   noise_feature_thresh = 4,
   random_marker_thresh = 5,
@@ -72,8 +72,8 @@ Recommended to provide at least library-size normalized data when
 \item{sketch_fraction}{Numeric between 0 and 1; fraction of cells per cluster to retain in sketch.}
 
 \item{label_transfer_method}{Character; method for transferring labels from sketched to full data.
-One of \code{"ewcsr-cor"}, \code{"count-project"},
-\code{"ewcsr-red-cor"}, or \code{"count-knn"}.}
+One of \code{"ewcsr-cor"}, \code{"seurat-project"},
+\code{"ewcsr-red-cor"}, or \code{"seurat-knn"}.}
 
 \item{sketch_pca_dims}{Integer; number of PCA dimensions used during label transfer.}
 
@@ -112,6 +112,14 @@ datasets via uniform sketching with label transfer back to the full dataset.
 If \code{sketch = TRUE}, a representative subset of cells is sampled from
 each cluster and used for sub-clustering. Labels are transferred back to
 the full dataset using the method specified by \code{label_transfer_method}.
+The \code{"seurat-project"} and \code{"seurat-knn"} methods operate on the
+original expression matrix rather than the EWCSR representation. The supplied
+expression data may consist of raw counts, log-normalized expression values,
+or SCTransform-normalized data, provided that the sketched and full datasets
+were processed using the same normalization strategy. These methods leverage
+Seurat's native label transfer workflows (\code{\link[Seurat]{ProjectData}},
+\code{\link[Seurat]{FindTransferAnchors}}, and
+\code{\link[Seurat]{TransferData}}) and do not require integer count matrices.
 }
 \examples{
 \dontrun{

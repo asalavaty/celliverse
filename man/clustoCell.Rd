@@ -20,7 +20,7 @@ clustoCell(
   identify_subclusters = TRUE,
   sketch = FALSE,
   sketch_ncells = 5000L,
-  label_transfer_method = c("ewcsr-cor", "count-project", "ewcsr-red-cor", "count-knn"),
+  label_transfer_method = c("ewcsr-cor", "seurat-project", "ewcsr-red-cor", "seurat-knn"),
   sketch_pca_dims = 30,
   refine_transferred_subClusters = FALSE,
   noise_feature_thresh = 4,
@@ -85,20 +85,20 @@ transfer cluster labels from the sketched dataset back to the full dataset.
 Only used when \code{sketch = TRUE}. Options include:
 \itemize{
   \item \code{"ewcsr-cor"}: Transfers labels by computing correlations between
-  EWCSR profiles of full-data cells and EWCSR centroids of sketched clusters
-  in the full (non-reduced) feature space.
-  \item \code{"count-project"}: Uses Seurat's \code{ProjectData} pipeline to
-  project full-resolution expression data onto the low-dimensional embedding
-  learned from the sketched dataset.
-  \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but performs
-  correlation in a reduced dimensional space (PCA embedding).
-  \item \code{"count-knn"}: Uses Seurat's \code{FindTransferAnchors} and
-  \code{TransferData} workflow based on shared features and k-nearest
-  neighbor matching in count space.
+  EWCSR profiles of query cells and EWCSR centroids of sketched clusters in
+  the full feature space.
+  \item \code{"seurat-project"}: Uses Seurat's \code{ProjectData()} workflow to transfer 
+  labels by projecting the full expression dataset (raw counts, log-normalized, or 
+  SCT-normalized) onto the low-dimensional embedding learned from the sketched dataset.
+  \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but correlations
+  are computed in a reduced dimensional space (PCA embedding).
+  \item \code{"seurat-knn"}: Uses Seurat's \code{FindTransferAnchors()} and
+  \code{TransferData()} workflow to transfer labels from the sketched dataset to the full dataset using 
+  nearest-neighbor matching. Supports standard Seurat normalization workflows (e.g., LogNormalize and SCTransform).
 }}
 
 \item{sketch_pca_dims}{Integer; number of PCA dimensions used during label
-transfer. Only applicable for \code{"ewcsr-red-cor"} and \code{"count-knn"}.}
+transfer. Only applicable for \code{"ewcsr-red-cor"} and \code{"seurat-knn"}.}
 
 \item{refine_transferred_subClusters}{Logical; whether to re-evaluate and refine
 transferred sub-cluster labels after label transfer.}
@@ -153,6 +153,14 @@ label transfer to the full dataset.
 If \code{sketch = TRUE}, a representative subset of cells is sampled from
 the input data and used for clustering. Labels are transferred back to
 the full dataset using the method specified by \code{label_transfer_method}.
+The \code{"seurat-project"} and \code{"seurat-knn"} methods operate on the
+original expression matrix rather than the EWCSR representation. The supplied
+expression data may consist of raw counts, log-normalized expression values,
+or SCTransform-normalized data, provided that the sketched and full datasets
+were processed using the same normalization strategy. These methods leverage
+Seurat's native label transfer workflows (\code{\link[Seurat]{ProjectData}},
+\code{\link[Seurat]{FindTransferAnchors}}, and
+\code{\link[Seurat]{TransferData}}) and do not require integer count matrices.
 }
 \examples{
 \dontrun{

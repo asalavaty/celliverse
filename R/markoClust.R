@@ -9,6 +9,14 @@
 #' If \code{sketch = TRUE}, a representative subset of cells is sampled from
 #' each cluster and used for sub-clustering. Labels are transferred back to
 #' the full dataset using the method specified by \code{label_transfer_method}.
+#' The \code{"seurat-project"} and \code{"seurat-knn"} methods operate on the
+#' original expression matrix rather than the EWCSR representation. The supplied
+#' expression data may consist of raw counts, log-normalized expression values,
+#' or SCTransform-normalized data, provided that the sketched and full datasets
+#' were processed using the same normalization strategy. These methods leverage
+#' Seurat's native label transfer workflows (\code{\link[Seurat]{ProjectData}},
+#' \code{\link[Seurat]{FindTransferAnchors}}, and
+#' \code{\link[Seurat]{TransferData}}) and do not require integer count matrices.
 #'
 #' @param data Either a \code{Seurat} object or a numeric matrix with features (genes) as rows and cells as columns.
 #'   Recommended to provide at least library-size normalized data when
@@ -61,8 +69,8 @@
 #'
 #' @param label_transfer_method
 #' Character; method for transferring labels from sketched to full data.
-#' One of \code{"ewcsr-cor"}, \code{"count-project"},
-#' \code{"ewcsr-red-cor"}, or \code{"count-knn"}.
+#' One of \code{"ewcsr-cor"}, \code{"seurat-project"},
+#' \code{"ewcsr-red-cor"}, or \code{"seurat-knn"}.
 #'
 #' @param sketch_pca_dims
 #' Integer; number of PCA dimensions used during label transfer.
@@ -142,15 +150,15 @@ markoClust <- function(
     # `sketch_fraction = 0.5` will sketch 50% of the cells in each cluster. This parameter allows for controlling the trade-off between 
     # data compression and representation in the sketched dataset. For small datasets (fewer than 10,000 cells), set this argument to at least 0.5.
     label_transfer_method = c("ewcsr-cor", 
-                              "count-project",
+                              "seurat-project",
                               "ewcsr-red-cor", 
-                              "count-knn"), 
+                              "seurat-knn"), 
     # Character string specifying the label transfer method to use. Optional. Used if sketch == TRUE. Options include:
     #   \item \code{"ewcsr-cor"}: Transfers labels by computing the correlation between each cell in the query expression matrix (\code{query_expr_mat}) and the EWCSR centroids of each cluster in the \code{clustoCell}, using the full expression space (i.e., non-reduced).
-    #   \item \code{"count-project"}: Transfers labels using the Seurat \code{ProjectData} pipeline, based on projection of high-dimensional single-cell RNA expression data from a full dataset onto the lower-dimensional embedding of the sketch of the dataset.
+    #   \item \code{"seurat-project"}: Transfers labels using the Seurat \code{ProjectData} pipeline, based on projection of high-dimensional single-cell RNA expression data from a full dataset onto the lower-dimensional embedding of the sketch of the dataset.
     #   \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but performs correlation in the reduced dimensional space (PCA embedding), using dimensionally reduced EWCSR centroids.
-    #   \item \code{"count-knn"}: Transfers labels using the Seurat \code{FindTransferAnchors} and \code{TransferData} pipeline, based on shared features in count-based expression data and k-nearest neighbor matching.
-    sketch_pca_dims = 30, # Integer, number of dimensions used during the label transferring. Only used when label_transfer_method is one of 'ewcsr-red-cor' or 'count-knn'.
+    #   \item \code{"seurat-knn"}: Transfers labels using the Seurat \code{FindTransferAnchors} and \code{TransferData} pipeline, based on shared features in count-based expression data and k-nearest neighbor matching.
+    sketch_pca_dims = 30, # Integer, number of dimensions used during the label transferring. Only used when label_transfer_method is one of 'ewcsr-red-cor' or 'seurat-knn'.
     noise_feature_thresh = 4, # The threshold for detecting noise features/genes (i.e. features that have non-zero expression in more than this number of samples/cells).
     random_marker_thresh = 5, # Markers detected at lower than this number of cell are considered as non-marker genes
     mr_thresh = NULL, # The threshold for choosing the cell-to-cell similarities with lower than selected thresh (if it is null it will be set to the square root of the number of cells by default).
@@ -530,7 +538,7 @@ markoClust <- function(
       if(identify_subclusters && sketch) {
         # Updating the expr_mat
         original_expr_mat <- original_expr_mat[rownames(expr_mat), colnames(expr_mat)]
-        if(!(label_transfer_method %in% c("count-knn", "count-project"))) {
+        if(!(label_transfer_method %in% c("seurat-knn", "seurat-project"))) {
           original_ewcsr_mat <- ewcsr_mat
         } else {
           original_ewcsr_mat <- NULL
@@ -549,7 +557,7 @@ markoClust <- function(
       if(identify_subclusters && sketch) {
         # Updating the expr_mat
         original_expr_mat <- original_expr_mat[rownames(expr_mat), colnames(expr_mat)]
-        if(!(label_transfer_method %in% c("count-knn", "count-project"))) {
+        if(!(label_transfer_method %in% c("seurat-knn", "seurat-project"))) {
           original_ewcsr_mat <- ewcsr_mat
         } else {
           original_ewcsr_mat <- NULL
@@ -562,7 +570,7 @@ markoClust <- function(
     if(identify_subclusters && sketch) {
       # Updating the expr_mat
       original_expr_mat <- original_expr_mat[rownames(expr_mat), colnames(expr_mat)]
-      if(!(label_transfer_method %in% c("count-knn", "count-project"))) {
+      if(!(label_transfer_method %in% c("seurat-knn", "seurat-project"))) {
         original_ewcsr_mat <- ewcsr_mat
       } else {
         original_ewcsr_mat <- NULL
@@ -677,10 +685,10 @@ markoClust <- function(
       
       if(length(pos_clusters_non_specific_features) > 0) {
         pos_clusters_non_specific_features <- data.frame(Feature = names(pos_clusters_non_specific_features), 
-                                                         Gini_Score = pos_clusters_non_specific_features) %>% 
-          dplyr::filter(!is.na(Gini_Score)) %>% 
+                                                         Freq_Gini_Score = pos_clusters_non_specific_features) %>% 
+          dplyr::filter(!is.na(Freq_Gini_Score)) %>% 
           dplyr::mutate(Med_Freq = apply(pos_marker_freq_mat[Feature, ,drop = FALSE], 1, median),
-                        Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
+                        Gini_Med_Freq_Combined = (1/Freq_Gini_Score)*Med_Freq,
                         Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
           ) %>% dplyr::arrange(Rank) 
         rownames(pos_clusters_non_specific_features) <- NULL
@@ -785,10 +793,10 @@ markoClust <- function(
       if(length(neg_clusters_non_specific_features) > 0) {
         
         neg_clusters_non_specific_features <- data.frame(Feature = names(neg_clusters_non_specific_features), 
-                                                         Gini_Score = neg_clusters_non_specific_features) %>% 
-          dplyr::filter(!is.na(Gini_Score)) %>% 
+                                                         Freq_Gini_Score = neg_clusters_non_specific_features) %>% 
+          dplyr::filter(!is.na(Freq_Gini_Score)) %>% 
           dplyr::mutate(Med_Freq = apply(neg_marker_freq_mat[Feature, ,drop = FALSE], 1, median),
-                        Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
+                        Gini_Med_Freq_Combined = (1/Freq_Gini_Score)*Med_Freq,
                         Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
           ) %>% dplyr::arrange(Rank) 
         rownames(neg_clusters_non_specific_features) <- NULL
@@ -893,10 +901,10 @@ markoClust <- function(
       
       if(length(med_clusters_non_specific_features) > 0) {
         med_clusters_non_specific_features <- data.frame(Feature = names(med_clusters_non_specific_features), 
-                                                         Gini_Score = med_clusters_non_specific_features) %>% 
-          dplyr::filter(!is.na(Gini_Score)) %>% 
+                                                         Freq_Gini_Score = med_clusters_non_specific_features) %>% 
+          dplyr::filter(!is.na(Freq_Gini_Score)) %>% 
           dplyr::mutate(Med_Freq = apply(med_marker_freq_mat[Feature, ,drop = FALSE], 1, median),
-                        Gini_Med_Freq_Combined = (1/Gini_Score)*Med_Freq,
+                        Gini_Med_Freq_Combined = (1/Freq_Gini_Score)*Med_Freq,
                         Rank = data.table::frankv(-Gini_Med_Freq_Combined, ties.method="dense")
           ) %>% dplyr::arrange(Rank) 
         rownames(med_clusters_non_specific_features) <- NULL
@@ -1182,7 +1190,7 @@ markoClust <- function(
       pos_mat <- pos_mat[,sketch_cells]
       
       # Remove redundant objects
-      if(!(label_transfer_method %in% c("count-knn", "count-project"))) {
+      if(!(label_transfer_method %in% c("seurat-knn", "seurat-project"))) {
         original_expr_mat <- NULL
       }
       
@@ -1794,7 +1802,7 @@ markoClust <- function(
     
     final_results_list$sketched_cells <- all_sketch_cells
     
-    if(inherits(data, "Seurat") & label_transfer_method == "count-project") {
+    if(inherits(data, "Seurat") & label_transfer_method == "seurat-project") {
       query_expr_mat <- data
     } else {
       query_expr_mat <- original_expr_mat 

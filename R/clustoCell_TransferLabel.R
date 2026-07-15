@@ -5,17 +5,27 @@
 #' generated on a sketched (subsampled) dataset to a full-resolution dataset
 #' using EWCSR-based correlation or Seurat-based projection and anchor
 #' transfer strategies.
+#' 
+#' @details
+#' The \code{"seurat-project"} and \code{"seurat-knn"} methods operate on the
+#' original expression matrix (`query_expr_mat`) rather than the EWCSR representation. The supplied
+#' expression data may consist of raw counts, log-normalized expression values,
+#' or SCTransform-normalized data, provided that the sketched and full datasets
+#' were processed using the same normalization strategy. These methods leverage
+#' Seurat's native label transfer workflows (\code{\link[Seurat]{ProjectData}},
+#' \code{\link[Seurat]{FindTransferAnchors}}, and
+#' \code{\link[Seurat]{TransferData}}) and do not require integer count matrices.
 #'
 #' @param clustoCell An object of class \code{ClustoCell} obtained by running
 #'   \code{clustoCell()} on a sketched dataset.
 #'
 #' @param query_ewcsr_mat A sparse matrix (\code{dgCMatrix}) containing EWCSR
 #'   values for the full dataset. Required for EWCSR-based methods and ignored
-#'   when \code{method = "count-knn"} or \code{method = "count-project"}.
+#'   when \code{method = "seurat-knn"} or \code{method = "seurat-project"}.
 #'
 #' @param query_expr_mat Either a \code{Seurat} object or a sparse count matrix
 #'   (\code{dgCMatrix}) for the full dataset. Required for
-#'   \code{method = "count-knn"} or \code{method = "count-project"} and optional otherwise.
+#'   \code{method = "seurat-knn"} or \code{method = "seurat-project"} and optional otherwise.
 #'
 #' @param assay Character string specifying the assay used in \code{query_expr_mat}
 #'   when a \code{Seurat} object is provided.
@@ -29,14 +39,14 @@
 #'     \item \code{"ewcsr-cor"}: Transfers labels by computing correlations between
 #'     EWCSR profiles of query cells and EWCSR centroids of sketched clusters in
 #'     the full feature space.
-#'     \item \code{"count-project"}: Uses Seurat's \code{ProjectData} pipeline to
-#'     project full-resolution expression data onto the low-dimensional embedding
-#'     of the sketched dataset.
+#'     \item \code{"seurat-project"}: Uses Seurat's \code{ProjectData()} workflow to transfer 
+#'     labels by projecting the full expression dataset (raw counts, log-normalized, or 
+#'     SCT-normalized) onto the low-dimensional embedding learned from the sketched dataset.
 #'     \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but correlations
 #'     are computed in a reduced dimensional space (PCA embedding).
-#'     \item \code{"count-knn"}: Uses Seurat's \code{FindTransferAnchors} and
-#'     \code{TransferData} workflow based on k-nearest neighbor matching in
-#'     count space.
+#'     \item \code{"seurat-knn"}: Uses Seurat's \code{FindTransferAnchors()} and
+#'     \code{TransferData()} workflow to transfer labels from the sketched dataset to the full dataset using 
+#'     nearest-neighbor matching. Supports standard Seurat normalization workflows (e.g., LogNormalize and SCTransform).
 #'   }
 #'
 #' @param dims Integer; number of dimensions used during sketching or PCA-based
@@ -60,7 +70,7 @@
 #' cc_full <- clustoCell_TransferLabel(
 #'   clustoCell = cc_sketched,
 #'   query_expr_mat = expr_mat_full,
-#'   method = "count-knn"
+#'   method = "seurat-knn"
 #' )
 #' }
 #'
@@ -68,19 +78,19 @@
 #' @export
 
 clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell obtained by running clustoCell on a sketched (sampled) dataset.
-                                     query_ewcsr_mat = NULL, # A dgCMatrix matrix (Query EWCSR matrix). This is not required if method is set to 'count-knn' or 'count-project' and mandatory otherwise. All cells in the clustoCell should be present in the query_ewcsr_mat.
-                                     query_expr_mat = NULL, # Either a Seurat object of the entire data or a dgCMatrix matrix (Query count matrix). This is mandatory if method is set to 'count-knn' and not required otherwise. All cells in the clustoCell should be present in the query_expr_mat.
+                                     query_ewcsr_mat = NULL, # A dgCMatrix matrix (Query EWCSR matrix). This is not required if method is set to 'seurat-knn' or 'seurat-project' and mandatory otherwise. All cells in the clustoCell should be present in the query_ewcsr_mat.
+                                     query_expr_mat = NULL, # Either a Seurat object of the entire data or a dgCMatrix matrix (Query count matrix). This is mandatory if method is set to 'seurat-knn' and not required otherwise. All cells in the clustoCell should be present in the query_expr_mat.
                                      assay = "RNA", # The desired assay corresponding to query_expr_mat.
                                      layer = "counts", # The desired layer corresponding to query_expr_mat.
                                      method = c("ewcsr-cor", 
-                                                "count-project",
+                                                "seurat-project",
                                                 "ewcsr-red-cor", 
-                                                "count-knn"), 
+                                                "seurat-knn"), 
                                      # Character string specifying the label transfer method to use. Options include:
                                      #   \item \code{"ewcsr-cor"}: Transfers labels by computing the correlation between each cell in the query expression matrix (\code{query_expr_mat}) and the EWCSR centroids of each cluster in the \code{clustoCell}, using the full expression space (i.e., non-reduced).
-                                     #   \item \code{"count-project"}: Transfers labels using the Seurat \code{ProjectData} pipeline, based on projection of high-dimensional single-cell RNA expression data from a full dataset onto the lower-dimensional embedding of the sketch of the dataset.
+                                     #   \item \code{"seurat-project"}: Transfers labels using the Seurat \code{ProjectData} pipeline, based on projection of high-dimensional single-cell RNA expression data from a full dataset onto the lower-dimensional embedding of the sketch of the dataset.
                                      #   \item \code{"ewcsr-red-cor"}: Similar to \code{"ewcsr-cor"}, but performs correlation in the reduced dimensional space (PCA embedding), using dimensionally reduced EWCSR centroids.
-                                     #   \item \code{"count-knn"}: Transfers labels using the Seurat \code{FindTransferAnchors} and \code{TransferData} pipeline, based on shared features in count-based expression data and k-nearest neighbor matching.
+                                     #   \item \code{"seurat-knn"}: Transfers labels using the Seurat \code{FindTransferAnchors} and \code{TransferData} pipeline, based on shared features in count-based expression data and k-nearest neighbor matching.
                                      dims = 30, # Integer, number of dimensions used during the sketching.
                                      num_threads = -1, # Integer. Number of threads (cores) to use. Default is -1, which uses all available cores.
                                      inherit_major_clusters = TRUE, # logical, whether to inherit the major cluster labels and label transfer sub-clusters (if present) within each major cluster or transfer labels of all cell based on the skeched data labels regardless of their original major cluster label. This is only used if all cells of the data are available within the major_cluster slot of the clustoCell object.
@@ -259,7 +269,7 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
     names(predicted_labels) <- colnames(query_ewcsr_mat)
     predicted_labels <- c(predicted_labels, sketched_clusters)
     
-  } else if (method == "count-project") {
+  } else if (method == "seurat-project") {
     
     log_progress_step("Creating Seurat Objects!")
     
@@ -386,7 +396,7 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
     names(predicted_labels) <- colnames(original_seu)
     predicted_labels <- c(predicted_labels, sketched_clusters)
     
-  } else if (method == "count-knn") {
+  } else if (method == "seurat-knn") {
     # kNN voting (using Seurat's framework)
     
     log_progress_step("Creating Seurat Objects!")

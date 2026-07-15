@@ -107,6 +107,8 @@ The core functions can be grouped into four main workflows:
 
 -   [getDatasetMarkers](#getDatasetMarkers) (`getDatasetMarkers()`) extracts positive, negative, and/or medium markers from major clusters and sub-clusters stored in a ClustoCell object. These markers could be treated as the dataset-level features for dimension reduction or machine learning purposes.    
 
+-   [featureInspect](#featureInspect) (`featureInspect()`) searches one or more desired features across all marker collections contained within a `ClustoCell` object, including global feature collections, cross-cluster markers, major cluster-specific markers, and sub-cluster-specific markers.    
+
 -   [clustoCell_TransferLabel](#clustoCell_TransferLabel) (`clustoCell_TransferLabel()`) transfers major and sub-cluster labels from a ClustoCell object generated on a sketched (subsampled) dataset to a full-resolution dataset.    
 
 -   [signatureDotHeatmap](#signatureDotHeatmap) (`signatureDotHeatmap()`) generates a dot heatmap summarizing expression of signature-associated features across clusters.
@@ -229,6 +231,10 @@ print(pbmc_clustoCell)
 
 As we see ClustoCell has identified 5 major clusters and 12 sub-clusters. Cells that don’t have ‘high’ markers are filtered out and labeled as quiescent, indicating they are in a resting or inactive state.
 
+<div class="celliverse-tip">
+<strong>Tip:</strong> The cluster and sub-cluster memberships are available in `pbmc_clustoCell$clusters`.
+</div>
+
 <a href="#top">Back to top</a>
 
 ## Adding cluster labels to the dataset {#addClustoData}
@@ -349,6 +355,69 @@ markoClustVis(obj = pbmc_clustoCell,
               desired_sets = paste("C", 1:5, sep = ""))
 
 ```
+
+<div class="celliverse-tip">
+<strong>Tip:</strong> The cluster and sub-cluster markers are available in `pbmc_clustoCell$markers`.
+</div>
+
+<a href="#top">Back to top</a>
+
+### Inspecting desired features {#featureInspect}
+
+In cases where you would like to inspect one or more features (genes) to determine whether they are marker genes for particular clusters or sub-clusters, you can use the `featureInspect()` function. For example, the following code inspects the genes **NKG7** and **HLA-DRB1** among the positive markers of the major clusters.
+
+```{r, warning=FALSE}
+
+knitr::kable(
+  featureInspect(
+    clustoCell = pbmc_clustoCell,
+    features = c("NKG7", "HLA-DRB1"),
+    level = "Major cluster",
+    type = "Positive"
+  )
+)
+
+```
+
+As shown above, **NKG7** is the top-ranked positive marker of C1 (NK and CD8 T cells), whereas **HLA-DRB1** is ranked 1st and 12th among the positive markers of C2 (B cells) and C4 (Mononuclear phagocytes), respectively. Although **HLA-DRB1** is also present among the positive markers of two other clusters, it is not sufficiently highly ranked to be particularly informative for annotating those clusters.
+
+The results can also be visualized by setting the `plot` argument to `TRUE`.
+
+```{r, warning=FALSE}
+
+pbmc_clustoCell_NKG7_HLA_DRB1_plt <-
+  featureInspect(
+    clustoCell = pbmc_clustoCell,
+    features = c("NKG7", "HLA-DRB1"),
+    level = "Major cluster",
+    type = "Positive",
+    plot = TRUE
+  )
+
+pbmc_clustoCell_NKG7_HLA_DRB1_plt$plot
+
+```
+
+In some cases, your feature(s) of interest may not be identified among the major-cluster or sub-cluster markers. In such situations, you can relax the search by leaving the `level` and `type` arguments as `NULL` (their default values), allowing `featureInspect()` to search across all available marker collections, including the global feature collections.
+
+For example, if you inspect the general PBMC marker genes *CD52*, *CD53*, *CD48*, and *PTPRCAP*, while restricting the search to the major-cluster and sub-cluster markers, no matches are returned because these genes are not informative for distinguishing individual cell populations. However, when the `level` and `type` arguments are left at their default values, these genes are identified among the globally pure ranked features.
+
+This behaviour is expected because these genes typically exhibit very similar expression patterns across most or all cells in the PBMC dataset. During `clustoCell()` analysis, such globally uninformative features are automatically detected according to the specified `gini_thresh`, excluded from the clustering and marker identification procedures to improve sensitivity, and stored in the `globally_pure_ranked` component of the returned `ClustoCell` object for future inspection.
+
+```{r, warning=FALSE}
+
+knitr::kable(
+  featureInspect(
+    clustoCell = pbmc_clustoCell,
+    features = c("CD52", "CD53", "CD48", "PTPRCAP")
+  )
+)
+
+```
+
+<div class="celliverse-tip">
+<strong>Tip:</strong> Inspecting the global feature collections is particularly useful when analysing datasets composed of a single cell type, where many informative features including canonical marker genes of that cell type are expected to be expressed uniformly across nearly all cells. Such features are typically stored in the <code>globally_pure_ranked</code> or <code>globally_pure_high</code> slot of the ClustoCell object and are not reported as cluster specific markers. See the <a href="#singleCellTypeScenario">Working with Single Cell Type Datasets</a> section.
+</div>
 
 <a href="#top">Back to top</a>
 
@@ -474,6 +543,76 @@ The results show that the top 5 markers of these 24 cells closely match those of
 
 <a href="#top">Back to top</a>
 
+### Working with Single Cell Type Datasets {#singleCellTypeScenario}
+
+There are situations where you may wish to cluster a dataset composed of only a single cell type in order to identify its constituent cell subtypes or cell states and their associated marker genes. For example, upstream enrichment methods such as Fluorescence-Activated Cell Sorting (FACS) physically isolate a specific cell population before sequencing, resulting in a dataset that is highly enriched for the desired cell type. Although ClustoCell is well suited for identifying cell subtypes and states within such datasets, there are several important considerations.
+
+- As described in the [featureInspect](#featureInspect) section, when the input dataset consists of a single cell type, many canonical marker genes for that cell type are expected to be expressed uniformly across nearly all cells. Consequently, these features are typically stored in the `globally_pure_ranked` or `globally_pure_high` slots of the ClustoCell object. As a result, the top-ranked markers identified for each cluster primarily represent markers that distinguish the corresponding cell subtype or cell state rather than the parent cell type itself. To illustrate this, we subset the PBMC3K dataset to **CD8 T cells** (**C1-Sub1**) and rerun `clustoCell()` on the resulting subset.
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+
+# Subsetting the dataset to C1-Sub1 (CD8 cells)
+pbmc3k_C1_Sub1_CD8_so <- subset(pbmc3k_so, subset = ClustoCell_SubClusters == "C1-Sub1")
+
+# Running ClustoCell
+pbmc3k_C1_Sub1_CD8_clustoCell <- clustoCell(pbmc3k_C1_Sub1_CD8_so, 
+                                            identify_subclusters = FALSE,
+                                            seed = 121)
+
+```
+
+Using `featureInspect()`, we can see that several canonical CD8 T-cell marker genes, including **CD3E**, **GZMA**, **GZMK**, **CCL5**, and **NKG7**, are identified as globally pure ranked features in this subset.
+
+```{r, warning=FALSE, eval=FALSE}
+
+knitr::kable(
+  featureInspect(
+    clustoCell = pbmc3k_C1_Sub1_CD8_clustoCell,
+    features = c("CD3E", "GZMA", "GZMK", "CCL5", "NKG7")
+  )
+)
+
+```
+
+- As shown above, some canonical marker genes of the underlying cell type may not appear among the cluster-specific markers because they are stored in the global feature collections. Therefore, we recommend using either manual or LLM-assisted approaches to annotate the cell subtypes or cell states represented by each major cluster or sub-cluster.\
+  \
+  A practical strategy is to construct a marker panel by combining canonical marker genes for the input cell type (obtained either from the literature or by inspecting the global feature collections) with the top cluster-specific markers (e.g. the top 10–15 positive markers) for the cluster or sub-cluster of interest. The resulting marker panel can then be used for manual annotation or supplied to `typoClust()`.
+
+<div class="celliverse-tip">
+<strong>Tip:</strong> If you wish to perform automatic annotation using <code>typoClust()</code>, we recommend following the <a href="#customMarkerPanel">Cell type annotation based on a custom marker panel</a> workflow and using your custom marker panel as input.
+</div>
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+
+pbmc3k_C1_Sub1_CD8_clustoCell_C1_typoClust <- 
+  typoClust(
+    desired_pos_markers = list(my_panel = c(
+      "CD3E", "GZMA", "GZMK", "CCL5", "NKG7", 
+      pbmc3k_C1_Sub1_CD8_clustoCell$markers$major_clusters$cluster_specific$positive_markers$C1$Feature[1:5]
+      )),
+    tissue = c("Blood"), 
+    verbose = FALSE)
+
+```
+
+Let's look at the top-ranked predicted cell type (or cell state).
+
+```{r, warning=FALSE}
+
+knitr::kable(
+  pbmc3k_C1_Sub1_CD8_clustoCell_C1_typoClust$cell_types$my_panel[1,c("Tissue", "Condition", "CellType", "Combined_Score", "Rank")]
+)
+
+```
+
+As expected, the cluster is annotated as **CD8+ Alpha-Beta T Cell**.
+
+<div class="celliverse-warning">
+<strong>Note:</strong> If you are unsure whether your dataset contains multiple cell types or represents a single cell type, inspect both the top cluster-specific markers and the canonical marker genes that may have been assigned to the global feature collections. For example, if one cluster is characterised by canonical NK/CD8 T-cell markers such as <em>NKG7</em>, <em>CCL5</em>, <em>GZMA</em>, <em>CTSW</em>, <em>CST7</em>, and <em>GNLY</em>, whereas another cluster is characterised by canonical B-cell markers such as <em>HLA-DRB1</em>, <em>HLA-DPA1</em>, <em>CD79A</em>, <em>CD79B</em>, <em>HLA-DQA1</em>, and <em>HLA-DQB1</em>, then your dataset clearly contains multiple cell types rather than a single homogeneous cell population.
+</div>
+
+<a href="#top">Back to top</a>
+
 ### Assessing purity of markers {#markerPurity}
 
 In some cases, you may have a specific marker in mind and want to check how purely it is expressed in a particular cluster or subset of cells. The `markerPurity` function allows you to do this quickly.
@@ -561,6 +700,8 @@ head(clustoCell_pbmc_typoClust$cell_types$C1[,c("Tissue", "Condition", "CellType
 knitr::kable(head(clustoCell_pbmc_typoClust$cell_types$C1[,c("Tissue", "Condition", "CellType", "Combined_Score", "Rank")]))
 
 ```
+
+#### Cell type annotation based on a custom marker panel {#customMarkerPanel}
 
 <div class="celliverse-tip">
 <strong>Tip:</strong> Custom marker panels are useful when you already have a candidate cell state, subtype, or manually curated marker set and want to query it against CelliVerse Marker DB.
@@ -881,7 +1022,11 @@ The `clustoCell_TransferLabel` function returns an updated **ClustoCell** object
 
 This strategy is especially useful when working with very large datasets or limited computational resources.
 
-In the example below, we demonstrate this approach using the pbmc3k dataset. Since the full dataset is in the form of raw counts, we use the `"count-project"` method for label transfer.
+<div class="celliverse-note">
+<strong>Expression-based label transfer:</strong> The <code>"seurat-project"</code> and <code>"seurat-knn"</code> methods operate on the original expression matrix rather than the EWCSR representation. The input expression data may consist of raw counts, log-normalized values, or SCTransform-normalized data, provided that both the sketched and full datasets use the same normalization strategy.
+</div>
+
+In the example below, we demonstrate this approach using the pbmc3k dataset and perform label transfer using the `"seurat-project"` method.
 
 ```{r, message=FALSE, eval=FALSE}
 
@@ -904,13 +1049,21 @@ sketched_pbmc_clustoCell <- clustoCell(
   verbose = FALSE
 )
 
+```
+
+<div class="celliverse-warning">
+  Note that in the <code>SketchData()</code> function we set the <code>sketched.assay</code> argument to <strong>"sketch"</strong>, and when running <code>clustoCell()</code> we set the <code>assay</code> argument to the same newly generated assay, <strong>"sketch"</strong>. However, during the label transfer step below using <code>clustoCell_TransferLabel()</code>, the full-data assay must be provided. Therefore, we set the <code>assay</code> argument to the original assay, <strong>"RNA"</strong>.
+</div>
+
+```{r, message=FALSE, eval=FALSE}
+
 # Converting the ClustoCell object to full dataset mode
 sketched_pbmc_clustoCell <- 
   clustoCell_TransferLabel(
     clustoCell = sketched_pbmc_clustoCell, 
     query_expr_mat = pbmc3k_so, 
     assay = "RNA",
-    method = "count-project",
+    method = "seurat-project",
     seed = 121
     )
 
