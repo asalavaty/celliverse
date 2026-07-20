@@ -60,7 +60,25 @@ The main goals of the package are:
 </div>
 
 <div class="celliverse-note">
-<strong>🤗 Interactive demo:</strong> A lightweight browser-based demo of selected CelliVerse functionality is available as a <a href="https://huggingface.co/spaces/asalavaty/celliverse" target="_blank" rel="noopener noreferrer">Hugging Face Space</a>. The current demo provides an interactive ClustoCell PBMC3K mini-demo using precomputed outputs.
+<strong>🤗 Interactive Demo:</strong> A lightweight browser-based demo of selected CelliVerse functionality is available through Hugging Face Spaces. The current demo provides an interactive ClustoCell PBMC3K mini-demo using precomputed outputs.<br>
+
+<a href="https://huggingface.co/spaces/asalavaty/celliverse"
+   target="_blank"
+   rel="noopener noreferrer"
+   style="display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; background: linear-gradient(135deg, #FFD54F, #FF8F00); color: #2d2d2d; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+  <i class="fas fa-rocket"></i> Open Interactive Demo
+</a>
+</div>
+
+<div class="celliverse-note">
+<strong>✨ Feature Explorer:</strong> Explore the features and capabilities of the CelliVerse R package through an interactive experience.<br>
+
+<a href="https://asalavaty.com/widgets/CelliVerse_Demo"
+   target="_blank"
+   rel="noopener noreferrer"
+   style="display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+  <i class="fas fa-compass"></i> Open Feature Explorer
+</a>
 </div>
 
 ## What you will learn
@@ -136,7 +154,14 @@ library(data.table)
 
 # For speed, reproducibility, and CRAN compatibility, computationally intensive steps are shown as code but are not re-run during vignette building. 
 # The corresponding precomputed results are loaded from `celliverse_vignette_results`, which was generated using the same workflow.
-data("celliverse_vignette_results", package = "celliverse")
+
+base::load(
+    system.file(
+        "extdata",
+        "celliverse_vignette_results.rda",
+        package = "celliverse"
+    )
+)
 
 invisible(
   list2env(
@@ -189,6 +214,17 @@ We will not run the default Seurat clustering here; instead, we demonstrate **ce
 -   (Optional) sub-clustering
 
 **clustoCell** can perform clustering and marker detection directly on raw data, so you do not need to normalize your data beforehand. You can simply provide your Seurat object as input.
+
+<div class="celliverse-note">
+<strong>✨ Feature Explorer:</strong> Explore the features and capabilities of ClustoCell through an interactive experience.<br>
+
+<a href="https://asalavaty.com/widgets/ClustoCell_Demo"
+   target="_blank"
+   rel="noopener noreferrer"
+   style="display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+  <i class="fas fa-compass"></i> Open Feature Explorer
+</a>
+</div>
 
 By default, the function uses the **count** layer from the **RNA** assay. If your assay or layer names are different from the standard ones, you can adjust the corresponding arguments.
 
