@@ -24,7 +24,7 @@
 #'
 #' @param objects
 #' A list of one or more objects of class \code{ClustoCell} or \code{MarkoCell}
-#' (e.g. \code{list(obj1, obj2)}). Mandatory if \code{desired_pos_markers} and
+#' (e.g. \code{list(obj1, obj2)}). Mandatory if \code{desired_pos_markers} and/or
 #' \code{desired_neg_markers} are not specified.
 #'
 #' @param desired_sets
@@ -84,13 +84,45 @@
 #'   \item \code{"markerDB"}: Annotates cell sets using curated cell-type
 #'   marker databases.
 #'   \item \code{"ceLLMarkup"}: Annotates cell sets using large language models
-#'   (LLM).
+#'   (LLM) via \code{\link{ceLLMarkup}}; configure the LLM with
+#'   \code{llm_provider}, \code{llm_model}, \code{llm_api_key}, \code{llm_host}.
 #' }
-#' Currently, only \code{"markerDB"} is accessible.
 #'
 #' @param species
-#' Character string specifying the species. One of \code{"human"} or
-#' \code{"mouse"}.
+#' Character string specifying the species (either \code{"human"} or
+#' \code{"mouse"}). Other species names may also be supplied when the mode is set to \code{"ceLLMarkup"}. Default is
+#' \code{"human"}.
+#' 
+#' @param sample_source Free-text description of the sample origin shown to the
+#'   model (e.g. \code{"human peripheral blood"}). Improves accuracy. Only used when mode is set to \code{"ceLLMarkup"}.
+#' @param feature_type Feature type of the markers (e.g. \code{"gene"},
+#'   \code{"protein"}). Default \code{"gene"}. Only used when mode is set to \code{"ceLLMarkup"}.
+#'
+#' @param llm_provider
+#' (\code{mode = "ceLLMarkup"} only) LLM provider. One of \code{"ollama"},
+#' \code{"lmstudio"}, \code{"openai"}, \code{"anthropic"}, \code{"gemini"},
+#' \code{"deepseek"}, \code{"groq"}, \code{"openrouter"}, \code{"cerebras"}.
+#' Default \code{"ollama"}.
+#'
+#' @param llm_model
+#' (\code{mode = "ceLLMarkup"} only) Model id for \code{llm_provider}
+#' (e.g. \code{"qwen3:8b"} for Ollama, \code{"qwen/qwen3-8b"} for LM Studio,
+#' \code{"gpt-4o-mini"} for OpenAI, \code{"anthropic/claude-3-haiku"} for
+#' OpenRouter). Mandatory when \code{mode = "ceLLMarkup"}.
+#'
+#' @param llm_api_key
+#' (\code{mode = "ceLLMarkup"} only) API key for cloud providers (not needed
+#' for Ollama/LM Studio). If \code{NULL}, falls back to the provider's standard
+#' environment variable (e.g. \code{OPENAI_API_KEY}, \code{OPENROUTER_API_KEY}).
+#'
+#' @param llm_host
+#' (\code{mode = "ceLLMarkup"} only) Base URL for local providers. Defaults to
+#' \code{http://localhost:11434} (Ollama) or \code{http://localhost:1234/v1}
+#' (LM Studio).
+#'
+#' @param llm_top_k
+#' (\code{mode = "ceLLMarkup"} only) Number of ranked candidate cell types
+#' returned per set. Default 3.
 #'
 #' @param verbose
 #' Logical; whether to display progress messages.
@@ -128,8 +160,15 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
                       ## "rank": selects all markers with ranks up to the threshold. If multiple markers share the same rank as the cutoff, they are all included.
                       ## "n": selects strictly the top n rows in rank order. Only the first n rows are kept, even if additional rows share the same rank as the n-th row.
                       thresh = 20, # Integer, threshold for choosing the top N rows of the marker tables or top N ranked markers of each cluster, sub-cluster, and cell-subset. Only used if `objects` is specified.
-                      mode = c("markerDB", "ceLLMarkup"), # Currently only markerDB is accessible. Either `markerDB` (which annotates the cell clusters and cell subsets based on the prepared database of cell-type markers) or ceLLMarkup (which annotates the cell clusters and cell subsets using large language models (LLM))
+                      mode = c("markerDB", "ceLLMarkup"), # Either `markerDB` (which annotates the cell clusters and cell subsets based on the prepared database of cell-type markers) or ceLLMarkup (which annotates the cell clusters and cell subsets using large language models (LLM))
                       species = c("human", "mouse"), # Character vector, either 'human' or 'mouse'.
+                      sample_source = NULL,
+                      feature_type = "gene",
+                      llm_provider = "ollama", # (mode = "ceLLMarkup" only) LLM provider: one of 'ollama', 'lmstudio', 'openai', 'anthropic', 'gemini', 'deepseek', 'groq', 'openrouter', 'cerebras'.
+                      llm_model = NULL, # (mode = "ceLLMarkup" only) model id for `llm_provider` (e.g. 'qwen3:8b' for ollama, 'qwen/qwen3-8b' for lmstudio, 'gpt-4o-mini' for openai, 'anthropic/claude-3-haiku' for openrouter). Mandatory when mode = "ceLLMarkup".
+                      llm_api_key = NULL, # (mode = "ceLLMarkup" only) API key for cloud providers (not needed for ollama/lmstudio). If NULL, falls back to the provider's standard environment variable (e.g. OPENAI_API_KEY, OPENROUTER_API_KEY).
+                      llm_host = NULL, # (mode = "ceLLMarkup" only) base URL for local providers (default http://localhost:11434 for ollama, http://localhost:1234/v1 for lmstudio).
+                      llm_top_k = 3, # (mode = "ceLLMarkup" only) number of ranked candidate cell types returned per set.
                       verbose = TRUE # Logical, whether to show progress messages
                       ) {
   
@@ -190,7 +229,22 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
   
   thresh_mode <- match.arg(thresh_mode)
   mode <- match.arg(mode)
-  species <- match.arg(species)
+  
+  species <- species[1]
+  if (!is.character(species) || length(species) == 0 || is.na(species)) {
+    cli::cli_abort("{.arg species} must be a non-empty character string.")
+  }
+  
+  # Normalize to lowercase
+  species <- tolower(species)
+  
+
+  if (mode == "ceLLMarkup" && (is.null(llm_model) || !nzchar(llm_model))) {
+    cli::cli_abort(c(
+      "{.arg llm_model} is required when {.code mode = 'ceLLMarkup'}.",
+      i = "e.g. llm_provider = 'ollama', llm_model = 'qwen3:8b' (local, offline); or llm_provider = 'openrouter', llm_model = 'anthropic/claude-3-haiku', llm_api_key = <key>."
+    ))
+  }
 
   #________________________________________
   
@@ -1014,6 +1068,46 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
   } else if(mode == "ceLLMarkup") {
 
     log_message("Setting the cell type annotation mode to ceLLMarkup!")
+
+    # LLM-based annotation: hand the already-assembled marker panels to
+    # ceLLMarkup(), which asks the configured LLM for ranked cell types per
+    # set. The LLM connection is configured via the `llm_provider`, `llm_model`,
+    # `llm_api_key`, and `llm_host` arguments (explicit, not inherited from the
+    # agent session). The result is reshaped to the same final_results_list
+    # structure as the markerDB branch so downstream functions work unchanged.
+    if(is.null(sample_source)) {
+      sample_source <- paste(
+        c(if (!is.null(tissue)) paste(tissue, collapse = ", ") else NULL,
+          if (!is.null(condition)) paste(condition, collapse = ", ") else NULL),
+        collapse = " ")
+    }
+
+    llm_res <- ceLLMarkup(
+      sample_source = if (nzchar(sample_source)) sample_source else NULL,
+      feature_type = feature_type,
+      panels = list(pos_panels = combined_panels_list$pos_panels %||% list(),
+                    neg_panels = if (isTRUE(use_neg_markers)) combined_panels_list$neg_panels %||% list() else list()),
+      tissue = if (!is.null(tissue)) paste(tissue, collapse = ", ") else NULL,
+      condition = if (!is.null(condition)) paste(condition, collapse = ", ") else NULL,
+      species = species,
+      provider = llm_provider,
+      model = llm_model,
+      api_key = llm_api_key,
+      host = llm_host,
+      top_k = llm_top_k,
+      n_markers = thresh,
+      verbose = verbose
+    )
+
+    # ceLLMarkup already returns TypoClust-shaped cell_types; keep them and
+    # attach the same metadata the markerDB branch produces.
+    final_results_list <- list(
+      cell_types = llm_res$cell_types,
+      metadata = list(desired_sets = combined_cell_set_names,
+                      marker_panels = combined_panels_list,
+                      marker_symbol_df = marker_symbol_df,
+                      ann_method = "ceLLMarkup")
+    )
 
   } else {
     cli::cli_abort("The `mode` argument should be either 'markerDB', or 'ceLLMarkup'!")
