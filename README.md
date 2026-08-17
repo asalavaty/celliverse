@@ -1,98 +1,334 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# CelliVerse <a href='https://youtu.be/DaWosjBNvmw' target="_blank" rel="noopener noreferrer"><img src='man/figures/Symbol.png' align="right" height="221" /></a>
+<div align="center">
+
+<a href="https://asalavaty.com/CelliVerse.html" target="_blank" rel="noopener noreferrer">
+<img src="man/figures/Symbol.png" alt="CelliVerse logo" width="190"/>
+</a>
+
+# CelliVerse
+
+### Clustering, marker discovery, cell-type annotation, and natural-language single-cell analysis in R
+
+A robust and versatile toolkit for interpretable single-cell
+RNA-sequencing analysis.
+
+</div>
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml)
-[![Hugging Face
-Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/asalavaty/celliverse)
-[![CRAN
-Version](https://www.r-pkg.org/badges/version/celliverse?color=blue)](https://cran.r-project.org/package=celliverse)
+<!-- [![R-CMD-check](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml) -->
+
+<!-- [![CRAN Version](https://www.r-pkg.org/badges/version/celliverse?color=blue)](https://cran.r-project.org/package=celliverse) -->
+
 [![Total CRAN
 Downloads](https://cranlogs.r-pkg.org/badges/grand-total/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse)
 [![Monthly CRAN
 Downloads](https://cranlogs.r-pkg.org/badges/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse)
+[![Documentation](https://img.shields.io/badge/docs-pkgdown-34495E)](https://asalavaty.github.io/celliverse/articles/Vignettes.html)
+[![Hugging Face
+Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/asalavaty/celliverse)
+[![License:
+GPL-3](https://img.shields.io/badge/License-GPL--3-blue.svg)](LICENSE)
 
 <!-- badges: end -->
 
 ## Overview
 
-`CelliVerse` is a robust and versatile toolkit for single-cell RNA
-sequencing (scRNA-seq) data analysis. It provides core functionalities
-for clustering cells, identifying markers for pre-defined clusters,
-performing sub-clustering of major cell populations, and discovering
-markers within custom-selected subsets of cells. CelliVerse also
-includes methods for analyzing cluster similarity and generating
-intuitive visualizations. Designed to be independent of library size and
-other sample- or cell-level confounding effects, CelliVerse ensures
-reliable and interpretable results across a wide range of datasets.
+`CelliVerse` is an R toolkit for **single-cell RNA-sequencing
+(scRNA-seq)** analysis, with integrated functionality for clustering,
+sub-clustering, marker discovery, cell-type annotation, cluster
+comparison, and visualization.
 
-## 🤗 Interactive demo
+At its core, **ClustoCell** provides a data-driven framework for
+identifying major cellular populations and resolving biologically
+meaningful sub-populations while simultaneously generating ranked
+positive and negative marker profiles. CelliVerse also supports marker
+discovery for pre-defined clusters and custom cell subsets, curated
+marker-based annotation through **CelliVerse MarkerDB**, LLM-assisted
+annotation, and an integrated natural-language **CelliVerse Agent**.
 
-A lightweight browser-based demo of selected `CelliVerse` functionality
-is available as a [Hugging Face
-Space](https://huggingface.co/spaces/asalavaty/celliverse). The current
-demo provides an interactive ClustoCell PBMC3K mini-demo using
-precomputed outputs, allowing users to explore UMAP visualizations,
-ClustoCell clusters/subclusters, and marker tables without installing
-the package locally.
+CelliVerse is designed to be independent of library size and other
+sample- or cell-level confounding effects, supporting robust and
+interpretable analyses across diverse datasets.
 
-## Author
+### At a glance
 
-The `CelliVerse` package was written by [Adrian
-Salavaty](https://asalavaty.com/)
+| Capability | What CelliVerse provides |
+|:---|:---|
+| **Clustering & sub-clustering** | Data-driven identification of major clusters and biologically meaningful sub-clusters with `clustoCell()` |
+| **Marker discovery** | Ranked positive and negative markers for clusters, sub-clusters, pre-defined groups, and selected cell subsets |
+| **Cell-type annotation** | Curated MarkerDB-based annotation, direct LLM-assisted annotation, and portable LLM prompts |
+| **Cellular subset analysis** | Marker discovery within user-defined subsets through the MarkoCell workflow |
+| **Visualization & comparison** | Tools for inspecting clustering structure, marker profiles, annotations, and cluster relationships |
+| **Natural-language analysis** | An integrated LLM-powered Agent for applying CelliVerse workflows through conversational instructions |
 
-## Advisors
+------------------------------------------------------------------------
 
-- Ramyar Molania
+## Quick links
 
-## How to Install
+| Resource | Link |
+|:---|:---|
+| 🌐 **CelliVerse website** | [asalavaty.com/CelliVerse.html](https://asalavaty.com/CelliVerse.html) |
+| ✨ **Feature Explorer** | [Explore CelliVerse capabilities](https://asalavaty.com/widgets/CelliVerse) |
+| 📦 **CRAN** | [cran.r-project.org/package=celliverse](https://cran.r-project.org/package=celliverse) |
+| 📖 **Full vignette** | [CelliVerse documentation](https://cran.r-project.org/web/packages/celliverse/vignettes/Introduction-to-CelliVerse.html) |
+| 🤖 **CelliVerse Agent setup** | [Setup Guide](https://cran.r-project.org/web/packages/celliverse/vignettes/Introduction-to-CelliVerse.html#installAgent) |
+| 🤗 **Interactive demo** | [Hugging Face Space](https://huggingface.co/spaces/asalavaty/celliverse) |
+| 🧬 **Reproducibility resources** | [CelliVerse-Project](https://github.com/asalavaty/CelliVerse-Project) |
+| 🐞 **Issues & feature requests** | [GitHub issue tracker](https://github.com/asalavaty/celliverse/issues) |
 
-You can install the official [CRAN
-release](https://cran.r-project.org/package=celliverse) of the
-`CelliVerse` with the following code:
+------------------------------------------------------------------------
+
+## Installation
+
+### CRAN release
+
+Install the current stable release from CRAN:
 
 ``` r
 install.packages("celliverse")
 ```
 
-Or the development version from GitHub:
+### Development version
+
+Install the latest development version from GitHub:
 
 ``` r
-## install.packages("remotes")
-remotes::install_github("asalavaty/celliverse", build_vignettes = TRUE)
+# install.packages("remotes")
+remotes::install_github(
+  "asalavaty/celliverse",
+  build_vignettes = TRUE
+)
 ```
 
-## Vignettes
+Then load the package:
 
-A comprehensive introduction to `CelliVerse` and all of its functions is
-available in the
-[vignette](https://asalavaty.github.io/celliverse/articles/Vignettes.html).
+``` r
+library(celliverse)
+```
 
-You may browse Vignettes from within R using the following code.
+------------------------------------------------------------------------
+
+## Core workflows
+
+### ClustoCell
+
+`clustoCell()` is the central clustering and marker-discovery workflow
+in CelliVerse. It supports identification of major clusters,
+sub-clustering of selected populations, and ranked positive and negative
+marker discovery within a unified analysis framework.
+
+The resulting `ClustoCell` object can be used directly with downstream
+CelliVerse annotation, visualization, and prompt-generation tools.
+
+### Marker discovery with MarkoCell
+
+The MarkoCell workflow complements ClustoCell when cluster identities or
+cell subsets are already defined. It enables marker discovery for
+pre-existing groups and custom-selected subsets without requiring cells
+to be re-clustered.
+
+### Cell-type annotation
+
+CelliVerse provides several annotation routes so users can choose
+between curated references and LLM-assisted interpretation.
+
+| Route | Main interface | Best suited for |
+|:---|:---|:---|
+| **CelliVerse MarkerDB** | `typoClust(mode = "markerDB")` | Reproducible annotation against the curated CelliVerse marker resource |
+| **Direct LLM annotation** | `typoClust(mode = "ceLLMarkup")` | Annotation of ClustoCell results through a configured language model |
+| **Standalone LLM annotation** | `ceLLMarkup()` | Annotation directly from marker panels or existing cluster labels |
+| **Portable annotation prompt** | `typoPrompt()` | Generating a structured prompt for use with any preferred chatbot or LLM |
+
+The CelliVerse MarkerDB is also distributed with the package as the
+`markerDB` data object and contains harmonized positive and negative
+marker information used by the package’s curated annotation workflow.
+
+------------------------------------------------------------------------
+
+## 🤖 CelliVerse Agent
+
+CelliVerse includes an **LLM-powered Agent** that provides a
+browser-based natural-language interface to CelliVerse analyses. It is
+designed to make workflows such as ClustoCell clustering, marker
+discovery, cell-type annotation, and visualization more accessible to
+researchers who do not routinely write R code.
+
+### Start the Agent
+
+``` r
+install_celliverse_agent()  # one-time setup
+run_celliverse_agent()      # launch the local browser app
+```
+
+The Agent can work with common single-cell data inputs, including:
+
+- `.rds`, `.RData`, and `.rda`;
+- `.csv`, `.tsv`, `.txt`, and `.tab`, optionally gzip-compressed;
+- Matrix Market `.mtx` files, optionally gzip-compressed, with their
+  sidecar files;
+- `.zip` archives containing a 10x triplet; and
+- `.h5` files when `hdf5r` is available.
+
+Example requests include:
+
+> `run clustoCell on the object`
+
+> `add labels to the Seurat object`
+
+> `generate a UMAP of the object and color cells by sub-clusters`
+
+> `give me the top 10 ranked markers of C2 and C4`
+
+> `annotate sub-clusters C1-Sub1 and C3-Sub2`
+
+The analysis objects and expression matrices remain in the local R
+session. When a cloud model is selected, the Agent sends only compact
+task-relevant information required for model reasoning rather than
+entire expression matrices. Fully local operation is also possible with
+providers such as **Ollama** and **LM Studio**.
+
+Model capability varies. Lightweight or local models may perform best
+when requests are expressed as one clear task at a time, whereas more
+capable models generally handle multi-step requests more reliably.
+
+For installation, provider configuration, security details, and advanced
+setup, see the [CelliVerse
+vignette](https://cran.r-project.org/web/packages/celliverse/vignettes/Introduction-to-CelliVerse.html).
+
+------------------------------------------------------------------------
+
+## ✨ Explore CelliVerse interactively
+
+You can explore CelliVerse before installing the package through two
+complementary interactive resources.
+
+<table>
+
+<tr>
+
+<td width="50%" valign="top">
+
+### ✨ Feature Explorer
+
+Explore the **features, workflows, and capabilities of the CelliVerse R
+package** through an interactive experience. This is a quick way to
+understand what CelliVerse can do and identify the workflows most
+relevant to your analysis.
+
+<p align="center">
+
+<a href="https://asalavaty.com/widgets/CelliVerse" target="_blank" rel="noopener noreferrer">
+<img src="https://img.shields.io/badge/✨-Open%20Feature%20Explorer-6D28D9?style=for-the-badge" alt="Open CelliVerse Feature Explorer"/>
+</a>
+</p>
+
+</td>
+
+<td width="50%" valign="top">
+
+### 🤗 ClustoCell interactive demo
+
+Explore a **PBMC3K ClustoCell analysis** using precomputed outputs,
+including UMAP visualizations, ClustoCell clusters and sub-clusters, and
+ranked marker tables, without installing the package locally.
+
+<p align="center">
+
+<a href="https://huggingface.co/spaces/asalavaty/celliverse" target="_blank" rel="noopener noreferrer">
+<img src="https://img.shields.io/badge/🤗-Open%20Interactive%20Demo-FFD21E?style=for-the-badge" alt="Open CelliVerse Demo"/>
+</a>
+</p>
+
+</td>
+
+</tr>
+
+</table>
+
+------------------------------------------------------------------------
+
+## Documentation
+
+A comprehensive introduction to CelliVerse and its workflows is
+available in the package vignette:
+
+**[Read the CelliVerse
+vignette](https://cran.r-project.org/web/packages/celliverse/vignettes/Introduction-to-CelliVerse.html)**
+
+You can also browse installed vignettes directly from R:
 
 ``` r
 browseVignettes("celliverse")
 ```
 
-## How to cite `CelliVerse`
+Function-level documentation is available through standard R help:
 
-To cite `CelliVerse`, please cite its associated paper:
+``` r
+?clustoCell
+?typoClust
+?ceLLMarkup
+?typoPrompt
+```
 
-- 
+------------------------------------------------------------------------
 
-You can also refer to the package’s citation information using the
-`citation()` function.
+## Reproducibility and study resources
+
+The analysis scripts used to generate the figures associated with the
+CelliVerse/ClustoCell study, together with prepared CelliVerse MarkerDB
+resources, are available in the dedicated reproducibility repository:
+
+**[github.com/asalavaty/CelliVerse-Project](https://github.com/asalavaty/CelliVerse-Project)**
+
+Public bulk and single-cell RNA-seq datasets used in the study are also
+archived on Zenodo:
+
+**[Zenodo DOI:
+10.5281/zenodo.20550512](https://doi.org/10.5281/zenodo.20550512)**
+
+This separation keeps the R package lightweight while providing
+transparent access to the manuscript workflows and study resources.
+
+------------------------------------------------------------------------
+
+## How to cite CelliVerse
+
+If you use CelliVerse, ClustoCell, CelliVerse MarkerDB, or related
+functionality in your work, please cite the associated
+CelliVerse/ClustoCell publication.
+
+The full manuscript citation will be added upon publication.
+
+You can also access the package citation information directly from R:
 
 ``` r
 citation("celliverse")
 ```
 
-## How to contribute
+------------------------------------------------------------------------
 
-Please don’t hesitate to report any bugs/issues and request for
-enhancement or any other contributions. To submit a bug report or
-enhancement request, please use the [`CelliVerse` GitHub issues
-tracker](https://github.com/asalavaty/celliverse/issues).
+## Author
+
+`CelliVerse` was developed by [Adrian Salavaty](https://asalavaty.com/).
+
+### Advisor
+
+- Ramyar Molania
+
+------------------------------------------------------------------------
+
+## Contributing and support
+
+Bug reports, feature requests, documentation suggestions, and other
+contributions are welcome.
+
+Please use the [`CelliVerse` GitHub issue
+tracker](https://github.com/asalavaty/celliverse/issues) to report
+problems or suggest enhancements.
+
+When reporting a bug, including a minimal reproducible example together
+with your R and package versions will make it easier to diagnose the
+issue.
