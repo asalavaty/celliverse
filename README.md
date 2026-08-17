@@ -1,20 +1,12 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-<div align="center">
-
-<a href="https://asalavaty.com/CelliVerse.html" target="_blank" rel="noopener noreferrer">
-<img src="man/figures/Symbol.png" alt="CelliVerse logo" width="190"/>
-</a>
-
-# CelliVerse
+# CelliVerse <a href="https://asalavaty.com/widgets/CelliVerse"><img src="man/figures/Symbol.png" align="right" height="221" alt="CelliVerse logo"/></a>
 
 ### Clustering, marker discovery, cell-type annotation, and natural-language single-cell analysis in R
 
 A robust and versatile toolkit for interpretable single-cell
 RNA-sequencing analysis.
-
-</div>
 
 <!-- badges: start -->
 
@@ -22,10 +14,10 @@ RNA-sequencing analysis.
 
 <!-- [![CRAN Version](https://www.r-pkg.org/badges/version/celliverse?color=blue)](https://cran.r-project.org/package=celliverse) -->
 
-[![Total CRAN
-Downloads](https://cranlogs.r-pkg.org/badges/grand-total/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse)
-[![Monthly CRAN
-Downloads](https://cranlogs.r-pkg.org/badges/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse)
+<!-- [![Total CRAN Downloads](https://cranlogs.r-pkg.org/badges/grand-total/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse) -->
+
+<!-- [![Monthly CRAN Downloads](https://cranlogs.r-pkg.org/badges/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse) -->
+
 [![Documentation](https://img.shields.io/badge/docs-pkgdown-34495E)](https://asalavaty.github.io/celliverse/articles/Vignettes.html)
 [![Hugging Face
 Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/asalavaty/celliverse)
@@ -70,7 +62,6 @@ interpretable analyses across diverse datasets.
 
 | Resource | Link |
 |:---|:---|
-| 🌐 **CelliVerse website** | [asalavaty.com/CelliVerse.html](https://asalavaty.com/CelliVerse.html) |
 | ✨ **Feature Explorer** | [Explore CelliVerse capabilities](https://asalavaty.com/widgets/CelliVerse) |
 | 📦 **CRAN** | [cran.r-project.org/package=celliverse](https://cran.r-project.org/package=celliverse) |
 | 📖 **Full vignette** | [CelliVerse documentation](https://cran.r-project.org/web/packages/celliverse/vignettes/Introduction-to-CelliVerse.html) |
