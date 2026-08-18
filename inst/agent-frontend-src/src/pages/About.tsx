@@ -59,7 +59,7 @@ export default function About() {
         <ul style={{ marginBottom: 0 }}>
           <LinkRow label="GitHub" href="https://github.com/asalavaty/celliverse" display="github.com/asalavaty/celliverse" />
           <LinkRow label="Documentation" href="https://asalavaty.github.io/celliverse/" display="asalavaty.github.io/celliverse" />
-          <LinkRow label="Vignettes" href="https://asalavaty.github.io/celliverse/articles/Vignettes.html" display="package vignettes &amp; workflows" />
+          <LinkRow label="Vignettes" href="https://asalavaty.github.io/celliverse/articles/Introduction-to-CelliVerse.html" display="package vignettes &amp; workflows" />
           <LinkRow label="Hugging Face" href="https://huggingface.co/spaces/asalavaty/celliverse" display="huggingface.co/spaces/asalavaty/celliverse" />
           <LinkRow label="Report an issue" href="https://github.com/asalavaty/celliverse/issues" display="github.com/asalavaty/celliverse/issues" />
         </ul>

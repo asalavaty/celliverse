@@ -15,6 +15,8 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+::: {.celliverse-vignette}
+
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -42,7 +44,7 @@ spaces <- function(n) {
 # Overview
 
 ```{r fig.align="right", echo=FALSE, out.width="25%", out.extra='style="float:right; padding:10px"'}
-knitr::include_graphics(path = "../man/figures/Symbol.png", error = FALSE)
+knitr::include_graphics(path = "Symbol.png", error = FALSE)
 ```
 
 **celliverse** is an R package for single-cell RNA-seq analysis that introduces a family of methods based on **Expression-Weighted Centered Scaled Ranks (EWCSR)**.
@@ -1756,3 +1758,5 @@ pbmc3k_so <- addClustoData(
 ```
 
 <a href="#top">Back to top</a>
+
+:::

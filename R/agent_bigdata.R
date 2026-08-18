@@ -63,7 +63,7 @@
 #'
 #' @param x any object.
 #' @return numeric bytes, or `NA_real_` if it cannot be determined.
-#' @keywords internal
+#' @noRd
 cv_object_bytes <- function(x) {
   tryCatch(as.numeric(utils::object.size(x)), error = function(e) NA_real_)
 }
@@ -77,7 +77,7 @@ cv_object_bytes <- function(x) {
 #' Not a tunable. It is a description of what plumber + webutils do, and if
 #' either stops copying, this number should be re-measured and changed, not
 #' adjusted to make a message read better.
-#' @keywords internal
+#' @noRd
 CV_UPLOAD_MEMORY_FACTOR <- 3
 
 #' How much EXTRA the matrix->Seurat conversion costs, as a multiple of the
@@ -95,14 +95,14 @@ CV_UPLOAD_MEMORY_FACTOR <- 3
 #' requirement by a third -- the user was told a 3.7 GB matrix needed "7.5 GB
 #' more" when the honest figure is about 5.5 GB. Labelling a total as an
 #' increment is the kind of error that reads as precision.
-#' @keywords internal
+#' @noRd
 CV_SEURAT_EXTRA_FACTOR <- 1.5
 
 #' Total physical RAM, in MB, or NA.
 #'
 #' The denominator `cv_available_memory_mb()` never had. See
 #' `cv_memory_budget_mb()` for why one reading is not enough.
-#' @keywords internal
+#' @noRd
 cv_total_memory_mb <- function() {
   sys <- tolower(Sys.info()[["sysname"]] %||% "")
   out <- tryCatch({
@@ -124,7 +124,7 @@ cv_total_memory_mb <- function() {
 }
 
 #' Fraction of total RAM a single R process may reasonably plan to use.
-#' @keywords internal
+#' @noRd
 CV_MEMORY_BUDGET_FRACTION <- 0.75
 
 #' What this machine can realistically GIVE a process, in MB.
@@ -154,7 +154,7 @@ CV_MEMORY_BUDGET_FRACTION <- 0.75
 #' ceiling; on an idle machine with lots free the direct reading is better.
 #' NA only when neither can be measured, and every caller treats NA as
 #' "no opinion, proceed".
-#' @keywords internal
+#' @noRd
 cv_memory_budget_mb <- function() {
   avail <- cv_available_memory_mb()
   total <- cv_total_memory_mb()
@@ -166,7 +166,7 @@ cv_memory_budget_mb <- function() {
 }
 
 #' Round a byte count to a short human string.
-#' @keywords internal
+#' @noRd
 cv_bytes_human <- function(bytes) {
   if (!is.finite(bytes %||% NA_real_)) return("an unknown size")
   if (bytes >= 2^30) return(sprintf("%.1f GB", bytes / 2^30))
@@ -208,7 +208,7 @@ cv_bytes_human <- function(bytes) {
 #' below refuses anything: the Upload button stays enabled, the message names
 #' the path box as the way through, and a file just under this ceiling is
 #' still judged purely on memory as before.
-#' @keywords internal
+#' @noRd
 CV_BROWSER_UPLOAD_HARD_LIMIT_BYTES <- 2^31
 
 #' @param bytes the file's size in bytes.
@@ -277,7 +277,7 @@ cv_upload_advice <- function(bytes) {
 #'   project has shipped before, and one call site is cheaper than one trap.
 #' @return a list with `convert` (logical), `bytes`, `needs_mb`, `available_mb`
 #'   and `reason` (NULL when converting).
-#' @keywords internal
+#' @noRd
 cv_conversion_advice <- function(x, handle = NULL) {
   bytes <- cv_object_bytes(x)
   avail <- cv_memory_budget_mb()
@@ -320,7 +320,7 @@ cv_conversion_advice <- function(x, handle = NULL) {
 #' @param name optional display name for the new handle.
 #' @return a list with `handle`, `descriptor` and `text`, or a `condition` on
 #'   failure (callers decide how to report it).
-#' @keywords internal
+#' @noRd
 cv_build_seurat_from_handle <- function(store, handle, name = NULL) {
   if (!cv_object_exists(store, handle)) {
     stop(sprintf("There is no object called '%s' in this session.", handle), call. = FALSE)
@@ -369,10 +369,10 @@ cv_build_seurat_from_handle <- function(store, handle, name = NULL) {
 #' Kept identical to the strings Round LXIV chose for the annotation prompt, so
 #' a model that has learned the convention from one prompt reads the other the
 #' same way.
-#' @keywords internal
+#' @noRd
 CV_FENCE_BEGIN <- "-----BEGIN DATASET CONTENT-----"
 #' @rdname CV_FENCE_BEGIN
-#' @keywords internal
+#' @noRd
 CV_FENCE_END <- "-----END DATASET CONTENT-----"
 
 #' Wrap data-derived text in a fence and say, once, that it is data.
@@ -392,7 +392,7 @@ CV_FENCE_END <- "-----END DATASET CONTENT-----"
 #' @param text the data-derived text.
 #' @param lead one sentence introducing the region, in the caller's own words.
 #' @return a single string: lead, the standing instruction, and the fenced text.
-#' @keywords internal
+#' @noRd
 cv_fence_data <- function(text, lead = "") {
   txt <- paste(as.character(text %||% ""), collapse = "\n")
   # A value that carries the fence would close the region early. Replaced, not
@@ -468,7 +468,7 @@ cv_fence_data <- function(text, lead = "") {
 #' derived-structure cost already measured for a matrix -> Seurat build.
 #' @param bytes the object's own resident size (`cv_object_bytes()`).
 #' @return numeric MB, or `NA_real_` when `bytes` cannot be measured.
-#' @keywords internal
+#' @noRd
 cv_heavy_dispatch_floor_mb <- function(bytes) {
   mb <- suppressWarnings(as.numeric(bytes %||% NA_real_)[1]) / 2^20
   if (!is.finite(mb) || mb <= 0) return(NA_real_)
@@ -492,7 +492,7 @@ cv_heavy_dispatch_floor_mb <- function(bytes) {
 #'   sketch size, or the total when not sketching).
 #' @param n_cells_total the object's total cell count.
 #' @return numeric MB, or `NA_real_` when `bytes` cannot be measured.
-#' @keywords internal
+#' @noRd
 cv_heavy_dispatch_needs_mb <- function(bytes, n_cells_used, n_cells_total) {
   mb <- suppressWarnings(as.numeric(bytes %||% NA_real_)[1]) / 2^20
   if (!is.finite(mb) || mb <= 0) return(NA_real_)
@@ -516,7 +516,7 @@ cv_heavy_dispatch_needs_mb <- function(bytes, n_cells_used, n_cells_total) {
 #' safety margin (this is an estimate, not a guarantee), and never suggests a
 #' number that is not strictly smaller than `n_cells_total` (clustoCell itself
 #' refuses `sketch_ncells >=` the cell count -- see `.cv_assert_sketch_fits`).
-#' @keywords internal
+#' @noRd
 cv_suggest_sketch_ncells <- function(bytes, n_cells_total, budget_mb) {
   mb    <- suppressWarnings(as.numeric(bytes %||% NA_real_)[1]) / 2^20
   total <- suppressWarnings(as.numeric(n_cells_total %||% NA_real_)[1])
@@ -548,7 +548,7 @@ cv_suggest_sketch_ncells <- function(bytes, n_cells_total, budget_mb) {
 #' @return a list: `fits` (logical), `bytes`, `n_cells_total`, `n_cells_used`,
 #'   `needs_mb`, `budget_mb`, `sketch_can_help` (logical, only meaningful when
 #'   `fits` is FALSE), `suggested_sketch_ncells` (integer or NA).
-#' @keywords internal
+#' @noRd
 cv_heavy_dispatch_route <- function(store, args, data_arg = "data", sketch_arg = "sketch_ncells") {
   out <- list(fits = TRUE, bytes = NA_real_, n_cells_total = NA_integer_,
               n_cells_used = NA_integer_, needs_mb = NA_real_, budget_mb = NA_real_,
@@ -607,5 +607,5 @@ cv_heavy_dispatch_route <- function(store, args, data_arg = "data", sketch_arg =
 #' a hardcoded cell count. That constraint binds the memory question; it does
 #' not extend to a speed preference the person who will wait for it gets to
 #' set.
-#' @keywords internal
+#' @noRd
 CV_LARGE_DATASET_SKETCH_HINT_NCELLS <- 100000L

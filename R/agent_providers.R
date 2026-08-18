@@ -55,7 +55,7 @@
 #'     shape); `"openai_like"`, `"anthropic"`, and `"gemini"` dispatch to the
 #'     matching `cv_models_*()` parser in agent_models.R.}
 #' }
-#' @keywords internal
+#' @noRd
 .cv_provider_registry <- list(
   ollama = list(
     key_field = NULL, key_envs = character(0), needs_key = FALSE,
@@ -105,7 +105,7 @@
 #' `c("openai_key", "anthropic_key", ...)` -- excludes keyless providers
 #' (ollama, lmstudio). Single source for every call site that previously
 #' hand-listed the 7 `*_key` config field names.
-#' @keywords internal
+#' @noRd
 .cv_provider_key_fields <- function() {
   fields <- vapply(.cv_provider_registry, function(p) p$key_field %||% NA_character_,
                    character(1))
@@ -117,7 +117,7 @@
 #' file) when a matching env var is set and non-empty. Mirrors the pre-
 #' registry per-provider `env_or()` calls in `cv_load_config()` exactly, just
 #' driven by the registry instead of one hardcoded line per provider.
-#' @keywords internal
+#' @noRd
 .cv_provider_apply_env_overrides <- function(cfg) {
   for (p in .cv_provider_registry) {
     if (is.null(p$key_field) || !length(p$key_envs)) next

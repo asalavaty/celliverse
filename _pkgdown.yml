@@ -1,11 +1,18 @@
 title: celliverse
 url: https://asalavaty.github.io/celliverse/
+
 template:
   bootstrap: 5
   params:
     bootswatch: flatly
+
 home:
   links:
   - text: Personal Website
     href: https://asalavaty.com/
 
+articles:
+- title: Getting Started
+  navbar: ~
+  contents:
+  - articles/Introduction-to-CelliVerse

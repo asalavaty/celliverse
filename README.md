@@ -18,7 +18,7 @@ RNA-sequencing analysis.
 
 <!-- [![Monthly CRAN Downloads](https://cranlogs.r-pkg.org/badges/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse) -->
 
-[![Documentation](https://img.shields.io/badge/docs-pkgdown-34495E)](https://asalavaty.github.io/celliverse/articles/Vignettes.html)
+[![Documentation](https://img.shields.io/badge/docs-pkgdown-34495E)](https://asalavaty.github.io/celliverse/)
 [![Hugging Face
 Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/asalavaty/celliverse)
 [![License:

@@ -38,7 +38,7 @@
 #' @param config effective config (for keys/hosts).
 #' @param ... extra provider params.
 #' @return internal normalized response list.
-#' @keywords internal
+#' @noRd
 cv_chat <- function(messages, provider, model, tools = NULL, temperature = 0.2,
                     stream = FALSE, on_delta = NULL, config = cv_load_config(),
                     response_format = NULL, ...) {
@@ -80,7 +80,7 @@ cv_chat <- function(messages, provider, model, tools = NULL, temperature = 0.2,
 #' `lmstudio` is the local LM Studio server (default http://localhost:1234/v1);
 #' its host is user-configurable (`lmstudio_host`) so the same provider slot
 #' also covers other OpenAI-compatible local servers (llama.cpp, Jan).
-#' @keywords internal
+#' @noRd
 .cv_openai_compatible_base_url <- function(provider, config = NULL) {
   reg <- .cv_provider_registry[[provider]]
   if (is.null(reg) || is.null(reg$base_url)) return(NULL)
@@ -88,7 +88,7 @@ cv_chat <- function(messages, provider, model, tools = NULL, temperature = 0.2,
 }
 
 #' Resolve the API key for a provider from config; error with guidance if absent
-#' @keywords internal
+#' @noRd
 cv_provider_key <- function(provider, config) {
   # Round XXXIV: key field + keyless-ness now come from .cv_provider_registry
   # instead of a hardcoded switch. Behavior is unchanged, including for an
@@ -109,7 +109,7 @@ cv_provider_key <- function(provider, config) {
 # ---- Normalization helpers shared by adapters -------------------------------
 
 #' Build a normalized tool_call record
-#' @keywords internal
+#' @noRd
 cv_tool_call <- function(id, name, arguments) {
   args <- arguments %||% list()
   # BATCH2 FIX: a bare, unnamed list() has no `names` attribute, so jsonlite
@@ -182,7 +182,7 @@ cv_tool_call <- function(id, name, arguments) {
 #' @param x the raw `arguments` field from the provider.
 #' @return a list. When the input could not be read as a JSON object, the list is
 #'   empty and carries `attr(., "cv_parse_failed")`, a short reason string.
-#' @keywords internal
+#' @noRd
 cv_parse_tool_args <- function(x) {
   fail <- function(why) structure(list(), cv_parse_failed = why)
   if (is.null(x)) return(list())
@@ -206,7 +206,7 @@ cv_parse_tool_args <- function(x) {
 }
 
 #' Standard normalized response constructor
-#' @keywords internal
+#' @noRd
 cv_llm_response <- function(content = NULL, tool_calls = NULL,
                             finish_reason = "stop", raw = NULL, usage = NULL) {
   list(content = content, tool_calls = tool_calls,
@@ -214,7 +214,7 @@ cv_llm_response <- function(content = NULL, tool_calls = NULL,
 }
 
 #' Does a normalized response request tool calls?
-#' @keywords internal
+#' @noRd
 cv_response_has_tools <- function(resp) {
   !is.null(resp$tool_calls) && length(resp$tool_calls) > 0L
 }
@@ -228,7 +228,7 @@ cv_response_has_tools <- function(resp) {
 #' common Ollama failures) instead of httr2's bare "HTTP 400 Bad Request".
 #' `parsed` is the JSON body as a list (may be empty); `raw_body` is the string
 #' body fallback. Always aborts.
-#' @keywords internal
+#' @noRd
 cv_llm_http_error <- function(status, parsed = list(), raw_body = NULL) {
   # Extract a useful message across provider shapes:
   #   OpenAI/Anthropic/Gemini -> $error$message (object)
@@ -303,7 +303,7 @@ cv_llm_http_error <- function(status, parsed = list(), raw_body = NULL) {
 #' This classifies the underlying curl message and names the provider + the
 #' likely cause, and — because CelliVerse can run fully offline — points cloud
 #' failures at Ollama. Always aborts. `provider` may be NULL (generic wording).
-#' @keywords internal
+#' @noRd
 cv_llm_connection_error <- function(provider, cond) {
   raw <- conditionMessage(cond)
   # Idempotency guard: if we are handed a condition we already classified
@@ -359,7 +359,7 @@ cv_llm_connection_error <- function(provider, cond) {
 #' `classify_conn=FALSE` re-raises the raw transport condition unchanged so a
 #' caller that owns its own connection wording (e.g. the Ollama wrapper) can
 #' classify it once, without this function nesting a generic message first.
-#' @keywords internal
+#' @noRd
 cv_http_post_json <- function(url, body, headers = list(), timeout = 300,
                               provider = NULL, classify_conn = TRUE) {
   req <- httr2::request(url)

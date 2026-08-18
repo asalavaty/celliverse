@@ -28,3 +28,6 @@ logo.png
 ^docs$
 ^_pkgdown\.yml$
 ^dev-vignettes$
+^vignettes/articles$
+^pkgdown$
+

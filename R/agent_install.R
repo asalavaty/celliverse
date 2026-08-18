@@ -206,14 +206,14 @@ install_celliverse_agent <- function(tier = c("auto", "light", "recommended",
 }
 
 #' Detect an executable on PATH (returns NULL if absent).
-#' @keywords internal
+#' @noRd
 cv_detect_binary <- function(bin) {
   path <- tryCatch(Sys.which(bin)[[1]], error = function(e) "")
   if (is.na(path) || !nzchar(path)) NULL else unname(path)
 }
 
 #' Which runtime R deps are NOT installed?
-#' @keywords internal
+#' @noRd
 cv_missing_agent_deps <- function() {
   pkgs <- .cv_agent_runtime_pkgs
   pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]

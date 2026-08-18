@@ -24,7 +24,7 @@
 # =============================================================================
 
 #' Register the ceLLMarkup annotation tool(s).
-#' @keywords internal
+#' @noRd
 cv_register_cellmarkup_tools <- function() {
   list(
     annotateCellsLLM = cv_tool(
@@ -166,7 +166,7 @@ cv_register_cellmarkup_tools <- function() {
 #' Lenient set-id resolver: case/separator-insensitive match against the
 #' available ids, returning NA for ids with no unique match (so the caller can
 #' report all unknowns at once). Unlike cv_resolve_set_ids it never aborts.
-#' @keywords internal
+#' @noRd
 cv_resolve_set_ids_lenient <- function(requested, available) {
   requested <- as.character(requested)
   available <- as.character(available)
@@ -214,7 +214,7 @@ cv_resolve_set_ids_lenient <- function(requested, available) {
 #'   3. the on-disk config -- the pre-existing fallback, unchanged, which is
 #'      what a bare store built directly in a test still gets.
 #' @param store the tool's object store; may be NULL or session-less.
-#' @keywords internal
+#' @noRd
 cv_current_config <- function(store = NULL) {
   sid <- if (!is.null(store)) attr(store, "cv_session_id") else NULL
   if (!is.null(sid) && is.character(sid) && nzchar(sid)) {
@@ -239,7 +239,7 @@ cv_current_config <- function(store = NULL) {
 #' @param top_k ranked candidates per cluster.
 #' @param config LLM config.
 #' @return a TypoClust-compatible object.
-#' @keywords internal
+#' @noRd
 cv_cellmarkup_annotate <- function(object, desired_sets = NULL, tissue = NULL,
                                    condition = NULL,
                                    species = "human", n_markers = 20L,
@@ -488,7 +488,7 @@ cv_cellmarkup_annotate <- function(object, desired_sets = NULL, tissue = NULL,
 #' user overrides it via `lmstudio_num_ctx`. Cloud providers get a value large
 #' enough that the batching below is a no-op at any realistic cluster count,
 #' which keeps the already-working cloud path on a single call.
-#' @keywords internal
+#' @noRd
 cv_llm_context_window <- function(config = cv_load_config()) {
   provider <- tolower(config$default_provider %||% "")
   ctx <- switch(
@@ -504,14 +504,14 @@ cv_llm_context_window <- function(config = cv_load_config()) {
 
 #' TRUE when the configured provider is a local inference server, where an
 #' oversized request is a stability problem rather than a billing one.
-#' @keywords internal
+#' @noRd
 cv_provider_is_local <- function(config = cv_load_config()) {
   tolower(config$default_provider %||% "") %in% c("ollama", "lmstudio")
 }
 
 #' Tokens the model must GENERATE for one cluster's annotation record: top_k
 #' candidates, each a cell_type + confidence + one-line reason, plus wrapping.
-#' @keywords internal
+#' @noRd
 cv_cellmarkup_out_tokens <- function(top_k) {
   tk <- suppressWarnings(as.integer(top_k))
   if (is.na(tk) || tk < 1L) tk <- 1L
@@ -519,7 +519,7 @@ cv_cellmarkup_out_tokens <- function(top_k) {
 }
 
 #' PROMPT tokens contributed by one cluster's marker block.
-#' @keywords internal
+#' @noRd
 cv_cellmarkup_cluster_tokens <- function(markers, cl) {
   pos <- markers$pos[[cl]] %||% character(0)
   neg <- markers$neg[[cl]] %||% character(0)
@@ -527,7 +527,7 @@ cv_cellmarkup_cluster_tokens <- function(markers, cl) {
 }
 
 #' Narrow a marker bundle to a subset of cluster ids, preserving its shape.
-#' @keywords internal
+#' @noRd
 cv_cellmarkup_subset_markers <- function(markers, keep) {
   keep <- intersect(as.character(markers$clusters), as.character(keep))
   markers$clusters <- keep
@@ -550,7 +550,7 @@ cv_cellmarkup_subset_markers <- function(markers, keep) {
 #'
 #' @return list of character vectors of cluster ids, together covering every
 #'   input cluster exactly once, in order.
-#' @keywords internal
+#' @noRd
 cv_cellmarkup_batch_clusters <- function(markers, tissue, condition, species,
                                          top_k, usable_tokens) {
   cls <- as.character(markers$clusters)
@@ -583,7 +583,7 @@ cv_cellmarkup_batch_clusters <- function(markers, tissue, condition, species,
 #' the ask (fewer candidates, then fewer markers as well), and a memory- or
 #' context-class error is re-raised immediately -- carrying the actionable hint
 #' cv_llm_http_error() already attaches -- instead of being retried at all.
-#' @keywords internal
+#' @noRd
 cv_cellmarkup_annotate_batch <- function(markers, tissue, condition, species,
                                          top_k, config, response_format,
                                          usable_tokens,
@@ -649,7 +649,7 @@ cv_cellmarkup_annotate_batch <- function(markers, tissue, condition, species,
 
 #' All annotatable set ids for an object (major +, when want_sub, sub). Used to
 #' build the "Available set(s)" list in the dropped-sets note.
-#' @keywords internal
+#' @noRd
 cv_extract_available_ids <- function(object, want_sub) {
   ml <- tryCatch(
     cv_extract_marker_lists(object, n_markers = 1L, use_neg_markers = FALSE,
@@ -675,7 +675,7 @@ cv_extract_available_ids <- function(object, want_sub) {
 #'
 #' @return list(clusters=<chr>, pos=<named list of chr>, neg=<named list of chr>,
 #'   level=<named chr: "major"/"sub" per cluster>, degraded=<lgl>)
-#' @keywords internal
+#' @noRd
 cv_extract_marker_lists <- function(object, n_markers = 20L,
                                     use_neg_markers = FALSE,
                                     annotate_subclusters = FALSE) {
@@ -694,7 +694,7 @@ cv_extract_marker_lists <- function(object, n_markers = 20L,
 }
 
 #' Top-N features from a per-cluster marker data.frame (Feature/Rank columns).
-#' @keywords internal
+#' @noRd
 cv_top_features <- function(df, n) {
   if (is.null(df) || !is.data.frame(df) || !("Feature" %in% names(df)) || !nrow(df)) {
     return(character(0))
@@ -707,7 +707,7 @@ cv_top_features <- function(df, n) {
 }
 
 #' Per-cluster markers directly from a ClustoCell's marker tree.
-#' @keywords internal
+#' @noRd
 cv_clustocell_marker_lists <- function(cc, n_markers = 20L, use_neg_markers = FALSE,
                                        annotate_subclusters = FALSE) {
   mk <- cc$markers$major_clusters$cluster_specific
@@ -757,7 +757,7 @@ cv_clustocell_marker_lists <- function(cc, n_markers = 20L, use_neg_markers = FA
 }
 
 #' Degraded single-group markers from a DatasetMarkers (pooled, no per-cluster).
-#' @keywords internal
+#' @noRd
 cv_datasetmarkers_pooled_lists <- function(dm, n_markers = 20L, use_neg_markers = FALSE) {
   take_top <- function(v) {
     v <- as.character(v); v <- v[!is.na(v) & nzchar(v)]
@@ -796,7 +796,7 @@ cv_datasetmarkers_pooled_lists <- function(dm, n_markers = 20L, use_neg_markers 
 #' sub-cluster that really is not a variety of its parent -- contamination, a
 #' doublet -- must stay reportable, or the constraint manufactures agreement
 #' instead of testing it.
-#' @keywords internal
+#' @noRd
 cv_cellmarkup_prompt_within <- function(markers, tissue, condition, species, top_k,
                                         parent_id, parent_type) {
   msgs <- cv_cellmarkup_prompt(markers, tissue, condition, species, top_k)
@@ -821,7 +821,7 @@ cv_cellmarkup_prompt_within <- function(markers, tissue, condition, species, top
 }
 
 #' Build the chat messages for annotation. Forces strict JSON output.
-#' @keywords internal
+#' @noRd
 cv_cellmarkup_prompt <- function(markers, tissue, condition, species, top_k) {
   ctx <- c(
     if (!is.null(tissue) && nzchar(tissue)) paste0("Tissue: ", tissue) else NULL,
@@ -920,7 +920,7 @@ cv_cellmarkup_prompt <- function(markers, tissue, condition, species, top_k) {
 #' of silently degrading every cluster to "Unknown". On a well-formed reply it
 #' behaves identically to cv_cellmarkup_parse() (Unknown-fill for any cluster
 #' the model omitted).
-#' @keywords internal
+#' @noRd
 cv_cellmarkup_parse_strict <- function(text, cluster_names, top_k = 3L) {
   text <- text %||% ""
   text <- gsub("```(json)?", "", text)
@@ -935,7 +935,7 @@ cv_cellmarkup_parse_strict <- function(text, cluster_names, top_k = 3L) {
 
 #' Parse the model's JSON annotation into a per-cluster candidate list.
 #' Robust to code fences / stray text around the JSON.
-#' @keywords internal
+#' @noRd
 cv_cellmarkup_parse <- function(text, cluster_names, top_k = 3L) {
   text <- text %||% ""
   # Strip markdown fences if present, then grab the outermost {...}.
@@ -978,7 +978,7 @@ cv_cellmarkup_parse <- function(text, cluster_names, top_k = 3L) {
 }
 
 #' Convert a list of candidate dicts into a ranked data.frame with a CellType col.
-#' @keywords internal
+#' @noRd
 cv_candidates_to_df <- function(cands, top_k) {
   if (!length(cands)) {
     return(data.frame(CellType = "Unknown", Confidence = 0, Rank = 1L,
@@ -1047,7 +1047,7 @@ cv_candidates_to_df <- function(cands, top_k) {
 #' Mirrors typoClust()'s structure: list(cell_types=<named list of dfs>,
 #' metadata=...), class = "TypoClust". Adds an `ann_method` marker so tooling
 #' can tell ceLLMarkup annotations from markerDB ones.
-#' @keywords internal
+#' @noRd
 cv_cellmarkup_build_typoclust <- function(parsed, markers, tissue, condition, species) {
   structure(
     list(

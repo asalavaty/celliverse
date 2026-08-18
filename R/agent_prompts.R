@@ -30,7 +30,7 @@
 #'
 #' One file, not one per session: these are the user's own shortcuts and the
 #' whole point is that they outlive the conversation that created them.
-#' @keywords internal
+#' @noRd
 cv_prompts_path <- function() file.path(cv_home_dir(), "prompts.json")
 
 #' How many saved prompts one installation may hold.
@@ -41,11 +41,11 @@ cv_prompts_path <- function() file.path(cv_home_dir(), "prompts.json")
 #' rounds. 500 is far above any plausible hand-curated favourites list, so in
 #' practice nobody meets it -- it exists so that a runaway client cannot grow the
 #' file without limit.
-#' @keywords internal
+#' @noRd
 CV_PROMPTS_MAX <- 500L
 
 #' The category a prompt gets when the user does not choose one.
-#' @keywords internal
+#' @noRd
 CV_PROMPT_DEFAULT_CATEGORY <- "General"
 
 #' Stable, human-readable id for a prompt.
@@ -58,7 +58,7 @@ CV_PROMPT_DEFAULT_CATEGORY <- "General"
 #' Deliberately NOT random: Round LXXX's logging notes make the same argument
 #' the other way round, and here determinism is what lets a built-in stay hidden
 #' across a restart.
-#' @keywords internal
+#' @noRd
 cv_prompt_slug <- function(label, prefix = "user") {
   s <- tolower(as.character(label %||% ""))
   s <- gsub("[^a-z0-9]+", "-", s)
@@ -72,7 +72,7 @@ cv_prompt_slug <- function(label, prefix = "user") {
 #' Defensive by design: this file is in the user's own directory, they are
 #' invited to edit it, and a stray character in it must degrade to "no saved
 #' prompts" rather than to a 500 on the page that shows the chat.
-#' @keywords internal
+#' @noRd
 .cv_prompts_normalise <- function(x) {
   if (!is.list(x)) x <- list()
   # `hidden` arrives as a character vector when this function is called on a
@@ -119,7 +119,7 @@ cv_prompt_slug <- function(label, prefix = "user") {
 #' an unparseable one is treated the same way, because the alternative -- an
 #' error surfacing on the chat screen -- would let a corrupt favourites list
 #' block the product's main job.
-#' @keywords internal
+#' @noRd
 cv_prompts_load <- function(path = cv_prompts_path()) {
   raw <- tryCatch({
     if (!file.exists(path)) NULL
@@ -133,7 +133,7 @@ cv_prompts_load <- function(path = cv_prompts_path()) {
 #' Temp file plus rename, so a second browser tab (or a crash mid-write) can
 #' never leave a half-written JSON document where the favourites live. Returns
 #' the normalised store invisibly.
-#' @keywords internal
+#' @noRd
 cv_prompts_save <- function(store, path = cv_prompts_path()) {
   store <- .cv_prompts_normalise(store)
   cv_ensure_home()
@@ -159,7 +159,7 @@ cv_prompts_save <- function(store, path = cv_prompts_path()) {
 #' starter prompt there therefore adds it here, to every installation, with no
 #' file migration -- which is exactly why the built-ins are not copied into
 #' prompts.json.
-#' @keywords internal
+#' @noRd
 cv_prompts_builtin <- function() {
   ex <- cv_example_prompts()
   lapply(ex, function(e) list(
@@ -174,7 +174,7 @@ cv_prompts_builtin <- function() {
 #' Order is deliberate. The starters come first because on a fresh install they
 #' are all there is, and a user who has added their own has, by definition,
 #' already found the rail.
-#' @keywords internal
+#' @noRd
 cv_prompts_all <- function(store = cv_prompts_load()) {
   bi <- cv_prompts_builtin()
   keep <- vapply(bi, function(p) !(p$id %in% store$hidden), logical(1))
@@ -183,7 +183,7 @@ cv_prompts_all <- function(store = cv_prompts_load()) {
 }
 
 #' The distinct categories present, starters first.
-#' @keywords internal
+#' @noRd
 cv_prompt_categories <- function(prompts = cv_prompts_all()) {
   cats <- vapply(prompts, function(p) as.character(p$category %||% CV_PROMPT_DEFAULT_CATEGORY),
                  character(1))
@@ -198,7 +198,7 @@ cv_prompt_categories <- function(prompts = cv_prompts_all()) {
 #'
 #' Errors are sentences in the approved voice: what happened, what to do next,
 #' no apology and no exclamation mark.
-#' @keywords internal
+#' @noRd
 cv_prompts_add <- function(label, text, category = CV_PROMPT_DEFAULT_CATEGORY,
                            store = cv_prompts_load()) {
   text <- trimws(as.character(text %||% "")[1])
@@ -236,7 +236,7 @@ cv_prompts_add <- function(label, text, category = CV_PROMPT_DEFAULT_CATEGORY,
 #' Removing something that is already gone succeeds quietly. The user pressed a
 #' button meaning "I do not want to see this", and after the call they do not;
 #' erroring on a double click would be reporting a failure that is not one.
-#' @keywords internal
+#' @noRd
 cv_prompts_remove <- function(id, store = cv_prompts_load()) {
   id <- as.character(id %||% "")[1]
   if (is.na(id) || !nzchar(id)) {
@@ -255,7 +255,7 @@ cv_prompts_remove <- function(id, store = cv_prompts_load()) {
 #'
 #' The way out of "I removed the starters and now I want them". Leaves the
 #' user's own prompts untouched.
-#' @keywords internal
+#' @noRd
 cv_prompts_restore_builtins <- function(store = cv_prompts_load()) {
   store$hidden <- character(0)
   cv_prompts_save(store)

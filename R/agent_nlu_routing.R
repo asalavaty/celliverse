@@ -40,7 +40,6 @@
 #' one. Provider/model-agnostic: this is a deterministic pre-flight check, so a
 #' weak model that would otherwise auto-route to annotateCellsLLM is stopped
 #' before any LLM call.
-#' @keywords internal
 #' Detect a META-QUESTION about a prior result rather than a fresh request.
 #'
 #' Round XVIII: "why did you annotate C5 as NK", "what method did you use",
@@ -48,7 +47,7 @@
 #' must answer them from conversation history (rule 0 CONVERSATION FIRST), NOT
 #' be intercepted by the method-choice chips OR the no-tool-call recovery.
 #' Returns TRUE for interrogative/attribution phrasing about a prior result.
-#' @keywords internal
+#' @noRd
 cv_is_meta_question <- function(msg) {
   if (is.null(msg) || !nzchar(msg)) return(FALSE)
   m <- tolower(msg)
@@ -77,7 +76,7 @@ cv_is_meta_question <- function(msg) {
 #' clustocell labels to my seurat obj" was wrongly intercepted by the method-choice
 #' chips because it matches "label" + "cluster". These are write-back requests that
 #' must fall through to the model (which routes to addClustoData/addTypoData).
-#' @keywords internal
+#' @noRd
 cv_is_write_labels_request <- function(msg) {
   if (is.null(msg) || !nzchar(msg)) return(FALSE)
   m <- tolower(msg)
@@ -101,7 +100,7 @@ cv_is_write_labels_request <- function(msg) {
 #' again, while `extra_cluster_words` preserves each caller's exact prior
 #' cluster-word set. Pure refactor: every caller passes the same arguments it
 #' always implicitly used, so detection behavior is unchanged.
-#' @keywords internal
+#' @noRd
 cv_has_annotation_intent <- function(m, extra_cluster_words = NULL) {
   annotate_verb <- grepl("annotat|label|cell[ -]?type|identify|classif|assign|what (cell|type|is)|name the", m, perl = TRUE)
   cluster_pat <- "cluster|clust|\\bc[0-9]|sub[ -]?clust|set|group|population|c1|c2|c3|c4|c5"
@@ -149,7 +148,7 @@ cv_is_unspecified_annotation <- function(msg) {
 #'
 #' @param msg The user message.
 #' @return `NULL` when in scope; otherwise a list(topic=, alternative=).
-#' @keywords internal
+#' @noRd
 cv_out_of_scope_request <- function(msg) {
   if (is.null(msg) || !nzchar(msg)) return(NULL)
   m <- tolower(msg)
@@ -192,7 +191,7 @@ cv_out_of_scope_request <- function(msg) {
 }
 
 #' The user-facing reply for an out-of-scope request.
-#' @keywords internal
+#' @noRd
 cv_out_of_scope_text <- function(hit) {
   paste0(
     "CelliVerse does not do ", hit$topic, ", so I cannot run that here. ",
@@ -208,7 +207,7 @@ cv_out_of_scope_text <- function(hit) {
 #'
 #' @param msg The user message.
 #' @return The species as a lowercase string, or `NULL` when absent/empty.
-#' @keywords internal
+#' @noRd
 cv_extract_species <- function(msg) {
   if (is.null(msg) || !nzchar(msg)) return(NULL)
   m <- regmatches(msg, regexpr("(?i)\\bspecies\\s*=\\s*([^,;]*)", msg, perl = TRUE))
@@ -232,7 +231,7 @@ cv_extract_species <- function(msg) {
 #' every markerDB annotation now first collects Tissue + Condition (either may be
 #' "All" = no filter). Returns TRUE only when the method is markerDB/typoClust AND
 #' no tissue=/condition= directive is present yet.
-#' @keywords internal
+#' @noRd
 cv_is_markerdb_annotation <- function(msg) {
   if (is.null(msg) || !nzchar(msg)) return(FALSE)
   m <- tolower(msg)
@@ -252,7 +251,7 @@ cv_is_markerdb_annotation <- function(msg) {
 #' picker) before running. Round XXI: the LLM path now collects the same
 #' Tissue/Condition/n as the MarkerDB path. Returns TRUE only when the method is
 #' the LLM AND no tissue=/condition=/n= directive is present yet.
-#' @keywords internal
+#' @noRd
 cv_is_llm_annotation <- function(msg) {
   if (is.null(msg) || !nzchar(msg)) return(FALSE)
   m <- tolower(msg)
@@ -305,7 +304,7 @@ cv_is_llm_annotation <- function(msg) {
 #'
 #' Regexes, anchored on whole words. Kept in one place so the list can be read
 #' as a list rather than reverse-engineered from a matcher.
-#' @keywords internal
+#' @noRd
 .cv_tool_aliases <- function() {
   list(
     clustoCell        = c("\\bcluster (my |the )?(cells?|data|object)\\b",
@@ -328,7 +327,7 @@ cv_is_llm_annotation <- function(msg) {
 }
 
 #' Which tools does this phrase name, by alias? Zero, one, or several.
-#' @keywords internal
+#' @noRd
 .cv_alias_matches <- function(text, reg) {
   t <- tolower(text %||% "")
   if (!nzchar(trimws(t))) return(character(0))
@@ -350,7 +349,7 @@ cv_is_llm_annotation <- function(msg) {
 #' length and the picker's n field is hidden. A "gene-like" token is 2+ chars of
 #' uppercase letters/digits (allowing a trailing digit/letter, e.g. CD3E, IL7R,
 #' MS4A1, PF4); we require >=2 such tokens to avoid false positives.
-#' @keywords internal
+#' @noRd
 
 cv_extract_user_marker_list <- function(msg) {
   empty <- list(markers = character(0), n = 0L)

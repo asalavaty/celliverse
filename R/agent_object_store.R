@@ -31,7 +31,7 @@
 #'   every existing standalone/test call site does) is simply never swept --
 #'   eviction only ever applies to a store that's actually attached to a live
 #'   session.
-#' @keywords internal
+#' @noRd
 cv_object_store_new <- function(session_id = NULL) {
   store <- new.env(parent = emptyenv())
   attr(store, "cv_session_id") <- session_id
@@ -54,7 +54,7 @@ cv_object_store_new <- function(session_id = NULL) {
 #' used first" ordering is always correct regardless of clock resolution or
 #' handle naming. Stored as an attribute on the store environment itself so
 #' it survives across calls without a separate side-channel.
-#' @keywords internal
+#' @noRd
 cv_object_next_seq <- function(store) {
   n <- (attr(store, "cv_seq_counter") %||% 0L) + 1L
   attr(store, "cv_seq_counter") <- n
@@ -99,10 +99,10 @@ cv_object_next_seq <- function(store) {
 #'
 #' Cached because these cannot change while the process lives, and this is
 #' called on every object put.
-#' @keywords internal
+#' @noRd
 .cv_versions_cache <- new.env(parent = emptyenv())
 
-#' @keywords internal
+#' @noRd
 cv_runtime_versions <- function() {
   if (!is.null(.cv_versions_cache$v)) return(.cv_versions_cache$v)
   pv <- function(p) tryCatch(as.character(utils::packageVersion(p)),
@@ -125,7 +125,7 @@ cv_runtime_versions <- function() {
 #' @param args the resolved, dispatched arguments.
 #' @param handle_args names of parameters carrying object handles (values kept
 #'   as the handle STRING; anything unserializable is dropped).
-#' @keywords internal
+#' @noRd
 cv_call_provenance <- function(tool_name, args = list(), handle_args = character(0)) {
   keep <- list()
   nm <- names(args %||% list())
@@ -170,7 +170,7 @@ cv_call_provenance <- function(tool_name, args = list(), handle_args = character
 #' reading a Results row or a downloaded file six months later, so it travels to
 #' the artifacts state and to `describe_object` (an explicit, one-off request)
 #' and nowhere else.
-#' @keywords internal
+#' @noRd
 cv_object_set_provenance <- function(store, handle, provenance) {
   tryCatch({
     if (is.null(store) || is.null(handle) || !nzchar(handle)) return(invisible(FALSE))
@@ -183,7 +183,7 @@ cv_object_set_provenance <- function(store, handle, provenance) {
 }
 
 #' Read a handle's provenance record, or NULL.
-#' @keywords internal
+#' @noRd
 cv_object_provenance <- function(store, handle) {
   tryCatch({
     if (is.null(store) || is.null(handle) || !nzchar(handle)) return(NULL)
@@ -193,7 +193,7 @@ cv_object_provenance <- function(store, handle) {
 }
 
 #' Render a provenance record as one readable block for `describe_object`.
-#' @keywords internal
+#' @noRd
 cv_provenance_text <- function(p) {
   if (is.null(p) || !is.list(p)) return("")
   bits <- character(0)
@@ -220,7 +220,7 @@ cv_provenance_text <- function(p) {
 #' @param handle optional explicit handle; auto-generated if NULL.
 #' @param source short human string describing where it came from.
 #' @return the handle (character).
-#' @keywords internal
+#' @noRd
 cv_object_put <- function(store, value, handle = NULL, source = "") {
   if (is.null(handle)) {
     handle <- cv_new_id(prefix = cv_handle_prefix(value))
@@ -279,7 +279,7 @@ cv_object_put <- function(store, value, handle = NULL, source = "") {
 #' @param value the updated R object (same canonical type as the current value).
 #' @param source short human string describing the update.
 #' @return the (unchanged) handle.
-#' @keywords internal
+#' @noRd
 cv_object_update <- function(store, handle, value, source = "") {
   if (!cv_object_exists(store, handle)) {
     cli::cli_abort(c(
@@ -328,7 +328,7 @@ cv_object_update <- function(store, handle, value, source = "") {
 }
 
 #' Retrieve the raw object for a handle (server-side use only)
-#' @keywords internal
+#' @noRd
 cv_object_get <- function(store, handle) {
   if (!cv_object_exists(store, handle)) {
     cli::cli_abort("No object with handle {.val {handle}} exists in this session.")
@@ -356,13 +356,13 @@ cv_object_get <- function(store, handle) {
 }
 
 #' Does a handle exist?
-#' @keywords internal
+#' @noRd
 cv_object_exists <- function(store, handle) {
   is.character(handle) && length(handle) == 1L && exists(handle, envir = store, inherits = FALSE)
 }
 
 #' Remove an object
-#' @keywords internal
+#' @noRd
 cv_object_remove <- function(store, handle) {
   if (cv_object_exists(store, handle)) rm(list = handle, envir = store)
   invisible(NULL)
@@ -381,7 +381,7 @@ cv_object_remove <- function(store, handle) {
 #' safely (see above), so this protection is a belt-and-suspenders measure
 #' against an unnecessary/confusing evict-then-immediately-resurrect cycle
 #' for an object that was never actually idle, not a correctness requirement.
-#' @keywords internal
+#' @noRd
 .cv_object_inflight_handles <- function(sess) {
   if (is.null(sess) || is.null(sess$jobs)) return(character(0))
   jids <- ls(envir = sess$jobs)
@@ -420,7 +420,7 @@ cv_object_remove <- function(store, handle) {
 #' @param keep max LIVE objects to retain; defaults to the owning session's
 #'   `object_store_limit` config (see cv_default_config()).
 #' @return invisibly, the number of objects evicted.
-#' @keywords internal
+#' @noRd
 cv_object_evict_stale <- function(store, keep = NULL) {
   session_id <- attr(store, "cv_session_id")
   if (is.null(session_id)) return(invisible(0L))
@@ -467,7 +467,7 @@ cv_object_evict_stale <- function(store, keep = NULL) {
 }
 
 #' List all handles
-#' @keywords internal
+#' @noRd
 cv_object_handles <- function(store) {
   ls(envir = store, all.names = FALSE)
 }
@@ -481,7 +481,7 @@ cv_object_handles <- function(store) {
 #' @param types character vector of canonical types (see `cv_object_type()`), or
 #'   NULL/empty to return every handle.
 #' @return a character vector of handles, possibly empty.
-#' @keywords internal
+#' @noRd
 cv_objects_of_type <- function(store, types = NULL) {
   hs <- cv_object_handles(store)
   if (is.null(types) || !length(types)) return(hs)
@@ -493,14 +493,14 @@ cv_objects_of_type <- function(store, types = NULL) {
 }
 
 #' Get the descriptor for a handle (safe to send to LLM / client)
-#' @keywords internal
+#' @noRd
 cv_object_descriptor <- function(store, handle) {
   if (!cv_object_exists(store, handle)) return(NULL)
   get(handle, envir = store)$descriptor
 }
 
 #' All descriptors in the store (list) - the "what's loaded" view for the LLM
-#' @keywords internal
+#' @noRd
 cv_object_descriptors <- function(store) {
   lapply(cv_object_handles(store), function(h) cv_object_descriptor(store, h))
 }
@@ -514,7 +514,7 @@ cv_object_descriptors <- function(store) {
 #' type (mat_/obj_/df_/...) and sanitizing the name: lowercase, runs of
 #' non-alphanumeric characters collapsed to single underscores, trimmed. Returns
 #' NULL when the name is empty/blank (caller then falls back to a random id).
-#' @keywords internal
+#' @noRd
 cv_handle_from_name <- function(value, name) {
   if (is.null(name) || length(name) == 0) return(NULL)
   nm <- trimws(as.character(name)[1])
@@ -539,7 +539,7 @@ cv_handle_from_name <- function(value, name) {
 #' @param value the new R object (its class picks the prefix).
 #' @param inherit_from character vector of input handles (first one wins).
 #' @return a unique handle (character).
-#' @keywords internal
+#' @noRd
 cv_derived_handle <- function(store, value, inherit_from = NULL) {
   prefix <- cv_handle_prefix(value)
   inherit_from <- as.character(inherit_from %||% character(0))
@@ -581,7 +581,7 @@ cv_derived_handle <- function(store, value, inherit_from = NULL) {
 #'   or NULL when annotating ALL sets.
 #' @return a character vector like `inherit_from` but with the first element's
 #'   base augmented; returned unchanged when there is nothing to add.
-#' @keywords internal
+#' @noRd
 cv_tagged_inherit <- function(inherit_from, method = NULL, desired_sets = NULL) {
   inherit_from <- as.character(inherit_from %||% character(0))
   inherit_from <- inherit_from[nzchar(inherit_from)]
@@ -621,7 +621,7 @@ cv_tagged_inherit <- function(inherit_from, method = NULL, desired_sets = NULL) 
 }
 
 #' Choose a handle prefix based on object class
-#' @keywords internal
+#' @noRd
 cv_handle_prefix <- function(value) {
   cl <- class(value)[1]
   switch(cl,
@@ -649,7 +649,7 @@ cv_handle_prefix <- function(value) {
 #' The registry declares which input_object_types a tool accepts and what
 #' output_object_type it produces; matching these prevents invalid tool chains
 #' (e.g. addClustoData before clustoCell).
-#' @keywords internal
+#' @noRd
 cv_object_type <- function(value) {
   if (inherits(value, "Seurat")) return("Seurat")
   if (inherits(value, "SpatialExperiment")) return("SpatialExperiment")
@@ -728,7 +728,7 @@ cv_object_type <- function(value) {
 #' @param source free-text provenance ("upload", a tool name, ...).
 #' @return a named list: the base fields, the type-specific fields, and
 #'   `summary`.
-#' @keywords internal
+#' @noRd
 cv_describe_object <- function(value, handle = NA_character_, source = "") {
   type <- cv_object_type(value)
   base <- list(
@@ -769,7 +769,7 @@ cv_describe_object <- function(value, handle = NA_character_, source = "") {
 #' are already log-transformed (see `cv_detect_log_transformed()`).
 #' @param x a Seurat object.
 #' @return a named list of type-specific descriptor fields.
-#' @keywords internal
+#' @noRd
 cv_describe_seurat <- function(x) {
   md_cols <- tryCatch(colnames(x[[]]), error = function(e) character(0))
   assays  <- tryCatch(names(x@assays), error = function(e) character(0))
@@ -801,7 +801,7 @@ cv_describe_seurat <- function(x) {
 #' paid on every turn.
 #' @param x a SingleCellExperiment or SpatialExperiment.
 #' @return a named list of type-specific descriptor fields.
-#' @keywords internal
+#' @noRd
 cv_describe_sce <- function(x) {
   md_cols <- tryCatch(colnames(SummarizedExperiment::colData(x)), error = function(e) character(0))
   assays  <- tryCatch(SummarizedExperiment::assayNames(x), error = function(e) character(0))
@@ -823,7 +823,7 @@ cv_describe_sce <- function(x) {
 #' apart and small enough to cost nothing.
 #' @param x a matrix or dgCMatrix.
 #' @return a named list of type-specific descriptor fields.
-#' @keywords internal
+#' @noRd
 cv_describe_matrix <- function(x) {
   list(
     n_features = nrow(x),   # genes are rows in CelliVerse convention
@@ -846,7 +846,7 @@ cv_describe_matrix <- function(x) {
 #' treated as LOG/NORMALIZED when (a) any sampled value is non-integer, OR
 #' (b) the max sampled value is suspiciously small for raw UMI counts (< ~30).
 #' Returns "counts", "log", or "unknown" (empty/undetermined).
-#' @keywords internal
+#' @noRd
 cv_detect_log_transformed <- function(x, assay = NULL, layer = "counts") {
   vals <- tryCatch({
     m <- x
@@ -932,7 +932,7 @@ cv_detect_log_transformed <- function(x, assay = NULL, layer = "counts") {
 #' Agent-layer helper (does NOT touch CelliVerse analysis functions). Assumes
 #' the CelliVerse genes-x-cells convention. A data.frame is coerced to a numeric
 #' matrix; a non-numeric frame returns NULL so the caller skips conversion.
-#' @keywords internal
+#' @noRd
 cv_matrix_to_seurat <- function(x) {
   m <- x
   if (inherits(x, "data.frame")) {
@@ -960,7 +960,7 @@ cv_matrix_to_seurat <- function(x) {
 #' `clustoCell()` assigns to unassigned cells, not a set anything can annotate.
 #' @param x a ClustoCell object.
 #' @return a named list of type-specific descriptor fields.
-#' @keywords internal
+#' @noRd
 cv_describe_clustocell <- function(x) {
   # Real ClustoCell structure (verified against the package's own results):
   #   x$clusters$major_clusters       named chr vector: cell -> "C1".."Cn"
@@ -1045,7 +1045,7 @@ cv_describe_clustocell <- function(x) {
 #' @param x a MarkoCell object.
 #' @param type the type label from the dispatch switch.
 #' @return a named list of type-specific descriptor fields.
-#' @keywords internal
+#' @noRd
 cv_describe_markoresult <- function(x, type) {
   # MarkoCell: $cell_subset_markers (named list, one entry per analysed subset)
   #            + globally_pure_* + quiescent_cells.
@@ -1082,7 +1082,7 @@ cv_describe_markoresult <- function(x, type) {
 #' the set the model is allowed to reference.
 #' @param x a MarkerPurity object.
 #' @return a named list of type-specific descriptor fields.
-#' @keywords internal
+#' @noRd
 cv_describe_markerpurity <- function(x) {
   # MarkerPurity: single element ($within_clusters or $within_cells) keyed by
   # marker TYPE (positive/negative/medium), each of which is keyed by the
@@ -1142,7 +1142,7 @@ cv_describe_markerpurity <- function(x) {
 CV_PURITY_FINDINGS_MAX <- 12L
 
 #' Flatten a MarkerPurity's per-type/per-group tables into one compact record.
-#' @keywords internal
+#' @noRd
 .cv_markerpurity_findings <- function(by_type, group_ids) {
   if (is.null(by_type) || !is.list(by_type) || !length(group_ids)) return(list())
   out <- list(); n <- 0L; dropped <- 0L
@@ -1171,7 +1171,7 @@ CV_PURITY_FINDINGS_MAX <- 12L
 }
 
 #' Render the findings for one group as a clause.
-#' @keywords internal
+#' @noRd
 .cv_markerpurity_findings_text <- function(findings) {
   if (!length(findings)) return("")
   parts <- character(0)
@@ -1202,7 +1202,7 @@ CV_PURITY_FINDINGS_MAX <- 12L
 #' markers these are, far short of a marker table.
 #' @param x a DatasetMarkers object.
 #' @return a named list of type-specific descriptor fields.
-#' @keywords internal
+#' @noRd
 cv_describe_datasetmarkers <- function(x) {
   # $combined_markers is a character vector of gene names (deduplicated union of
   # cluster + sub-cluster positive markers). length() is the right count.
@@ -1225,7 +1225,7 @@ cv_describe_datasetmarkers <- function(x) {
 #' labels are small, and they are the whole point of the object.
 #' @param x a TypoClust object.
 #' @return a named list of type-specific descriptor fields.
-#' @keywords internal
+#' @noRd
 cv_describe_typoclust <- function(x) {
   sets <- tryCatch(names(x$cell_types), error = function(e) character(0))
   # Round LXIV: carry the annotation CONTEXT, not just the labels.
@@ -1284,6 +1284,7 @@ cv_describe_typoclust <- function(x) {
 #' Deliberately far above any realistic clustering (the previous 20/40 were
 #' not). This exists to stop a pathological object from putting an unbounded
 #' string in the system prompt, not to summarize -- reaching it is announced.
+#' @noRd
 CV_DESC_MAX_IDS <- 500L
 
 #' Sort ids the way a human reads them: C2 before C10, C1-Sub2 before C1-Sub10.
@@ -1295,7 +1296,7 @@ CV_DESC_MAX_IDS <- 500L
 #' surprises) while ordering numerically.
 #' @param x character vector of ids.
 #' @return `x`, reordered.
-#' @keywords internal
+#' @noRd
 .cv_natural_sort <- function(x) {
   if (!length(x)) return(x)
   x <- as.character(x)
@@ -1318,7 +1319,7 @@ CV_DESC_MAX_IDS <- 500L
 #'   descriptor holds, which is the default because the model is instructed to
 #'   take set ids from here.
 #' @return a bracketed string like " [C1, C2, C3 ... (+7 more)]", or "".
-#' @keywords internal
+#' @noRd
 .cv_id_list_text <- function(ids, total = NULL, max_show = NULL) {
   ids <- as.character(ids %||% character(0))
   if (!length(ids)) return("")
@@ -1345,7 +1346,7 @@ CV_DESC_MAX_IDS <- 500L
 #' to "first row" rather than error.
 #' @param df one set's candidate data.frame.
 #' @return a one-row data.frame.
-#' @keywords internal
+#' @noRd
 .cv_typoclust_rank1_row <- function(df) {
   tryCatch({
     if ("Rank" %in% names(df)) df[df$Rank == 1L, , drop = FALSE][1, , drop = FALSE]
@@ -1371,7 +1372,7 @@ CV_DESC_MAX_IDS <- 500L
 #' @return a named character vector: name = set id, value = label string.
 #'   Sets whose label could not be read are dropped, so the result may be
 #'   shorter than `names(x$cell_types)`.
-#' @keywords internal
+#' @noRd
 cv_typoclust_top_labels <- function(x) {
   ct <- tryCatch(x$cell_types, error = function(e) NULL)
   if (is.null(ct) || !length(ct)) return(character(0))
@@ -1455,7 +1456,7 @@ CV_TYPO_NEAR_TIE <- 0.5
 #'
 #' @param df one set's candidate data.frame.
 #' @return "" when there is nothing to say, else " [...]".
-#' @keywords internal
+#' @noRd
 .cv_typoclust_margin_text <- function(df) {
   tryCatch({
     if (is.null(df) || !is.data.frame(df) || nrow(df) < 1L) return("")
@@ -1501,7 +1502,7 @@ CV_TYPO_NEAR_TIE <- 0.5
 
 #' Format the rank-1 labels as a compact one-line string for the result text,
 #' e.g. "C1: B cells (Blood/Healthy); C2: CD4+ T cell; C5: Platelet".
-#' @keywords internal
+#' @noRd
 cv_typoclust_labels_text <- function(x, max_sets = 25L) {
   lbls <- cv_typoclust_top_labels(x)
   if (!length(lbls)) return("")
@@ -1531,13 +1532,13 @@ cv_typoclust_labels_text <- function(x, max_sets = 25L) {
 #' set to name a column in a follow-up call.
 #' @param x a data.frame.
 #' @return a named list of type-specific descriptor fields.
-#' @keywords internal
+#' @noRd
 cv_describe_df <- function(x) {
   list(nrow = nrow(x), ncol = ncol(x), columns = colnames(x))
 }
 
 #' Describe a CellSet (a reusable set of cell barcodes from a cluster/subset)
-#' @keywords internal
+#' @noRd
 cv_describe_cellset <- function(x) {
   list(
     n_cells       = length(x$cells %||% character(0)),
@@ -1559,7 +1560,7 @@ cv_describe_cellset <- function(x) {
 #' their upload arrived and can be downloaded again.
 #' @param x any object.
 #' @return a named list with a single `length` field.
-#' @keywords internal
+#' @noRd
 cv_describe_fallback <- function(x) {
   list(length = length(x))
 }
@@ -1572,7 +1573,7 @@ cv_describe_fallback <- function(x) {
 #' to "some": contract rule 6 says unknown and none must not be collapsed, and
 #' inventing a number here would be exactly that collapse in the other
 #' direction.
-#' @keywords internal
+#' @noRd
 .cv_set_aside_text <- function(flag, n, label) {
   if (!isTRUE(flag)) return(character(0))
   n <- suppressWarnings(as.integer(n %||% NA))
@@ -1581,7 +1582,7 @@ cv_describe_fallback <- function(x) {
 }
 
 #' Build the one-line human summary shown to the LLM
-#' @keywords internal
+#' @noRd
 cv_summary_line <- function(d) {
   t <- d$type
   if (t %in% c("Seurat", "SingleCellExperiment", "SpatialExperiment")) {

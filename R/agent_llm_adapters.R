@@ -62,8 +62,7 @@
 #'   Callers that can PREDICT how long the reply should be (annotateCellsLLM
 #'   knows it wants one JSON record per cluster) should pass that prediction so
 #'   the server refuses to overrun instead of trying.
-#' @keywords internal
-#' Nucleus-sampling and seed values for a request.
+#'   Nucleus-sampling and seed values for a request.
 #'
 #' Round LXXX (audit #92). `top_p`, `top_k` and `seed` appeared ZERO times in
 #' this entire file, so every request went out at the provider's default
@@ -156,7 +155,7 @@ cv_chat_openai <- function(messages, model, tools = NULL, temperature = 0.2,
 }
 
 #' Convert internal messages -> OpenAI message array
-#' @keywords internal
+#' @noRd
 cv_msgs_to_openai <- function(messages) {
   lapply(messages, function(m) {
     role <- m$role
@@ -177,7 +176,7 @@ cv_msgs_to_openai <- function(messages) {
 }
 
 #' Parse OpenAI response -> normalized
-#' @keywords internal
+#' @noRd
 cv_openai_parse_response <- function(parsed) {
   # BATCH2 FIX: a well-formed 2xx response can still carry an empty
   # `choices` array (e.g. certain content-filter responses, or a momentary
@@ -203,7 +202,7 @@ cv_openai_parse_response <- function(parsed) {
 }
 
 #' Streaming path for OpenAI (SSE from the API). Accumulates tokens + tool calls.
-#' @keywords internal
+#' @noRd
 cv_stream_openai <- function(base_url, body, headers, on_delta, provider = "openai") {
   body$stream <- TRUE
   acc_content <- ""
@@ -280,7 +279,7 @@ cv_stream_openai <- function(base_url, body, headers, on_delta, provider = "open
 # Anthropic (Messages API). Tool use via `tools` + `tool_use`/`tool_result`.
 # -----------------------------------------------------------------------------
 
-#' @keywords internal
+#' @noRd
 cv_chat_anthropic <- function(messages, model, tools = NULL, temperature = 0.2,
                               stream = FALSE, on_delta = NULL, config = cv_load_config(),
                               base_url = "https://api.anthropic.com/v1", max_tokens = 4096,
@@ -322,14 +321,14 @@ cv_chat_anthropic <- function(messages, model, tools = NULL, temperature = 0.2,
 }
 
 #' Pull the concatenated system prompt out of internal messages
-#' @keywords internal
+#' @noRd
 cv_extract_system <- function(messages) {
   sys <- vapply(messages, function(m) if (identical(m$role, "system")) (m$content %||% "") else "", character(1))
   paste(sys[nzchar(sys)], collapse = "\n\n")
 }
 
 #' Convert internal messages -> Anthropic messages (system stripped)
-#' @keywords internal
+#' @noRd
 cv_msgs_to_anthropic <- function(messages) {
   msgs <- Filter(function(m) !identical(m$role, "system"), messages)
   lapply(msgs, function(m) {
@@ -350,7 +349,7 @@ cv_msgs_to_anthropic <- function(messages) {
 }
 
 #' Convert provider-neutral tool specs -> Anthropic tool format
-#' @keywords internal
+#' @noRd
 cv_tools_to_anthropic <- function(tools) {
   lapply(tools, function(t) {
     f <- t$`function`
@@ -359,7 +358,7 @@ cv_tools_to_anthropic <- function(tools) {
 }
 
 #' Parse Anthropic response -> normalized
-#' @keywords internal
+#' @noRd
 cv_anthropic_parse_response <- function(parsed) {
   content_txt <- NULL; tcs <- list()
   for (block in parsed$content %||% list()) {
@@ -382,7 +381,7 @@ cv_anthropic_parse_response <- function(parsed) {
 # Google Gemini (generateContent). Tool use via functionDeclarations.
 # -----------------------------------------------------------------------------
 
-#' @keywords internal
+#' @noRd
 cv_chat_gemini <- function(messages, model, tools = NULL, temperature = 0.2,
                            stream = FALSE, on_delta = NULL, config = cv_load_config(),
                            base_url = "https://generativelanguage.googleapis.com/v1beta",
@@ -431,7 +430,7 @@ cv_chat_gemini <- function(messages, model, tools = NULL, temperature = 0.2,
 }
 
 #' Convert internal messages -> Gemini contents (roles: user/model)
-#' @keywords internal
+#' @noRd
 cv_msgs_to_gemini <- function(messages) {
   msgs <- Filter(function(m) !identical(m$role, "system"), messages)
   lapply(msgs, function(m) {
@@ -457,7 +456,7 @@ cv_msgs_to_gemini <- function(messages) {
 }
 
 #' Parse Gemini response -> normalized
-#' @keywords internal
+#' @noRd
 cv_gemini_parse_response <- function(parsed) {
   cand <- tryCatch(parsed$candidates[[1]], error = function(e) NULL)
   content_txt <- NULL; tcs <- list()
@@ -588,7 +587,7 @@ cv_chat_ollama <- function(messages, model, tools = NULL, temperature = 0.2,
 #' poster / stream path) are re-raised unchanged so their provider hints
 #' survive. Only genuine transport failures get the "is ollama serve running?"
 #' hint.
-#' @keywords internal
+#' @noRd
 cv_with_ollama_connect_hint <- function(host, expr) {
   tryCatch(
     expr,
@@ -624,7 +623,7 @@ cv_with_ollama_connect_hint <- function(host, expr) {
 }
 
 #' Convert internal messages -> Ollama messages
-#' @keywords internal
+#' @noRd
 cv_msgs_to_ollama <- function(messages) {
   lapply(messages, function(m) {
     if (m$role == "tool") {
@@ -647,7 +646,7 @@ cv_msgs_to_ollama <- function(messages) {
 }
 
 #' Parse an Ollama message object -> normalized
-#' @keywords internal
+#' @noRd
 cv_ollama_parse_message <- function(msg, raw = NULL) {
   tcs <- NULL
   if (!is.null(msg$tool_calls) && length(msg$tool_calls)) {
@@ -665,7 +664,7 @@ cv_ollama_parse_message <- function(msg, raw = NULL) {
 }
 
 #' Streaming path for Ollama (newline-delimited JSON objects)
-#' @keywords internal
+#' @noRd
 cv_stream_ollama <- function(host, body, on_delta) {
   acc_content <- ""; final_msg <- NULL
   req <- httr2::request(paste0(host, "/api/chat"))

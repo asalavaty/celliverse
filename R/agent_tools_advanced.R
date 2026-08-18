@@ -21,7 +21,7 @@
 # =============================================================================
 
 #' Register advanced (low-level EWCSR primitives) + decoupled-workflow tools
-#' @keywords internal
+#' @noRd
 cv_register_advanced_tools <- function() {
   list(
 
@@ -249,7 +249,7 @@ cv_register_advanced_tools <- function() {
 }
 
 #' Register meta / utility tools (LLM-visible orientation helpers)
-#' @keywords internal
+#' @noRd
 cv_register_meta_tools <- function() {
   list(
 

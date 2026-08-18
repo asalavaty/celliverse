@@ -287,7 +287,7 @@ ceLLMarkup <- function(sample_source = NULL,
 #' Both levels have to be present. A call carrying only sub-clusters has no
 #' parent identity available to inherit, so every entry comes back `NA` and the
 #' caller takes its ordinary single-request path.
-#' @keywords internal
+#' @noRd
 .cv_cellmarkup_parentage <- function(set_names, enabled = TRUE) {
   out <- stats::setNames(rep(NA_character_, length(set_names)), set_names)
   if (!isTRUE(enabled) || length(set_names) < 2L) return(out)
@@ -329,7 +329,7 @@ ceLLMarkup <- function(sample_source = NULL,
 #' @return `list(parsed=, inheritance=, hierarchical=)`. `inheritance` is NULL
 #'   when nothing was inherited, else a data.frame of Set / Parent /
 #'   Parent_CellType / Restricted.
-#' @keywords internal
+#' @noRd
 .cv_cellmarkup_hierarchy <- function(set_names, enabled, annotate, log = NULL) {
   say <- function(...) if (is.function(log)) log(...) else invisible(NULL)
   
@@ -400,7 +400,7 @@ ceLLMarkup <- function(sample_source = NULL,
 #' guidance in `typoPrompt()`: a sub-cluster that genuinely is not a variety of
 #' its parent (contamination, a doublet, a mis-split) must be reportable as
 #' such, or the constraint would turn into a way of manufacturing agreement.
-#' @keywords internal
+#' @noRd
 .cv_cellmarkup_prompt_within <- function(markers, parent_id, parent_type,
                                          sample_source, feature_type, tissue,
                                          condition, species, top_k) {
@@ -461,7 +461,7 @@ ceLLMarkup <- function(sample_source = NULL,
 }
 
 #' Build a cv_chat()-compatible config from explicit ceLLMarkup arguments.
-#' @keywords internal
+#' @noRd
 .cv_cellmarkup_config <- function(provider, model, api_key, host, temperature) {
   if (missing(model) || is.null(model) || !nzchar(model)) {
     cli::cli_abort(c(
@@ -504,7 +504,7 @@ ceLLMarkup <- function(sample_source = NULL,
 }
 
 #' Build the ceLLMarkup chat messages (strict JSON out).
-#' @keywords internal
+#' @noRd
 .cv_cellmarkup_prompt <- function(markers, sample_source, feature_type, tissue,
                                   condition, species, top_k) {
   ctx <- c(
@@ -548,7 +548,7 @@ ceLLMarkup <- function(sample_source = NULL,
 }
 
 #' Parse the model's JSON annotation; NULL when unparseable (triggers retry).
-#' @keywords internal
+#' @noRd
 .cv_cellmarkup_parse <- function(text, cluster_names, top_k = 3L) {
   text <- text %||% ""
   text <- gsub("```(json)?", "", text)
@@ -574,7 +574,7 @@ ceLLMarkup <- function(sample_source = NULL,
 }
 
 #' Convert candidate dicts to a ranked data.frame.
-#' @keywords internal
+#' @noRd
 .cv_cellmarkup_candidates_df <- function(cands, top_k) {
   if (!length(cands)) {
     return(data.frame(CellType = "Unknown", Confidence = 0, Rank = 1L,
@@ -595,7 +595,7 @@ ceLLMarkup <- function(sample_source = NULL,
 #' addTypoData() expect. LLM-specific fields (Confidence, Reason) are kept;
 #' markerDB-style evidence columns are filled from the input panels so the
 #' visualization functions work unchanged.
-#' @keywords internal
+#' @noRd
 .cv_cellmarkup_build_typoclust <- function(parsed, markers, tissue, condition,
                                            species, pos_panels, neg_panels) {
   cell_types <- lapply(names(parsed), function(cl) {

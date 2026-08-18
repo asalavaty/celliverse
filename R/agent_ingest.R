@@ -41,7 +41,7 @@
 # =============================================================================
 
 #' Formats this build can actually read, as a user-facing list.
-#' @keywords internal
+#' @noRd
 cv_supported_formats <- function() {
   base <- c(".rds", ".rdata/.rda", ".csv/.tsv/.txt (+.gz)", ".mtx (+.gz)",
             ".zip (10x matrix/barcodes/features)")
@@ -50,7 +50,7 @@ cv_supported_formats <- function() {
 
 #' Is an HDF5 reader available in THIS R installation? `hdf5r` is a Seurat
 #' Suggests, so it may or may not be present; CelliVerse never requires it.
-#' @keywords internal
+#' @noRd
 cv_has_hdf5 <- function() requireNamespace("hdf5r", quietly = TRUE)
 
 #' Extensions `cv_read_dataset_file()` actually dispatches on.
@@ -64,7 +64,7 @@ cv_has_hdf5 <- function() requireNamespace("hdf5r", quietly = TRUE)
 #' the reader's specific, actionable message ("install hdf5r, or export as 10x
 #' MTX") with a generic list of formats -- the pre-check exists to save the user
 #' an upload, not to give a worse answer than the code behind it.
-#' @keywords internal
+#' @noRd
 CV_UPLOAD_EXTS <- c("rds", "rdata", "rda", "csv", "tsv", "txt", "tab",
                     "mtx", "zip", "h5")
 
@@ -90,7 +90,7 @@ CV_UPLOAD_EXTS <- c("rds", "rdata", "rda", "csv", "tsv", "txt", "tab",
 #' `cv_api_upload_multipart()` has always defaulted that to `.rds`; turning a
 #' working path into an error would be a regression dressed as a guard.
 #' @param filename the name the browser sent.
-#' @keywords internal
+#' @noRd
 cv_upload_extension_problem <- function(filename) {
   ext <- cv_file_ext2(filename %||% "")
   if (!nzchar(ext)) return(NULL)
@@ -111,7 +111,7 @@ cv_upload_extension_problem <- function(filename) {
 }
 
 #' Normalised extension, with `.gz` peeled off ("counts.csv.gz" -> "csv").
-#' @keywords internal
+#' @noRd
 cv_file_ext2 <- function(path) {
   f <- tolower(basename(path %||% ""))
   f <- sub("\\.gz$", "", f)
@@ -119,7 +119,7 @@ cv_file_ext2 <- function(path) {
 }
 
 #' A message for a format we cannot read without adding a dependency.
-#' @keywords internal
+#' @noRd
 cv_unsupported_format_msg <- function(ext) {
   how <- switch(
     ext,
@@ -147,7 +147,7 @@ cv_unsupported_format_msg <- function(ext) {
 #' 10x barcodes are long ACGT runs with an optional `-1` lane suffix, which no
 #' gene symbol resembles. Used to decide a count table's ORIENTATION, which is
 #' the one genuinely ambiguous thing about a CSV of counts.
-#' @keywords internal
+#' @noRd
 cv_looks_like_barcodes <- function(x, min_frac = 0.8) {
   x <- as.character(x)
   x <- x[!is.na(x) & nzchar(x)]
@@ -165,7 +165,7 @@ cv_looks_like_barcodes <- function(x, min_frac = 0.8) {
 #' assumed silently: a wrong guess here transposes the whole analysis, so it has
 #' to be visible and correctable, not buried.
 #' @return list(mat = <genes x cells>, note = <chr>)
-#' @keywords internal
+#' @noRd
 cv_orient_count_table <- function(m) {
   rn <- rownames(m); cn <- colnames(m)
   if (cv_looks_like_barcodes(cn)) {
@@ -190,7 +190,7 @@ cv_orient_count_table <- function(m) {
 #' handles .gz, so no new dependency and no guessing at commas vs tabs. The
 #' first column is taken as row names when it is not numeric -- the near
 #' universal layout for an exported count table.
-#' @keywords internal
+#' @noRd
 cv_read_delim_counts <- function(path) {
   # GZIP MUST BE DECOMPRESSED EXPLICITLY. Verified empirically: handed a
   # "counts.csv.gz", fread did NOT error -- it returned a single-column table of
@@ -263,7 +263,7 @@ cv_read_delim_counts <- function(path) {
 # ---- Matrix Market ---------------------------------------------------------
 
 #' Find a 10x-style sidecar (barcodes / features / genes) beside an .mtx.
-#' @keywords internal
+#' @noRd
 cv_find_sidecar <- function(dir, kind) {
   pat <- switch(kind,
                 barcodes = "^barcodes\\.tsv(\\.gz)?$",
@@ -273,7 +273,7 @@ cv_find_sidecar <- function(dir, kind) {
 }
 
 #' Read an .mtx, using its sidecars when they are present.
-#' @keywords internal
+#' @noRd
 cv_read_mtx <- function(path) {
   dir <- dirname(path)
   bc <- cv_find_sidecar(dir, "barcodes")
@@ -311,7 +311,7 @@ cv_read_mtx <- function(path) {
 #'
 #' @param path Path to the .zip file.
 #' @return `TRUE` invisibly when every entry is safe; aborts otherwise.
-#' @keywords internal
+#' @noRd
 cv_assert_safe_zip_entries <- function(path) {
   entries <- tryCatch(utils::unzip(path, list = TRUE)$Name,
                       error = function(e) NULL)
@@ -363,7 +363,7 @@ cv_assert_safe_zip_entries <- function(path) {
 }
 
 #' Read a .zip: a 10x triplet if one is inside, else the single supported file.
-#' @keywords internal
+#' @noRd
 cv_read_zip <- function(path) {
   ex <- file.path(tempdir(), paste0("cvzip_", basename(tempfile(""))))
   dir.create(ex, showWarnings = FALSE, recursive = TRUE)
@@ -435,7 +435,7 @@ cv_read_zip <- function(path) {
 #' @param filename original name, when `path` is a temp file whose extension may
 #'   have been lost.
 #' @return list(object=, note=<chr or NULL>, format=<chr>)
-#' @keywords internal
+#' @noRd
 cv_read_dataset_file <- function(path, filename = NULL) {
   ext <- cv_file_ext2(filename %||% path)
   if (!nzchar(ext)) ext <- cv_file_ext2(path)

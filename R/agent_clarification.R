@@ -19,7 +19,7 @@
 #' Build a method-choice clarification payload (Marker DB vs LLM) with two
 #' clickable choices, each carrying a `resume_message` the UI auto-sends on
 #' click so the task continues WITHOUT the user pressing Send again.
-#' @keywords internal
+#' @noRd
 cv_method_clarification_payload <- function(user_message) {
   um <- if (is.null(user_message)) "" else as.character(user_message)[1]
   header <- paste0(
@@ -72,7 +72,7 @@ cv_method_clarification_payload <- function(user_message) {
 #'
 #' @param user_message The user's original request.
 #' @param method `"markerdb"` or `"llm"`.
-#' @keywords internal
+#' @noRd
 cv_species_clarification_payload <- function(user_message, method = c("markerdb", "llm")) {
   method <- match.arg(method)
   um <- if (is.null(user_message)) "" else as.character(user_message)[1]
@@ -112,7 +112,7 @@ cv_species_clarification_payload <- function(user_message, method = c("markerdb"
     kind = "species_choice")
 }
 
-#' @keywords internal
+#' @noRd
 cv_annotation_options_payload <- function(user_message, method = c("markerdb", "llm"), species = "human") {
   method <- match.arg(method)
   um <- if (is.null(user_message)) "" else as.character(user_message)[1]
@@ -238,7 +238,7 @@ cv_annotation_options_payload <- function(user_message, method = c("markerdb", "
 #' plus a machine-readable `choices` list, so the UI can render clickable handle
 #' chips and the user never has to type a handle. `tool` is the intended tool
 #' (may be NULL); `header` is a short lead-in sentence.
-#' @keywords internal
+#' @noRd
 cv_clarification_payload <- function(store, header, handles, tool = NULL) {
   handles <- unique(as.character(handles[nzchar(as.character(handles))]))
   descs <- lapply(handles, function(h) {
@@ -268,7 +268,7 @@ cv_clarification_payload <- function(store, header, handles, tool = NULL) {
 #' Longest-first so "Bone Marrow" wins over "Bone", and word-boundary anchored
 #' so "Lung" does not match "Lunge". Returns NULL when nothing matches or when
 #' two DIFFERENT terms of the same length both match (ambiguous -> ask).
-#' @keywords internal
+#' @noRd
 .cv_match_vocab <- function(msg, vocab) {
   txt <- tolower(as.character(msg %||% "")[1])
   vocab <- as.character(vocab %||% character(0))
@@ -293,7 +293,7 @@ cv_clarification_payload <- function(store, header, handles, tool = NULL) {
 #' Only forms that NAME the quantity count. A bare number in "annotate C1" or
 #' "top 5 markers of C3" must not become n, which is why there is no bare-digit
 #' branch -- the same trap Round LXXIV's #11 detector had to be narrowed for.
-#' @keywords internal
+#' @noRd
 .cv_extract_top_n <- function(msg) {
   txt <- tolower(as.character(msg %||% "")[1])
   if (!nzchar(trimws(txt))) return(NULL)
@@ -335,7 +335,7 @@ cv_clarification_payload <- function(store, header, handles, tool = NULL) {
 #' (agent_worker.R) for the identical shape this mirrors.
 #' @param payload the clarification payload (`text`/`tool`/`choices`/
 #'   `dropdowns`/`inputs`/`note`/`resume_template`/`base_request`/`kind`).
-#' @keywords internal
+#' @noRd
 cv_needs_clarification_condition <- function(payload) {
   structure(
     class = c("cv_needs_clarification", "error", "condition"),
@@ -362,7 +362,7 @@ cv_needs_clarification_condition <- function(payload) {
 #' the more reliable source. Every other argument the call already carried
 #' (besides the data handle and the sketch settings) is restated verbatim so
 #' Continuing does not silently drop a choice the user already made.
-#' @keywords internal
+#' @noRd
 cv_sketch_size_clarification_payload <- function(store, args, tool, route, data_arg = "data") {
   handle    <- args[[data_arg]]
   nc        <- route$n_cells_total
@@ -419,7 +419,7 @@ cv_sketch_size_clarification_payload <- function(store, args, tool, route, data_
 #' (`sketch_ncells`); markoClust takes a FRACTION per cluster (`sketch_fraction`,
 #' only meaningful with `identify_subclusters=TRUE`, which the caller has
 #' already checked before reaching here).
-#' @keywords internal
+#' @noRd
 cv_speed_sketch_clarification_payload <- function(handle, tool, ncell,
                                                     sketch_kind = c("ncells", "fraction")) {
   sketch_kind <- match.arg(sketch_kind)

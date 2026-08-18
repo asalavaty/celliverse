@@ -17,7 +17,7 @@
 # =============================================================================
 
 #' Construct a single registry tool entry
-#' @keywords internal
+#' @noRd
 cv_tool <- function(name, description, parameters = list(),
                     input_object_types = character(0),
                     output_object_type = NA_character_,
@@ -124,7 +124,7 @@ cv_tool <- function(name, description, parameters = list(),
 #' @param required logical.
 #' @param items element type for arrays.
 #' @param description human/LLM description.
-#' @keywords internal
+#' @noRd
 cv_param <- function(type, description = "", default = NULL, required = FALSE,
                      enum = NULL, handle_types = NULL, items = NULL,
                      min = NULL, max = NULL) {
@@ -150,7 +150,7 @@ cv_param <- function(type, description = "", default = NULL, required = FALSE,
 #' Defined in agent_tools_*.R via cv_register_core_tools() and
 #' cv_register_advanced_tools(). Kept as a function so it is rebuilt fresh per
 #' process and easy to extend (add one entry -> auto-surfaces to the LLM).
-#' @keywords internal
+#' @noRd
 cv_build_registry <- function() {
   reg <- list()
   reg <- c(reg, cv_register_core_tools())
@@ -166,7 +166,7 @@ cv_build_registry <- function() {
 .cv_registry_cache <- new.env(parent = emptyenv())
 
 #' Get (and lazily build/cache) the registry
-#' @keywords internal
+#' @noRd
 cv_registry <- function(rebuild = FALSE) {
   if (rebuild || is.null(.cv_registry_cache$reg)) {
     .cv_registry_cache$reg <- cv_build_registry()
@@ -192,7 +192,7 @@ cv_registry <- function(rebuild = FALSE) {
 #'   sees, so the model asking for `clustcell` and getting `clustoCell` was a
 #'   correction nobody outside the R session could observe. Informational: the
 #'   right tool ran, and this says which.
-#' @keywords internal
+#' @noRd
 cv_tool_get <- function(name, reg = cv_registry(), warnings = NULL) {
   nms <- names(reg)
 
@@ -239,7 +239,7 @@ cv_tool_get <- function(name, reg = cv_registry(), warnings = NULL) {
 # ---- JSON-schema export for LLM function-calling ----------------------------
 
 #' Convert a cv_param to a JSON-schema property (for provider tool specs)
-#' @keywords internal
+#' @noRd
 cv_param_to_schema <- function(p) {
   # "handle" is presented to the LLM as a string (the object handle name).
   json_type <- switch(p$type,
@@ -265,7 +265,7 @@ cv_param_to_schema <- function(p) {
 
 #' Convert a single tool to a provider-neutral function spec
 #' (OpenAI-style; adapters reshape as needed).
-#' @keywords internal
+#' @noRd
 cv_tool_to_spec <- function(tool) {
   props <- lapply(tool$parameters, cv_param_to_schema)
   names(props) <- names(tool$parameters)
@@ -292,14 +292,14 @@ cv_tool_to_spec <- function(tool) {
 
 #' Build the tool-spec list for the LLM (core tier by default)
 #' @param include_advanced logical; include the advanced EWCSR primitives.
-#' @keywords internal
+#' @noRd
 cv_tools_specs <- function(reg = cv_registry(), include_advanced = FALSE) {
   keep <- Filter(function(t) t$tier == "core" || (include_advanced && t$tier == "advanced"), reg)
   lapply(unname(keep), cv_tool_to_spec)
 }
 
 #' Registry metadata for the client (Package Browser / Tool Inspector)
-#' @keywords internal
+#' @noRd
 cv_registry_metadata <- function(reg = cv_registry()) {
   lapply(unname(reg), function(t) {
     list(
@@ -342,7 +342,7 @@ cv_registry_metadata <- function(reg = cv_registry()) {
 #' and could operate on the wrong / older object).
 #'
 #' @param val the supplied value (use `NA`/`NA_character_` for a MISSING arg).
-#' @keywords internal
+#' @noRd
 cv_try_resolve_handle <- function(val, nm, p, store) {
   typed <- cv_objects_of_type(store, p$handle_types)
   # (1) Unambiguous by type — safe for both missing and wrong values.
@@ -398,7 +398,7 @@ cv_try_resolve_handle <- function(val, nm, p, store) {
 #'   when the choice was UNAMBIGUOUS -- exactly one loaded object of the right
 #'   type -- so the run used the object the user meant. What was missing was
 #'   saying so.
-#' @keywords internal
+#' @noRd
 cv_resolve_args <- function(tool, args, store, warnings = NULL) {
   args <- args %||% list()
   spec <- tool$parameters
@@ -534,7 +534,7 @@ cv_resolve_args <- function(tool, args, store, warnings = NULL) {
 }
 
 #' Coerce a scalar/array value to the declared parameter type
-#' @keywords internal
+#' @noRd
 cv_coerce_scalar <- function(val, p) {
   # Round LXIV Batch 2a: match an enum case-INSENSITIVELY and return the
   # canonical spelling. A model that emits "positive" against

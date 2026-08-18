@@ -124,7 +124,7 @@
 #' Returns `list(cv_warn(...))` the first time and `NULL` afterwards, so callers
 #' splice it straight into cv_result_add_warnings(). With no store (unit tests,
 #' programmatic callers) it behaves exactly as it always did.
-#' @keywords internal
+#' @noRd
 .cv_session_note_once <- function(store, code, text) {
   if (is.null(text) || !nzchar(text)) return(NULL)
   if (!is.environment(store)) return(list(cv_warn("info", text, code)))
@@ -175,7 +175,7 @@
 #' Advisory only. It never overrides the result, and it stays silent whenever
 #' the run produced real labels, because a warning that fires on good runs is
 #' how users learn to ignore warnings.
-#' @keywords internal
+#' @noRd
 .cv_typoclust_explicit_tissue_warning <- function(res, tissue) {
   ct <- tryCatch(res$cell_types, error = function(e) NULL)
   if (is.null(ct) || !length(ct)) return("")
@@ -199,7 +199,7 @@
     "database.")
 }
 
-#' @keywords internal
+#' @noRd
 .cv_typoclust_tissue_warning <- function(res, tissue_arg) {
   # Round LXV Batch 2b (audit #15): this used to return early whenever a tissue
   # WAS given -- i.e. the advisory was switched off in exactly the case the user
@@ -346,7 +346,7 @@ cv_discrete_palette <- function(n) {
 #' @param require_subset Abort when no cell subset is given (markoCell only;
 #'   markerPurity can legitimately run on whole clusters).
 #' @return `list(args = <args with desired_cells expanded>, inherit_from = <chr>)`.
-#' @keywords internal
+#' @noRd
 .cv_prepare_cell_subset <- function(store, tool, args, handle_args,
                                     require_subset = FALSE) {
   dc_raw <- args$desired_cells
@@ -387,7 +387,7 @@ cv_discrete_palette <- function(n) {
 #     question than they appear to. MAY_INVALIDATE, and the message says what
 #     the user said it should: the data may be low quality, or genuinely very
 #     heterogeneous.
-#' @keywords internal
+#' @noRd
 .cv_clustering_warnings <- function(value) {
   d <- tryCatch(cv_describe_object(value), error = function(e) NULL)
   if (!is.list(d) || !identical(d$type, "ClustoCell")) return(list())
@@ -445,7 +445,7 @@ cv_discrete_palette <- function(n) {
 # this draws precisely the wrong conclusion from them.
 CV_MIN_SUBSET_CELLS <- 10L
 
-#' @keywords internal
+#' @noRd
 .cv_warn_small_subset <- function(store, args, warnings, tool_name) {
   dc <- tryCatch(.cv_expand_desired_cells(store, args$desired_cells),
                  error = function(e) NULL)
@@ -488,7 +488,7 @@ CV_MIN_SUBSET_CELLS <- 10L
 #' argument, a handle that is not in the store, a type with no descriptor. A
 #' validator that cannot see the object must stay silent: refusing on missing
 #' information would turn a diagnostic into a new failure mode.
-#' @keywords internal
+#' @noRd
 .cv_arg_descriptor <- function(store, args, data_arg) {
   h <- args[[data_arg]]
   if (!is.character(h) || length(h) != 1L || is.na(h) || !nzchar(h)) return(NULL)
@@ -508,7 +508,7 @@ CV_MIN_SUBSET_CELLS <- 10L
 #' metadata (markoCell then reads `cluster_labels` as a per-cell vector, a shape
 #' the agent schema cannot even express), and an empty `metadata_cols` means the
 #' descriptor failed rather than that the object has no columns.
-#' @keywords internal
+#' @noRd
 .cv_assert_metadata_column <- function(store, args, col_arg, data_arg) {
   col <- args[[col_arg]]
   if (!is.character(col) || length(col) != 1L || is.na(col) || !nzchar(col)) return(invisible(NULL))
@@ -526,7 +526,7 @@ CV_MIN_SUBSET_CELLS <- 10L
 }
 
 #' Column names `addClustoData` writes by default.
-#' @keywords internal
+#' @noRd
 CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 
 #' Write the missing ClustoCell labels rather than refusing the plot.
@@ -559,7 +559,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 #' `.cv_assert_metadata_column()` to raise its own actionable error, so this can
 #' only ever turn a failure into a success, never a success into a failure.
 #' @return invisibly TRUE when labels were written.
-#' @keywords internal
+#' @noRd
 .cv_autofill_cluster_labels <- function(store, args, warnings,
                                         col_arg = "group_by", data_arg = "seurat_obj") {
   tryCatch({
@@ -631,7 +631,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 #' worker-failure framing. The wording below deliberately echoes clustoCell's
 #' own guidance ("at least half the total" under 10,000 cells) so the early
 #' message and the late one cannot give different advice.
-#' @keywords internal
+#' @noRd
 .cv_assert_sketch_fits <- function(store, args, data_arg = "data") {
   if (!isTRUE(args$sketch)) return(invisible(NULL))
   n <- suppressWarnings(as.integer(args$sketch_ncells %||% NA))
@@ -654,7 +654,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 #' object), different tool: `createDataSketch` always sketches (there is no
 #' `sketch=` flag to gate on), so this checks `ncells` unconditionally rather
 #' than only when sketching is enabled.
-#' @keywords internal
+#' @noRd
 .cv_assert_createsketch_fits <- function(store, args, data_arg = "data") {
   n <- suppressWarnings(as.integer(args$ncells %||% NA))
   if (is.na(n)) return(invisible(NULL))
@@ -710,7 +710,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 #' completeness across every split layer of a multi-sample/merged Assay5
 #' object -- a real but narrower edge case, named in CHANGES.md rather than
 #' handled here.
-#' @keywords internal
+#' @noRd
 .cv_assert_createsketch_normalized <- function(store, args, data_arg = "data") {
   handle <- args[[data_arg]]
   if (!is.character(handle) || length(handle) != 1L || is.na(handle) || !nzchar(handle) ||
@@ -774,7 +774,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 #'
 #' Silent whenever the route cannot be assessed (no measurement -> no
 #' opinion, proceed), and silent when it fits.
-#' @keywords internal
+#' @noRd
 .cv_assert_heavy_object_fits <- function(store, args, tool, data_arg = "data") {
   route <- cv_heavy_dispatch_route(store, args, data_arg = data_arg)
   if (!identical(route$fits, FALSE)) return(invisible(NULL))
@@ -831,7 +831,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 #' recorded, and returns silently -- regardless of how the model phrases "no
 #' sketch" on that second pass. A session that never existed (or could not be
 #' reached) degrades to "ask every time" rather than erroring.
-#' @keywords internal
+#' @noRd
 .cv_offer_speed_sketch <- function(store, args, tool, data_arg = "data",
                                     sketch_kind = c("ncells", "fraction")) {
   sketch_kind <- match.arg(sketch_kind)
@@ -875,7 +875,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 #' refine, and sub-clusters are detected on the full data directly, which is the
 #' thing refinement approximates. Nobody reading the numbers draws a wrong
 #' conclusion from skipping this note.
-#' @keywords internal
+#' @noRd
 .cv_note_inert_refine <- function(args, warnings) {
   if (!isTRUE(args$refine_transferred_subClusters)) return(invisible(NULL))
   missing_pre <- c(
@@ -889,7 +889,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
     code = "refine_without_sketch")
 }
 
-#' @keywords internal
+#' @noRd
 .cv_expand_desired_cells <- function(store, dc) {
   if (is.null(dc)) return(NULL)
   cs <- NULL
@@ -915,7 +915,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 #      append the sanitized subset name to the data handle's base.
 #   3. otherwise (multi-subset / cluster_labels path / no subset) -> the data
 #      handle(s) unchanged (current behaviour).
-#' @keywords internal
+#' @noRd
 .cv_subset_inherit <- function(store, dc_raw, dc_expanded, inh) {
   # Case 1: a CellSet handle string or CellSet object.
   cs_handle <- NULL
@@ -947,7 +947,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 # Unknown / absent columns are dropped gracefully (never an error) and reported.
 
 # Canonical marker columns and the case-insensitive words that map onto them.
-#' @keywords internal
+#' @noRd
 .cv_marker_concept_map <- function() {
   list(
     Purity     = c("purity"),
@@ -958,14 +958,14 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 }
 
 # Resolve a canonical concept to the ACTUAL column name present (case-insensitive).
-#' @keywords internal
+#' @noRd
 .cv_resolve_col <- function(concept, columns) {
   hit <- columns[tolower(columns) == tolower(concept)]
   if (length(hit)) hit[1] else NA_character_
 }
 
 # Pretty-print a filter value: integer if whole, else the numeric as-is.
-#' @keywords internal
+#' @noRd
 .cv_fmt_num <- function(x) {
   x <- suppressWarnings(as.numeric(x))
   if (length(x) != 1L || is.na(x)) return("NA")
@@ -973,7 +973,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 }
 
 # Normalise an operator phrase (words or symbols) to one canonical operator.
-#' @keywords internal
+#' @noRd
 .cv_norm_op <- function(s) {
   s <- tolower(trimws(s))
   if (s %in% c(">=", "\u2265", "greater than or equal to", "at least", "no less than", "no fewer than")) return(">=")
@@ -987,7 +987,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 
 # All non-overlapping PCRE matches of `pat`, each as its capture-group vector
 # (version-safe stand-in for gregexec).
-#' @keywords internal
+#' @noRd
 .cv_all_matches <- function(pat, text) {
   out <- list(); rest <- text
   repeat {
@@ -1004,7 +1004,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 }
 
 # Case-insensitive synonym alternation tolerant of space / underscore / hyphen.
-#' @keywords internal
+#' @noRd
 .cv_syn_alt <- function(syns) {
   syns <- gsub("[ _-]", "[ _-]?", syns)
   syns <- unique(syns[order(nchar(syns), decreasing = TRUE)])
@@ -1013,7 +1013,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 
 # Extract column predicates from a lowercased phrase. Predicates on columns not
 # present in `columns` are dropped and recorded in `unknown` (concept names).
-#' @keywords internal
+#' @noRd
 .cv_extract_marker_predicates <- function(lt, columns) {
   cmap <- .cv_marker_concept_map()
   preds <- list(); unknown <- character(0)
@@ -1058,7 +1058,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 }
 
 # Detect the "ranked" intent (Rank <= N with ties) and its N, if present.
-#' @keywords internal
+#' @noRd
 .cv_detect_rank_kind <- function(lt) {
   trig <- FALSE; n <- NA_integer_
   m <- regmatches(lt, regexec("rank\\s*(?:<=|\u2264)\\s*(\\d+)", lt, perl = TRUE))[[1]]
@@ -1083,7 +1083,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 }
 
 # Detect a positional "top N" / "first N" / "N markers" count, if present.
-#' @keywords internal
+#' @noRd
 .cv_detect_rows_number <- function(lt) {
   for (p in c("top\\s+(\\d+)", "first\\s+(\\d+)",
               "(\\d+)\\s+(?:markers?|genes?|features?|rows?|symbols?|results?)")) {
@@ -1093,7 +1093,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
   NA_integer_
 }
 
-#' @keywords internal
+#' @noRd
 .cv_detect_rows_signal <- function(lt) {
   grepl("\\btop\\s+\\d+|\\bfirst\\s+\\d+|\\d+\\s+(?:markers?|genes?|features?|rows?|symbols?|results?)",
         lt, perl = TRUE)
@@ -1101,7 +1101,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 
 # Parse one free-text expression into a spec, or NULL when it carries no
 # confident filtering signal (so the caller can fall through to the next source).
-#' @keywords internal
+#' @noRd
 .cv_parse_marker_expr <- function(text, columns, top_n) {
   if (is.null(text)) return(NULL)
   text <- cv_strip_ansi(as.character(text)[1])
@@ -1146,7 +1146,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 }
 
 # Human-readable description of exactly what a spec will do.
-#' @keywords internal
+#' @noRd
 .cv_marker_spec_interpretation <- function(spec, columns) {
   base <- switch(spec$kind,
     rows = sprintf("return the first %d marker(s) by rank (exactly %d row(s))", spec$n, spec$n),
@@ -1171,7 +1171,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
   base
 }
 
-#' @keywords internal
+#' @noRd
 .cv_finalize_marker_spec <- function(spec, columns) {
   if (is.null(spec$unknown_cols)) spec$unknown_cols <- character(0)
   if (is.null(spec$limit)) spec$limit <- NA_integer_
@@ -1189,7 +1189,7 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 #' Returns a list with `kind` ("rows" | "rank" | "predicate"), `n`, `predicates`
 #' (each `list(col, op, value, value2)`), `limit`, `unknown_cols`, `source`
 #' ("request_text" | "filter" | "mode") and a human-readable `interpretation`.
-#' @keywords internal
+#' @noRd
 cv_parse_marker_filter <- function(request_text = NULL, filter = NULL,
                                    mode = c("rows", "rank"),
                                    top_n = 10L, columns = character()) {
@@ -1225,7 +1225,7 @@ cv_parse_marker_filter <- function(request_text = NULL, filter = NULL,
 # So it fires only when the phrase carries an explicit FILTERING signal: a
 # number, a marker-table column word, or one of the words people use to move a
 # threshold. Anything vaguer stays silent.
-#' @keywords internal
+#' @noRd
 .cv_marker_filter_looked_like_one <- function(request_text, filter) {
   txt <- c(as.character(request_text %||% ""), as.character(filter %||% ""))
   txt <- txt[nzchar(trimws(txt))]
@@ -1253,14 +1253,13 @@ cv_parse_marker_filter <- function(request_text = NULL, filter = NULL,
 }
 
 #' Apply a parsed marker-filter spec to a single per-set marker data.frame.
-#' @keywords internal
 #' Clamp a caller-supplied count to a non-negative integer for use with
 #' utils::head(). BATCH2 FIX: utils::head(x, n) with a NEGATIVE n means
 #' "drop the last |n| rows" in base R, not "invalid/empty" -- none of the
 #' call sites below previously clamped a model-supplied count before passing
 #' it straight to head(), so e.g. `top_n = -5` silently returned rows with a
 #' directly self-contradictory "Top -5 marker(s)" label instead of an error.
-#' @keywords internal
+#' @noRd
 .cv_safe_head_n <- function(n, default = 10L) {
   n <- suppressWarnings(as.integer(n %||% default))
   if (is.na(n) || n < 0L) 0L else n
@@ -1315,7 +1314,7 @@ cv_apply_marker_filter <- function(df, spec) {
 # available ids) only when a request matches nothing, or matches >1 stored id
 # (ambiguous). This is the single resolver used by every agent-layer set-id
 # lookup so the agent "understands" the id regardless of case/separator.
-#' @keywords internal
+#' @noRd
 cv_resolve_set_ids <- function(requested, available, level = NULL) {
   requested <- as.character(requested)
   available <- as.character(available)
@@ -1361,7 +1360,6 @@ cv_resolve_set_ids <- function(requested, available, level = NULL) {
   unname(resolved)
 }
 
-#' @keywords internal
 # ---- Where a marker actually lives (Round LXXVI, from live use) --------------
 #
 # THE REPORT. The user asked "what is the purity of marker CD8A in C1". The
@@ -1481,7 +1479,7 @@ CV_MARKER_TYPE_KEYS <- c(Positive = "positive_markers",
 # severity: a note on ordinary correct work is not a signal.
 
 #' Announce the scale of a heavy run before it starts.
-#' @keywords internal
+#' @noRd
 .cv_note_heavy_cost <- function(store, args, tool, warnings) {
   h <- NULL
   for (k in c("data", "obj", "clustoCell", "query_expr_mat")) {
@@ -1526,7 +1524,7 @@ CV_MARKER_TYPE_KEYS <- c(Positive = "positive_markers",
 #' @param tool the tool record just run.
 #' @param reg the registry, used to drop any suggestion that is not a real tool.
 #' @return a list of cv_warn() entries (empty when there is nothing to say).
-#' @keywords internal
+#' @noRd
 .cv_next_steps_note <- function(tool, reg = NULL) {
   ns <- tryCatch(as.character(tool$next_suggestions %||% character(0)),
                  error = function(e) character(0))
@@ -1560,7 +1558,7 @@ CV_MARKER_TYPE_KEYS <- c(Positive = "positive_markers",
 # a guess from column type, because "a factor with few levels" is also what
 # sample, donor, condition and batch look like.
 
-#' @keywords internal
+#' @noRd
 .cv_cluster_like_columns <- function(cols) {
   cols <- as.character(cols %||% character(0))
   if (!length(cols)) return(character(0))
@@ -1568,7 +1566,7 @@ CV_MARKER_TYPE_KEYS <- c(Positive = "positive_markers",
              cols, ignore.case = TRUE, perl = TRUE)]
 }
 
-#' @keywords internal
+#' @noRd
 .cv_note_existing_clusters <- function(store, args, warnings) {
   d <- tryCatch(cv_object_descriptor(store, args$data), error = function(e) NULL)
   hits <- .cv_cluster_like_columns(d$metadata_cols)
@@ -1601,7 +1599,7 @@ CV_MARKER_TYPE_KEYS <- c(Positive = "positive_markers",
 # check reads the store's descriptor before dispatch, through the Round LXX
 # validate hook.
 
-#' @keywords internal
+#' @noRd
 .cv_note_replaced_columns <- function(store, args, warnings) {
   d <- tryCatch(cv_object_descriptor(store, args$obj), error = function(e) NULL)
   cols <- as.character(d$metadata_cols %||% character(0))
@@ -1629,7 +1627,7 @@ CV_MARKER_TYPE_KEYS <- c(Positive = "positive_markers",
 #' cv_find_marker_in_object(), so a false positive is not merely unlikely, it is
 #' structurally impossible. Round LXXIV's #11 spent a whole iteration on a
 #' false-positive detector; this one cannot have that failure mode.
-#' @keywords internal
+#' @noRd
 .cv_candidate_genes <- function(request_text) {
   txt <- as.character(request_text %||% "")
   if (!length(txt) || !nzchar(trimws(txt[1]))) return(character(0))
@@ -1646,7 +1644,7 @@ CV_MARKER_TYPE_KEYS <- c(Positive = "positive_markers",
 #' Genes named in the request that this slice does not show but the object has.
 #'
 #' @return list(append = <rows to add, same type+level>, message = <warning or "">).
-#' @keywords internal
+#' @noRd
 .cv_out_of_slice_hits <- function(cc, request_text, shown, sets, type, level) {
   none <- list(append = NULL, message = "")
   cand <- .cv_candidate_genes(request_text)
@@ -1701,7 +1699,7 @@ CV_MARKER_TYPE_KEYS <- c(Positive = "positive_markers",
 #' @return a data.frame with Feature, Level, Membership, Type, Gini_Score,
 #'   Purity, Rank -- the same shape celliverse::featureInspect() returns, so the
 #'   two are directly comparable. Zero rows when the gene is in none of them.
-#' @keywords internal
+#' @noRd
 cv_find_marker_in_object <- function(obj, features, sets = NULL) {
   empty <- data.frame(Feature = character(0), Level = character(0),
                       Membership = character(0), Type = character(0),
@@ -1941,7 +1939,7 @@ cv_cluster_markers_table <- function(cc, desired_sets = NULL,
 # Returns list(cells=<chr>, available=<chr sorted unique ids>, column=<used col
 # name or NA>). Aborts (cli) only for genuinely unusable input; an unknown
 # cluster is reported by the CALLER using `available`.
-#' @keywords internal
+#' @noRd
 cv_cluster_cell_names <- function(obj, cluster, level = "major",
                                   cluster_column = NULL) {
   cluster <- as.character(cluster)[1]
@@ -2009,7 +2007,7 @@ cv_cluster_cell_names <- function(obj, cluster, level = "major",
 # Build a CellSet from an extracted barcode vector, applying optional
 # reproducible random sampling. `n` NULL/NA/>=length -> all cells (no sampling).
 # Returns list(cellset=<CellSet>, sampled=<bool>, n_total=<int>, seed=<int|NA>).
-#' @keywords internal
+#' @noRd
 cv_make_cellset <- function(cells, cluster, level, source_handle,
                             n = NULL, seed = 9999L) {
   n_total <- length(cells)
@@ -2047,7 +2045,7 @@ cv_make_cellset <- function(cells, cluster, level, source_handle,
 }
 
 #' Register the core CelliVerse tools
-#' @keywords internal
+#' @noRd
 cv_register_core_tools <- function() {
   list(
 
@@ -3023,7 +3021,7 @@ cv_register_core_tools <- function() {
 
 #' Pick an existing UMAP-like reduction name from a Seurat object's reduction
 #' list, or NA if none exists.
-#' @keywords internal
+#' @noRd
 .cv_umap_pick_existing <- function(reds) {
   for (nm in c("clustoCell_umap", "umap")) if (nm %in% reds) return(nm)
   hit <- grep("umap", reds, ignore.case = TRUE, value = TRUE)
@@ -3033,7 +3031,7 @@ cv_register_core_tools <- function() {
 #' Does umapPlot need to COMPUTE a fresh UMAP for this call, or can it just
 #' re-draw an existing embedding? Shared by the dispatch-cost classifier and
 #' the actual compute function so the two decisions can never disagree.
-#' @keywords internal
+#' @noRd
 .cv_umap_needs_compute <- function(so, reduction_arg) {
   reds <- SeuratObject::Reductions(so)
   reduction <- reduction_arg %||% NA_character_
@@ -3049,7 +3047,7 @@ cv_register_core_tools <- function() {
 #' resolved or isn't a Seurat object; the real, specific error still surfaces
 #' from .cv_umap_plot_compute() a moment later either way, so this
 #' classifier's only job is choosing a dispatch path, never validation.
-#' @keywords internal
+#' @noRd
 .cv_umap_plot_dispatch_cost <- function(store, call_args) {
   so <- tryCatch(cv_object_get(store, call_args$seurat_obj), error = function(e) NULL)
   if (is.null(so) || !methods::is(so, "Seurat")) return("heavy")
@@ -3063,7 +3061,7 @@ cv_register_core_tools <- function() {
 #' name via getFromNamespace -- see cv_launch_heavy()'s child_fun). Returns
 #' the SAME list(kind=, plot_object=, text=) shape either way, which is what
 #' cv_render_result()/cv_result_from_value() both expect for a "plot" result.
-#' @keywords internal
+#' @noRd
 .cv_umap_plot_compute <- function(seurat_obj, group_by, reduction = NULL,
                                   dims = 10L, seed = 121L, title = NULL) {
   so <- seurat_obj
@@ -3181,7 +3179,7 @@ cv_register_core_tools <- function() {
 #' Fires only when the request actually contains a sub-cluster whose parent
 #' exists, which is the only case where turning inheritance off changes an
 #' answer. Annotating major clusters flat is the ordinary case and stays silent.
-#' @keywords internal
+#' @noRd
 .cv_warn_inheritance_off <- function(store, args, warnings) {
   if (is.null(args$inherit_major_clusters) || isTRUE(args$inherit_major_clusters)) return(invisible(NULL))
   want <- as.character(unlist(args$desired_sets %||% character(0)))
@@ -3221,7 +3219,7 @@ cv_register_core_tools <- function() {
 #' labels on screen? Yes -- these labels may contradict their own parents, and
 #' nothing else says so. It fires only when parents were actually AVAILABLE, so
 #' an ordinary flat annotation of major clusters stays silent.
-#' @keywords internal
+#' @noRd
 .cv_inheritance_skipped_note <- function(value) {
   md <- tryCatch(value$metadata, error = function(e) NULL)
   if (!is.list(md)) return(NULL)
@@ -3235,7 +3233,7 @@ cv_register_core_tools <- function() {
     paste(sk, collapse = ", "))
 }
 
-#' @keywords internal
+#' @noRd
 .cv_inheritance_note <- function(value) {
   md <- tryCatch(value$metadata, error = function(e) NULL)
   if (!is.list(md)) return(NULL)

@@ -35,22 +35,22 @@
 # ---- Filenames --------------------------------------------------------------
 
 #' Filesystem-safe token (letters, digits, dot, underscore, hyphen).
-#' @keywords internal
+#' @noRd
 .cv_fs_safe <- function(x) {
   x <- as.character(x)[1]
   if (is.na(x) || !nzchar(x)) return("x")
   gsub("[^A-Za-z0-9._-]+", "_", x)
 }
 
-#' @keywords internal
+#' @noRd
 .cv_object_rds_name <- function(handle, type) {
   sprintf("object_%s__%s.rds", .cv_fs_safe(type), .cv_fs_safe(handle))
 }
-#' @keywords internal
+#' @noRd
 .cv_object_txt_name <- function(handle, type, suffix) {
   sprintf("object_%s__%s__%s.txt", .cv_fs_safe(type), .cv_fs_safe(handle), .cv_fs_safe(suffix))
 }
-#' @keywords internal
+#' @noRd
 .cv_object_csv_name <- function(handle, type) {
   sprintf("object_%s__%s.csv", .cv_fs_safe(type), .cv_fs_safe(handle))
 }
@@ -63,7 +63,7 @@
 #' whose value is a data.frame of ranked candidate matches with a `CellType`
 #' column (row 1 = top call). We emit a small tab-separated summary: the top
 #' cell type for each set. Returns TRUE if a file was written.
-#' @keywords internal
+#' @noRd
 .cv_write_typoclust_txt <- function(val, path) {
   ct <- tryCatch(val$cell_types, error = function(e) NULL)
   if (is.null(ct) || !length(ct)) return(FALSE)
@@ -91,7 +91,7 @@
 #'   DatasetMarkers  -> combined markers .txt
 #'   data.frame      -> .csv
 #'   character vector-> values .txt
-#' @keywords internal
+#' @noRd
 .cv_write_object_artifacts <- function(val, type, handle, artifacts_dir) {
   written <- character(0)
 
@@ -150,7 +150,7 @@
 #' condition here is a cheap field read (does this TypoClust have any cell types
 #' at all?), never a serialization, which is the entire point.
 #' `test-round54-...` asserts the two functions agree for every supported type.
-#' @keywords internal
+#' @noRd
 .cv_planned_object_files <- function(val, type, handle) {
   planned <- .cv_object_rds_name(handle, type)   # ALWAYS, same as the writer
 
@@ -178,7 +178,7 @@
 #'
 #' Pulled out of cv_sync_object_artifacts() in Round LIV so the index hook and
 #' the materialization path cannot drift apart on what "changed" means.
-#' @keywords internal
+#' @noRd
 .cv_object_artifact_sig <- function(rec) {
   # BATCH2B FIX: cv_now() (agent_utils.R) has only whole-second resolution, so
   # two in-place updates to the SAME handle within the same wall-clock second
@@ -204,7 +204,7 @@
 #' should not have four independent answers.
 #' @param artifacts_dir session artifacts dir.
 #' @return the parsed state list, or an empty list.
-#' @keywords internal
+#' @noRd
 .cv_read_artifacts_state <- function(artifacts_dir) {
   p <- file.path(artifacts_dir, ".artifacts_state.json")
   if (!file.exists(p)) return(list())
@@ -216,7 +216,7 @@
 #' Entries written before Round LIV carry no `pending` field at all, and absent
 #' means FALSE (already materialized) -- so an existing session's state file
 #' keeps working untouched.
-#' @keywords internal
+#' @noRd
 .cv_state_is_pending <- function(entry) isTRUE(entry$pending)
 
 # ---- Round LXXV (audit #33): the terminal paths index too ---------------------
@@ -254,7 +254,7 @@
 #'
 #' @param session_id session id; looked up for its store and artifacts dir.
 #' @param when short phrase naming the path that called this, for the warning.
-#' @keywords internal
+#' @noRd
 cv_index_artifacts_safe <- function(session_id, when = "turn end") {
   tryCatch({
     sess <- cv_session_get(session_id)
@@ -270,7 +270,7 @@ cv_index_artifacts_safe <- function(session_id, when = "turn end") {
 #'
 #' Round LXXV (audit #31). Deliberately says what the file IS and where it came
 #' from, because the alternative the user sees is a bare `job_a1b2c3.log`.
-#' @keywords internal
+#' @noRd
 .cv_job_log_summary <- function(filename) {
   jid <- sub("\\.log$", "", filename)
   sprintf(paste0("Run log for job %s -- the analysis process's own output, ",
@@ -309,7 +309,7 @@ cv_index_artifacts_safe <- function(session_id, when = "turn end") {
 #' @param artifacts_dir session artifacts dir.
 #' @param session_id for building URLs.
 #' @return the freshly built manifest (invisibly via cv_build_manifest).
-#' @keywords internal
+#' @noRd
 #'
 cv_index_object_artifacts <- function(store, artifacts_dir, session_id = NULL) {
   if (is.null(artifacts_dir)) return(invisible(NULL))
@@ -391,7 +391,7 @@ cv_index_object_artifacts <- function(store, artifacts_dir, session_id = NULL) {
 #'   "Download all" path wants. A single-file download passes exactly one, so
 #'   clicking one row never pays for every other object in the session.
 #' @return the freshly built manifest (invisibly via cv_build_manifest).
-#' @keywords internal
+#' @noRd
 cv_sync_object_artifacts <- function(store, artifacts_dir, session_id = NULL,
                                      handles = NULL) {
   if (is.null(artifacts_dir)) return(invisible(NULL))
@@ -462,7 +462,7 @@ cv_sync_object_artifacts <- function(store, artifacts_dir, session_id = NULL,
 #' @param session_id session id.
 #' @param filename bare artifact filename (already path-guarded by the caller).
 #' @return invisibly TRUE if something was written.
-#' @keywords internal
+#' @noRd
 cv_materialize_pending_artifact <- function(session_id, filename) {
   if (!cv_session_exists(session_id)) return(invisible(FALSE))
   sess <- cv_session_get(session_id)
@@ -489,7 +489,7 @@ cv_materialize_pending_artifact <- function(session_id, filename) {
 # ---- Manifest (read-only enumeration) ---------------------------------------
 
 #' Attach object provenance (handle/type/summary/source) to a file entry.
-#' @keywords internal
+#' @noRd
 .cv_manifest_attach_provenance <- function(entry, filename, fname_to_handle, state, desc_by_handle) {
   h <- fname_to_handle[[filename]]
   if (is.null(h)) return(entry)
@@ -521,7 +521,7 @@ cv_materialize_pending_artifact <- function(session_id, filename) {
 #'
 #' Kinds: "figure" (svg/png/pdf, grouped by stem), "table" (csv), "rds", "text"
 #' (txt), "other". Object-derived files also carry handle/type/summary/source.
-#' @keywords internal
+#' @noRd
 cv_build_manifest <- function(store, artifacts_dir, session_id = NULL) {
   if (is.null(artifacts_dir)) return(list(session = session_id %||% NA_character_,
                                            generated = cv_now(), artifacts = list()))
@@ -670,7 +670,7 @@ cv_build_manifest <- function(store, artifacts_dir, session_id = NULL) {
 #' Prefers the cross-platform `zip` package (no system dependency); falls back to
 #' utils::zip (system `zip`). Entries are stored with bare filenames (no nested
 #' session path). Returns NULL when there is nothing to zip or zipping fails.
-#' @keywords internal
+#' @noRd
 cv_artifacts_zip_file <- function(artifacts_dir, session_id = NULL) {
   if (is.null(artifacts_dir) || !dir.exists(artifacts_dir)) return(NULL)
   files <- list.files(artifacts_dir, all.files = FALSE, no.. = TRUE)  # hidden (.state) excluded
