@@ -1,0 +1,23 @@
+# Refuse a metadata column that is not on the object (audit \#12).
+
+\`cluster_labels\` was carried into a heavy job unchecked by markoClust,
+markoCell and markerPurity alike. All three abort eventually – via
+Seurat's own \`\[\[\`, which says the column is "not found in this
+Seurat object" and does NOT list the ones that are. So the model saw a
+failure it could not correct without a second round-trip through
+get_metadata_columns, and the user waited for a worker to start and die
+to get there.
+
+## Usage
+
+``` r
+.cv_assert_metadata_column(store, args, col_arg, data_arg)
+```
+
+## Details
+
+Silent when there is nothing to check against: a matrix input has no
+metadata (markoCell then reads \`cluster_labels\` as a per-cell vector,
+a shape the agent schema cannot even express), and an empty
+\`metadata_cols\` means the descriptor failed rather than that the
+object has no columns.

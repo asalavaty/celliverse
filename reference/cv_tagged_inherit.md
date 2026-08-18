@@ -1,0 +1,43 @@
+# Append a method + target-set tag to the inherit-base for a result handle.
+
+WHY (Round XXIV): an annotation run on a specific set of clusters should
+produce a handle that SAYS so - \`typo_pbmc_markerdb_c1_c3\` or
+\`typo_pbmc_llm_c1sub1_c3sub2\` - not a bare \`typo_pbmc\` /
+\`typo_pbmc_2\`. The handle is an opaque reference (resolved by exact
+lookup, never name-parsed), so a longer descriptive name is safe for
+every downstream tool.
+
+## Usage
+
+``` r
+cv_tagged_inherit(inherit_from, method = NULL, desired_sets = NULL)
+```
+
+## Arguments
+
+- inherit_from:
+
+  character vector of input handles (first one wins).
+
+- method:
+
+  short method tag, e.g. "markerdb" (typoClust) or "llm"
+  (annotateCellsLLM / ceLLMarkup). NULL/"" -\> no method tag.
+
+- desired_sets:
+
+  character vector of target set names (e.g. c("C1-Sub1")), or NULL when
+  annotating ALL sets.
+
+## Value
+
+a character vector like \`inherit_from\` but with the first element's
+base augmented; returned unchanged when there is nothing to add.
+
+## Details
+
+The tag is appended to the FIRST inherit handle's base;
+cv_derived_handle() then strips only the LEADING type prefix and
+re-sanitizes, so the embedded method/set tag survives intact and the
+usual \`\_2\`/\`\_3\` collision suffix still applies (an identical
+repeat run -\> \`...\_2\`).

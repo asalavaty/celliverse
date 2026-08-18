@@ -1,0 +1,24 @@
+# The other half of the disclosure: inheritance that was TURNED OFF.
+
+Round LXXIII. Live testing produced a card reading "2 annotated set(s)"
+for a two-sub-cluster request – byte-identical to what the build without
+this feature produced, and with nothing on screen to tell them apart.
+The model had set \`inherit_major_clusters = FALSE\` (the schema's own
+wording invited it by advertising the saved model call), and a disabled
+default is exactly as consequential as an applied one: it is what lets a
+sub-cluster of an NK-cell population come back labelled a T cell.
+
+## Usage
+
+``` r
+.cv_inheritance_skipped_note(value)
+```
+
+## Details
+
+MAY_INVALIDATE, unlike its applied counterpart, and the Round LXIX
+question decides it: would a reader who skipped this draw a wrong
+conclusion from the labels on screen? Yes – these labels may contradict
+their own parents, and nothing else says so. It fires only when parents
+were actually AVAILABLE, so an ordinary flat annotation of major
+clusters stays silent.

@@ -1,0 +1,49 @@
+# Write the missing ClustoCell labels rather than refusing the plot.
+
+Round LXXXI (D2), from live use. The user asked for "a umap of the
+object coloured by subclusters". \`umapPlot\` refused, correctly,
+because the Seurat object did not carry \`ClustoCell_SubClusters\` yet –
+and then the turn spent six steps and two further tool calls recovering
+from a prerequisite that was one unambiguous call away.
+
+## Usage
+
+``` r
+.cv_autofill_cluster_labels(
+  store,
+  args,
+  warnings,
+  col_arg = "group_by",
+  data_arg = "seurat_obj"
+)
+```
+
+## Value
+
+invisibly TRUE when labels were written.
+
+## Details
+
+The refusal was RIGHT and the outcome was still bad. When the missing
+column is one of the two names \`addClustoData\` writes by default, and
+EXACTLY ONE ClustoCell is loaded, there is nothing to decide: run it and
+say so.
+
+WHAT IT WILL NOT DO, and why each boundary is where it is: \* Only the
+two DEFAULT column names. A user who wrote their labels under a custom
+name has made a choice, and guessing which object it came from would be
+a guess. \* Only when exactly one ClustoCell is loaded. Two means a
+decision, and ask-when-ambiguous is this project's standing rule. \*
+Only when the object does not already have the column – this never
+overwrites anything. \* It writes ONLY the column that was asked for,
+not both.
+
+It is a NOTICE, never a gate: audit category 3b item 4 ruled that a
+confirmation prompt on addClustoData is the wrong answer and a notice is
+the right one. The user is told, in the same card, that the labels were
+added.
+
+Best effort by construction. Any failure returns quietly and leaves
+\`.cv_assert_metadata_column()\` to raise its own actionable error, so
+this can only ever turn a failure into a success, never a success into a
+failure.

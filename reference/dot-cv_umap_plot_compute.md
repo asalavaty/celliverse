@@ -1,0 +1,23 @@
+# The actual umapPlot computation: pick or compute a reduction, draw the DimPlot. Store-independent (a plain Seurat object + scalar args) so it runs identically whether called inline (light path, via the tool's \`handler\`) or in a heavy worker's child process (\`heavy_impl\`, invoked by name via getFromNamespace – see cv_launch_heavy()'s child_fun). Returns the SAME list(kind=, plot_object=, text=) shape either way, which is what cv_render_result()/cv_result_from_value() both expect for a "plot" result.
+
+The actual umapPlot computation: pick or compute a reduction, draw the
+DimPlot. Store-independent (a plain Seurat object + scalar args) so it
+runs identically whether called inline (light path, via the tool's
+\`handler\`) or in a heavy worker's child process (\`heavy_impl\`,
+invoked by name via getFromNamespace – see cv_launch_heavy()'s
+child_fun). Returns the SAME list(kind=, plot_object=, text=) shape
+either way, which is what cv_render_result()/cv_result_from_value() both
+expect for a "plot" result.
+
+## Usage
+
+``` r
+.cv_umap_plot_compute(
+  seurat_obj,
+  group_by,
+  reduction = NULL,
+  dims = 10L,
+  seed = 121L,
+  title = NULL
+)
+```

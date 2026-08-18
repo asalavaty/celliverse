@@ -1,0 +1,55 @@
+# Run a hierarchical annotation: parents first, then each parent's sub-clusters within that parent's identity.
+
+THE SHARED ORCHESTRATOR. This package has two LLM annotation
+implementations – \`ceLLMarkup()\` and the agent's
+\`cv_cellmarkup_annotate()\` – because the agent's was written when
+\`typoClust(mode = "ceLLMarkup")\` was still an empty stub, and they
+carry genuinely different transports: the agent budgets its request
+against the server's context window and batches (Round XLII, which
+exists because an unbounded version of that request contributed to a
+machine restart), while this one takes an explicit provider/model/key.
+
+## Usage
+
+``` r
+.cv_cellmarkup_hierarchy(set_names, enabled, annotate, log = NULL)
+```
+
+## Arguments
+
+- set_names:
+
+  all set ids to annotate, in the caller's order.
+
+- enabled:
+
+  FALSE reproduces a single flat pass exactly.
+
+- annotate:
+
+  \`function(ids, parent_id = NULL, parent_type = NULL)\` returning a
+  named list of parsed annotation data.frames, one per id. The ONLY
+  thing a caller has to supply: everything else about the sequencing is
+  decided here.
+
+- log:
+
+  optional \`function(...)\` for progress messages.
+
+## Value
+
+\`list(parsed=, inheritance=, hierarchical=)\`. \`inheritance\` is NULL
+when nothing was inherited, else a data.frame of Set / Parent /
+Parent_CellType / Restricted.
+
+## Details
+
+What they must NOT differ on is the sequencing: who counts as a parent,
+that parents are annotated first from their OWN markers, that stage two
+issues one request PER PARENT, and how the result is recorded. Round
+LXXI shipped that logic into \`ceLLMarkup()\` only, and the agent –
+which never calls it – went on annotating sub-clusters flat. That is the
+fourth instance in this codebase of two paths drifting apart
+(CHANGES.md:1499, Round XXXIII, Round LXIV/D1), and like Round LXIV's
+\`cv_tool(prepare = )\` it is fixed by giving both callers one
+implementation rather than one comment asking them to stay in step.

@@ -1,0 +1,29 @@
+# Look up a tool by name (tolerant of casing + small typos)
+
+Weak local models routinely emit a tool name with the wrong case
+(\`clustocell\`) or a small typo. Rather than fail the whole turn on
+such a near-miss, resolve in three tiers: 1. exact key match; 2.
+case-insensitive match when it is UNIQUE (e.g.
+\`clustocell\`/\`CLUSTOCELL\` -\> \`clustoCell\`); 3. a single close
+fuzzy match (\`adist\`, small edit distance) when EXACTLY one registered
+tool is within range (e.g. \`clustcell\` -\> \`clustoCell\`). Zero
+matches, or an ambiguous case-insensitive / fuzzy set, still errors with
+the list of valid tool names so the caller (loop or user) can correct
+it. A non-exact resolution emits an info note so the correction stays
+visible.
+
+## Usage
+
+``` r
+cv_tool_get(name, reg = cv_registry(), warnings = NULL)
+```
+
+## Arguments
+
+- warnings:
+
+  optional collector (cv_warnings_new()). Round LXIX: a non-exact
+  resolution used to reach a cli console the browser user never sees, so
+  the model asking for \`clustcell\` and getting \`clustoCell\` was a
+  correction nobody outside the R session could observe. Informational:
+  the right tool ran, and this says which.

@@ -1,0 +1,20 @@
+# Warn when the model switched sub-cluster inheritance off (typoClust side).
+
+Round LXXIII. The LLM tool records this in its own metadata; typoClust
+cannot, because the core function is out of scope for the agent to
+change. So it is detected here instead, from the store's DESCRIPTOR –
+which already carries \`major_labels\` and \`sub_labels\`, so no object
+is touched and the check costs nothing.
+
+## Usage
+
+``` r
+.cv_warn_inheritance_off(store, args, warnings)
+```
+
+## Details
+
+Fires only when the request actually contains a sub-cluster whose parent
+exists, which is the only case where turning inheritance off changes an
+answer. Annotating major clusters flat is the ordinary case and stays
+silent.

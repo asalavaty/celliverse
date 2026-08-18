@@ -1,0 +1,27 @@
+# Attach a provenance record to a handle already in the store.
+
+Separate from cv_object_put() on purpose: the store is written by the
+handler (which does not know the resolved arguments) and the provenance
+is known at the funnel (which does not know the handle until the handler
+returns). This is the join. Never errors – provenance is a nicety and
+must not be able to fail a successful call.
+
+## Usage
+
+``` r
+cv_object_set_provenance(store, handle, provenance)
+```
+
+## Details
+
+DELIBERATELY NOT ON THE DESCRIPTOR. The first version of this set
+\`rec\$descriptor\$provenance\` as well, which looked tidier and was
+wrong: the descriptor is what \`cv_tool_result_for_model()\` sends as
+\`payload\$object\` on every object result, and \`cv_summary_line()\`
+re-injects into the SYSTEM PROMPT on every single turn. That would spend
+tokens on five version strings and a defaulted argument list, every
+turn, for information the model cannot act on – it already knows the
+arguments it sent. Provenance is for the human reading a Results row or
+a downloaded file six months later, so it travels to the artifacts state
+and to \`describe_object\` (an explicit, one-off request) and nowhere
+else.

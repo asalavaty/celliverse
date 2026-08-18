@@ -1,0 +1,38 @@
+# What this machine can realistically GIVE a process, in MB.
+
+THE BUG THIS FIXES, reported from live use on a 24 GB Mac: the agent
+declined to build a Seurat because "this machine has about 4.3 GB
+available", and the user then did the same conversion by hand in R
+without trouble.
+
+## Usage
+
+``` r
+cv_memory_budget_mb()
+```
+
+## Details
+
+\`cv_available_memory_mb()\` was not lying; it was answering a different
+question. On macOS it sums vm_stat's free + inactive + speculative +
+purgeable pages, which is memory sitting idle RIGHT NOW. A healthy Mac
+keeps almost none of that: unused RAM is wasted RAM, so the OS fills it
+with cache and compressed anonymous pages and hands memory back on
+demand. The formula cannot see the compressor (\`Pages occupied by
+compressor\`), cannot see the file-backed pages inside \`active\`, and
+knows nothing about swap. On a 24 GB machine running a browser it
+reports 4-5 GB as a matter of course.
+
+That conservatism is CORRECT for the job it was written for in Round
+XXXIX: deciding whether to spawn an ADDITIONAL concurrent worker, where
+being pessimistic costs a short queue and being optimistic costs the
+machine. It is wrong as a gate on one thing the user asked for once. So
+this function does not replace it – Round XXXIX's admission control
+still calls the original – it answers the other question, and the two
+coexist on purpose.
+
+\`max()\` of the two readings, because either can be the larger: on a
+busy machine the idle figure is small and the total-RAM share is the
+honest ceiling; on an idle machine with lots free the direct reading is
+better. NA only when neither can be measured, and every caller treats NA
+as "no opinion, proceed".
