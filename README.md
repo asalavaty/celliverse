@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# CelliVerse <a href="https://asalavaty.com/widgets/CelliVerse"><img src="man/figures/Symbol.png" align="right" height="221" alt="CelliVerse logo"/></a>
+# CelliVerse <a href="https://asalavaty.com/widgets/celliVerse"><img src="man/figures/Symbol.png" align="right" height="221" alt="CelliVerse logo"/></a>
 
 ### Clustering, marker discovery, cell-type annotation, and natural-language single-cell analysis in R
 
@@ -63,6 +63,7 @@ interpretable analyses across diverse datasets.
 | Resource | Link |
 |:---|:---|
 | ✨ **Feature Explorer** | [Explore CelliVerse capabilities](https://asalavaty.com/widgets/CelliVerse) |
+| 🧭 **Adoption Hub** | [Interactive onboarding, function guidance, and troubleshooting](https://asalavaty.com/widgets/celliverse_adoption_hub) |
 | 📦 **CRAN** | [cran.r-project.org/package=celliverse](https://cran.r-project.org/package=celliverse) |
 | 📖 **Full vignette** | [CelliVerse documentation](https://cran.r-project.org/web/packages/celliverse/vignettes/Introduction-to-CelliVerse.html) |
 | 🤖 **CelliVerse Agent setup** | [Setup Guide](https://cran.r-project.org/web/packages/celliverse/vignettes/Introduction-to-CelliVerse.html#installAgent) |
@@ -211,7 +212,7 @@ relevant to your analysis.
 
 <p align="center">
 
-<a href="https://asalavaty.com/widgets/CelliVerse" target="_blank" rel="noopener noreferrer">
+<a href="https://asalavaty.com/widgets/celliVerse" target="_blank" rel="noopener noreferrer">
 <img src="https://img.shields.io/badge/✨-Open%20Feature%20Explorer-6D28D9?style=for-the-badge" alt="Open CelliVerse Feature Explorer"/>
 </a>
 </p>
@@ -238,6 +239,21 @@ ranked marker tables, without installing the package locally.
 </tr>
 
 </table>
+
+### 🧭 CelliVerse Adoption Hub
+
+New to CelliVerse? The **[CelliVerse Adoption
+Hub](https://asalavaty.com/widgets/celliverse_adoption_hub)** provides a
+practical interactive guide for choosing the right workflow and
+function, following the minimal analysis route, understanding how the
+major functions connect, and resolving common first-use issues.
+
+<p align="center">
+
+<a href="https://asalavaty.com/widgets/celliverse_adoption_hub" target="_blank" rel="noopener noreferrer">
+<img src="https://img.shields.io/badge/🧭-Open%20Adoption%20Hub-176987?style=for-the-badge" alt="Open CelliVerse Adoption Hub"/>
+</a>
+</p>
 
 ------------------------------------------------------------------------
 

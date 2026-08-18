@@ -1,0 +1,64 @@
+CRAN Comments
+================
+Adrian Salavaty
+15 August 2026
+
+## Submission
+
+This is the first CRAN submission of `celliverse` (version 0.0.2).
+
+`celliverse` is an R toolkit for single-cell RNA-sequencing analysis,
+including clustering and sub-clustering, marker discovery, cell-type
+annotation, visualization, and optional LLM-assisted workflows.
+
+## Test environments
+
+The package has been checked on:
+
+- local macOS, R 4.2.2
+- Ubuntu, R-hub, R release and R-devel
+- win-builder, R release and R-devel
+- Windows Server/AppVeyor, R 4.1.0
+
+## R CMD check results
+
+There were no ERRORs or WARNINGs.
+
+There was 1 NOTE:
+
+- checking CRAN incoming feasibility … NOTE
+
+This is a new submission.
+
+The words reported as possibly misspelled by CRAN incoming checks are
+package-specific terminology, software/package names, scientific
+abbreviations, or proper names, including terms such as `CelliVerse`,
+`ClustoCell`, `MarkoCell`, `TypoPrompt`, `scRNA-seq`, `Seurat`,
+`Ollama`, and author names.
+
+The package uses Bioconductor dependencies where required, with the
+corresponding repository declared through `Additional_repositories`.
+
+## External services and optional Agent functionality
+
+`celliverse` includes optional LLM-assisted functionality and an
+optional browser-based CelliVerse Agent.
+
+No external model service, local LLM server, browser application, or
+additional software is started automatically during package
+installation, package loading, examples, tests, vignettes, or CRAN
+checks. Agent installation and launch are explicit user actions through
+`install_celliverse_agent()` and `run_celliverse_agent()`.
+
+Examples requiring network access, API credentials, external model
+providers, or local LLM software are not executed during CRAN checks.
+Functions that use optional external services are designed to be invoked
+explicitly by the user.
+
+Computationally intensive vignette steps are also not re-run during CRAN
+checks; precomputed results are used where appropriate to keep check
+time and package-resource usage reasonable.
+
+## Downstream dependencies
+
+There are currently no downstream dependencies for `celliverse`.

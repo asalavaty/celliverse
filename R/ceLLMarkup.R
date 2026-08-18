@@ -73,6 +73,28 @@
 #'   (default 25).
 #' @param max_retries Retries per set when the model returns an unparseable or
 #'   empty answer (default 1).
+#' @param inherit_major_clusters Logical; whether a sub-cluster should be
+#'   annotated \emph{within the identity of its own major cluster}. Default
+#'   \code{TRUE}.
+#'
+#'   When \code{FALSE}, all sets are annotated together in a single request and
+#'   the function behaves exactly as it did before this argument existed.
+#'
+#'   When \code{TRUE}, the set names are inspected for a major/sub-cluster
+#'   hierarchy — a set \code{"C1"} is the parent of \code{"C1-Sub1"},
+#'   \code{"C1-Sub2"}, and so on. If both levels are present, annotation runs in
+#'   two stages. First the major clusters are annotated from \emph{their own}
+#'   markers. Then, for each major cluster separately, the model is told what
+#'   that cluster was identified as and asked which specific subtype or state of
+#'   \emph{that} cell type each of its sub-clusters represents, given the
+#'   \emph{sub-cluster's own} markers.
+#'
+#'   One request is issued per major cluster in the second stage. That is what
+#'   keeps each sub-cluster tied to its own parent: a single combined request
+#'   could not carry a different parent identity for each set. Cost is therefore
+#'   one request plus one per major cluster that has sub-clusters, rather than
+#'   one in total. \code{metadata$inheritance} records which parent was used for
+#'   each sub-cluster and what it was called.
 #' @param verbose Show progress messages (default \code{TRUE}).
 #'
 #' @return An object of class \code{TypoClust}: a list with \code{cell_types}
@@ -118,24 +140,30 @@ ceLLMarkup <- function(sample_source = NULL,
                        top_k = 3L,
                        n_markers = 25L,
                        max_retries = 1L,
+                       inherit_major_clusters = TRUE,
                        verbose = TRUE) {
-
+  
   species <- species[1]
   if (!is.character(species) || length(species) == 0 || is.na(species)) {
     cli::cli_abort("{.arg species} must be a non-empty character string.")
   }
   
+  if (length(inherit_major_clusters) != 1L || is.na(inherit_major_clusters) ||
+      !is.logical(inherit_major_clusters)) {
+    cli::cli_abort("{.arg inherit_major_clusters} must be TRUE or FALSE.")
+  }
+  
   log_message <- function(...) if (verbose) cli::cli_alert_info(...)
-
+  
   # ---- 1. Resolve the input into per-set positive/negative marker vectors ----
   n_inputs <- sum(!is.null(marker_set_list), !is.null(seuratClusters), !is.null(panels))
   if (n_inputs != 1L) {
     cli::cli_abort("Exactly one of {.arg marker_set_list}, {.arg seuratClusters}, or {.arg panels} must be provided!")
   }
-
+  
   pos_panels <- list()
   neg_panels <- list()
-
+  
   if (!is.null(panels)) {
     # typoClust-style input: list(pos_panels=<named list>, neg_panels=<named list>)
     # or a plain named list of character vectors (positive markers only).
@@ -174,45 +202,263 @@ ceLLMarkup <- function(sample_source = NULL,
       pos_panels[[nm]] <- utils::head(feats, n_markers)
     }
   }
-
+  
   set_names <- unique(c(names(pos_panels), names(neg_panels)))
   if (!length(set_names)) cli::cli_abort("No marker sets to annotate.")
-
+  
   # ---- 2. Build the LLM config (explicit arguments only) --------------------
   config <- .cv_cellmarkup_config(provider = provider, model = model,
                                   api_key = api_key, host = host,
                                   temperature = temperature)
-
+  
   # ---- 3. Prompt + call ------------------------------------------------------
   markers <- list(clusters = set_names, pos = pos_panels, neg = neg_panels,
                   level = stats::setNames(rep("set", length(set_names)), set_names),
                   degraded = FALSE)
-  msgs <- .cv_cellmarkup_prompt(markers, sample_source = sample_source,
-                                feature_type = feature_type, tissue = tissue,
-                                condition = condition, species = species,
-                                top_k = top_k)
-
-  parsed <- NULL
-  for (attempt in seq_len(max_retries + 1L)) {
-    resp <- cv_chat(msgs, provider = config$default_provider,
-                    model = config$default_model, tools = NULL,
-                    temperature = config$temperature, stream = FALSE,
-                    config = config)
-    parsed <- .cv_cellmarkup_parse(resp$content, cluster_names = set_names, top_k = top_k)
-    if (!is.null(parsed)) break
-    if (attempt <= max_retries) log_message("Model reply was not parseable; retrying ({attempt}/{max_retries})...")
+  
+  # One request for a given set of ids, with a retry when the reply will not
+  # parse. Factored out because `inherit_major_clusters` issues several.
+  ask <- function(ids, msgs) {
+    parsed <- NULL
+    for (attempt in seq_len(max_retries + 1L)) {
+      resp <- cv_chat(msgs, provider = config$default_provider,
+                      model = config$default_model, tools = NULL,
+                      temperature = config$temperature, stream = FALSE,
+                      config = config)
+      parsed <- .cv_cellmarkup_parse(resp$content, cluster_names = ids, top_k = top_k)
+      if (!is.null(parsed)) break
+      if (attempt <= max_retries) log_message("Model reply was not parseable; retrying ({attempt}/{max_retries})...")
+    }
+    if (is.null(parsed)) {
+      cli::cli_abort("The model did not return a usable annotation after {max_retries + 1L} attempt(s).")
+    }
+    parsed
   }
-  if (is.null(parsed)) {
-    cli::cli_abort("The model did not return a usable annotation after {max_retries + 1L} attempt(s).")
-  }
-
+  
+  # Stage the annotation through the SHARED hierarchy orchestrator. The
+  # sequencing -- who is a parent, who goes first, one request per parent, how
+  # the inheritance is recorded -- lives in one place and is used by the agent
+  # layer too (`cv_cellmarkup_annotate()`), because there are two LLM annotation
+  # implementations in this package and the drift between them is exactly what
+  # this round had to fix. Only the TRANSPORT differs, so only the transport is
+  # supplied here: how to turn a set of ids (optionally with a parent identity)
+  # into parsed annotations.
+  hier <- .cv_cellmarkup_hierarchy(
+    set_names, enabled = isTRUE(inherit_major_clusters),
+    annotate = function(ids, parent_id = NULL, parent_type = NULL) {
+      m <- markers; m$clusters <- ids
+      msgs <- if (is.null(parent_type))
+        .cv_cellmarkup_prompt(m, sample_source = sample_source,
+                              feature_type = feature_type, tissue = tissue,
+                              condition = condition, species = species,
+                              top_k = top_k)
+      else
+        .cv_cellmarkup_prompt_within(m, parent_id = parent_id, parent_type = parent_type,
+                                     sample_source = sample_source,
+                                     feature_type = feature_type, tissue = tissue,
+                                     condition = condition, species = species,
+                                     top_k = top_k)
+      ask(ids, msgs)
+    },
+    log = log_message)
+  parsed <- hier$parsed
+  inheritance <- hier$inheritance
+  
   # ---- 4. Assemble the TypoClust-compatible object ---------------------------
-  .cv_cellmarkup_build_typoclust(parsed, markers, tissue = tissue,
-                                 condition = condition, species = species,
-                                 pos_panels = pos_panels, neg_panels = neg_panels)
+  out <- .cv_cellmarkup_build_typoclust(parsed, markers, tissue = tissue,
+                                        condition = condition, species = species,
+                                        pos_panels = pos_panels, neg_panels = neg_panels)
+  out$metadata$inherit_major_clusters <- isTRUE(inherit_major_clusters)
+  out$metadata$inheritance <- inheritance
+  out
 }
 
 # ---- Internal helpers ---------------------------------------------------------
+
+#' Derive major-cluster parentage from a vector of set ids.
+#'
+#' Returns a named character vector, one entry per id, holding that id's parent
+#' or `NA` when it has none. A set `P` is the parent of `S` when `S` begins with
+#' `paste0(P, "-")` and `P` is itself one of the ids. The LONGEST candidate wins,
+#' so a cluster called `"C1"` cannot claim `"C10-Sub1"` -- which a `"-Sub[0-9]+$"`
+#' pattern would also get right, but only by accident of the naming, whereas
+#' matching against the real ids is exact.
+#'
+#' Both levels have to be present. A call carrying only sub-clusters has no
+#' parent identity available to inherit, so every entry comes back `NA` and the
+#' caller takes its ordinary single-request path.
+#' @keywords internal
+.cv_cellmarkup_parentage <- function(set_names, enabled = TRUE) {
+  out <- stats::setNames(rep(NA_character_, length(set_names)), set_names)
+  if (!isTRUE(enabled) || length(set_names) < 2L) return(out)
+  for (s in set_names) {
+    cand <- set_names[startsWith(s, paste0(set_names, "-"))]
+    cand <- cand[cand != s]
+    if (length(cand)) out[[s]] <- cand[which.max(nchar(cand))]
+  }
+  out
+}
+
+#' Run a hierarchical annotation: parents first, then each parent's sub-clusters
+#' within that parent's identity.
+#'
+#' THE SHARED ORCHESTRATOR. This package has two LLM annotation implementations
+#' -- `ceLLMarkup()` and the agent's `cv_cellmarkup_annotate()` -- because the
+#' agent's was written when `typoClust(mode = "ceLLMarkup")` was still an empty
+#' stub, and they carry genuinely different transports: the agent budgets its
+#' request against the server's context window and batches (Round XLII, which
+#' exists because an unbounded version of that request contributed to a machine
+#' restart), while this one takes an explicit provider/model/key.
+#'
+#' What they must NOT differ on is the sequencing: who counts as a parent, that
+#' parents are annotated first from their OWN markers, that stage two issues one
+#' request PER PARENT, and how the result is recorded. Round LXXI shipped that
+#' logic into `ceLLMarkup()` only, and the agent -- which never calls it -- went
+#' on annotating sub-clusters flat. That is the fourth instance in this codebase
+#' of two paths drifting apart (CHANGES.md:1499, Round XXXIII, Round LXIV/D1),
+#' and like Round LXIV's `cv_tool(prepare = )` it is fixed by giving both callers
+#' one implementation rather than one comment asking them to stay in step.
+#'
+#' @param set_names all set ids to annotate, in the caller's order.
+#' @param enabled FALSE reproduces a single flat pass exactly.
+#' @param annotate `function(ids, parent_id = NULL, parent_type = NULL)`
+#'   returning a named list of parsed annotation data.frames, one per id. The
+#'   ONLY thing a caller has to supply: everything else about the sequencing is
+#'   decided here.
+#' @param log optional `function(...)` for progress messages.
+#' @return `list(parsed=, inheritance=, hierarchical=)`. `inheritance` is NULL
+#'   when nothing was inherited, else a data.frame of Set / Parent /
+#'   Parent_CellType / Restricted.
+#' @keywords internal
+.cv_cellmarkup_hierarchy <- function(set_names, enabled, annotate, log = NULL) {
+  say <- function(...) if (is.function(log)) log(...) else invisible(NULL)
+  
+  parent_of <- .cv_cellmarkup_parentage(set_names, enabled = enabled)
+  inheriting <- names(parent_of)[!is.na(parent_of)]
+  
+  if (!length(inheriting)) {
+    # No hierarchy, or the feature is off: one flat pass, exactly the behaviour
+    # both callers had before this existed.
+    return(list(parsed = annotate(set_names, NULL, NULL),
+                inheritance = NULL, hierarchical = FALSE))
+  }
+  
+  # Stage 1: the major clusters (and any set with no parent), from THEIR OWN
+  # markers. Sub-clusters are held back because their parent identity is not
+  # known yet.
+  first_pass <- setdiff(set_names, inheriting)
+  say(sprintf("Annotating %d parent set(s) first, so their sub-clusters can be read within them.",
+              length(first_pass)))
+  parsed <- annotate(first_pass, NULL, NULL)
+  
+  # Stage 2: one request PER PARENT. Not one combined request -- each group
+  # carries a different parent identity, and a single request could only carry
+  # one. This is also what makes it structurally impossible for one major
+  # cluster's identity to be applied to another's sub-clusters.
+  rows <- list()
+  for (p in unique(stats::na.omit(unname(parent_of[inheriting])))) {
+    subs <- inheriting[!is.na(parent_of[inheriting]) & parent_of[inheriting] == p]
+    p_df <- parsed[[p]]
+    p_type <- if (is.data.frame(p_df) && nrow(p_df)) as.character(p_df$CellType[1]) else NA_character_
+    
+    if (is.na(p_type) || !nzchar(p_type) || identical(p_type, "Unknown")) {
+      # Nothing usable to inherit. Annotate these the ordinary way rather than
+      # telling the model their parent is "Unknown", which would be worse than
+      # saying nothing.
+      say(sprintf("No usable identity for parent %s; its sub-cluster(s) are annotated without inheritance.", p))
+      got <- annotate(subs, NULL, NULL)
+      for (s in subs) rows[[length(rows) + 1L]] <- data.frame(
+        Set = s, Parent = p, Parent_CellType = NA_character_,
+        Restricted = FALSE, stringsAsFactors = FALSE)
+    } else {
+      say(sprintf("Annotating sub-cluster(s) of %s as subtypes/states of %s.", p, p_type))
+      got <- annotate(subs, p, p_type)
+      for (s in subs) rows[[length(rows) + 1L]] <- data.frame(
+        Set = s, Parent = p, Parent_CellType = p_type,
+        Restricted = TRUE, stringsAsFactors = FALSE)
+    }
+    for (s in names(got)) parsed[[s]] <- got[[s]]
+  }
+  
+  # Restore the caller's ordering rather than exposing the two-stage order.
+  list(
+    parsed = parsed[set_names],
+    inheritance = if (length(rows)) do.call(rbind, rows) else NULL,
+    hierarchical = TRUE
+  )
+}
+
+#' Build the stage-two prompt: sub-clusters read WITHIN a known parent identity.
+#'
+#' The difference from `.cv_cellmarkup_prompt()` is the whole point of the
+#' feature, so it is stated plainly to the model rather than hinted at: these
+#' sets are sub-populations of one already-identified cell type, the markers
+#' shown are the SUB-CLUSTER'S OWN, and the answer wanted is which subtype or
+#' state of that parent type each one is.
+#'
+#' The escape hatch in the last instruction is deliberate and matches the
+#' guidance in `typoPrompt()`: a sub-cluster that genuinely is not a variety of
+#' its parent (contamination, a doublet, a mis-split) must be reportable as
+#' such, or the constraint would turn into a way of manufacturing agreement.
+#' @keywords internal
+.cv_cellmarkup_prompt_within <- function(markers, parent_id, parent_type,
+                                         sample_source, feature_type, tissue,
+                                         condition, species, top_k) {
+  ctx <- c(
+    if (!is.null(sample_source) && nzchar(sample_source)) paste0("Sample source: ", sample_source) else NULL,
+    if (!is.null(tissue) && nzchar(tissue)) paste0("Tissue: ", tissue) else NULL,
+    if (!is.null(condition) && nzchar(condition)) paste0("Condition: ", condition) else NULL,
+    paste0("Species: ", species %||% "human")
+  )
+  blocks <- vapply(markers$clusters, function(cl) {
+    pos <- markers$pos[[cl]] %||% character(0)
+    neg <- markers$neg[[cl]] %||% character(0)
+    line <- sprintf("Set %s:\n  Positive %ss: %s", cl, feature_type,
+                    if (length(pos)) paste(pos, collapse = ", ") else "(none)")
+    if (length(neg)) line <- paste0(line, sprintf("\n  Negative %ss: %s", feature_type, paste(neg, collapse = ", ")))
+    line
+  }, character(1))
+  
+  sys <- paste(
+    "You are an expert single-cell cell-type annotator (the 'ceLLMarkup' method).",
+    "",
+    sprintf("The major cluster '%s' has already been identified as: %s", parent_id, parent_type),
+    "",
+    sprintf("Every set below is a SUB-CLUSTER of that population, so each one is a %s.", parent_type),
+    sprintf("Your task is NOT to re-identify them as some other lineage. It is to say which specific"),
+    sprintf("subtype, differentiation state, activation state or functional state of %s each set is,", parent_type),
+    "based on the sub-cluster's own markers listed below.",
+    "",
+    "Use the sub-cluster-specific markers to work out what distinguishes each sub-cluster from the",
+    "others within the same parent (for example naive, memory, effector, activated, exhausted,",
+    "regulatory, cycling, tissue-resident, or an interferon-responding state).",
+    "",
+    sprintf("Name each answer as a specific variety of %s wherever the markers support it. If the", parent_type),
+    "markers only support the parent type itself, return the parent type rather than inventing a",
+    "narrower label.",
+    "",
+    sprintf("Only if the markers clearly contradict %s -- contamination, a doublet, or another", parent_type),
+    "clear biological explanation -- may you name a different lineage, and you must say so in the",
+    "reason.",
+    "",
+    sprintf("For EACH set return up to %d ranked candidate annotations (rank 1 = most likely),", top_k),
+    "each with a confidence in [0,1] and a one-line reason citing the key markers.",
+    "",
+    "Respond with STRICT JSON ONLY (no prose, no markdown fences), of the form:",
+    '{"annotations":[{"cluster":"<set id>","candidates":[{"cell_type":"...","confidence":0.0,"reason":"..."}]}]}',
+    sep = "\n")
+  
+  user <- paste(
+    paste(ctx, collapse = "\n"), "",
+    sprintf("Parent major cluster: %s = %s", parent_id, parent_type), "",
+    "Sub-clusters and THEIR OWN markers:", "",
+    paste(blocks, collapse = "\n\n"), "",
+    sprintf("Return JSON with one entry per set (%d sets), up to %d candidates each.",
+            length(markers$clusters), top_k),
+    sep = "\n")
+  
+  list(list(role = "system", content = sys), list(role = "user", content = user))
+}
 
 #' Build a cv_chat()-compatible config from explicit ceLLMarkup arguments.
 #' @keywords internal
@@ -227,13 +473,13 @@ ceLLMarkup <- function(sample_source = NULL,
   cfg$default_provider <- provider
   cfg$default_model    <- model
   cfg$temperature      <- temperature %||% 0.2
-
+  
   # Host for local providers.
   if (!is.null(host) && nzchar(host)) {
     if (provider == "ollama")        cfg$ollama_host <- host
     else if (provider == "lmstudio") cfg$lmstudio_host <- host
   }
-
+  
   # API key: explicit argument wins; otherwise the standard env var for the
   # provider. Local providers need no key.
   key_field <- paste0(provider, "_key")
@@ -275,7 +521,7 @@ ceLLMarkup <- function(sample_source = NULL,
     if (length(neg)) line <- paste0(line, sprintf("\n  Negative %ss: %s", feature_type, paste(neg, collapse = ", ")))
     line
   }, character(1))
-
+  
   sys <- paste(
     "You are an expert single-cell cell-type annotator (the 'ceLLMarkup' method).",
     "Given each set's marker features and the sample context, assign the most likely",
@@ -289,7 +535,7 @@ ceLLMarkup <- function(sample_source = NULL,
     "Respond with STRICT JSON ONLY (no prose, no markdown fences), of the form:",
     '{"annotations":[{"cluster":"<set id>","candidates":[{"cell_type":"...","confidence":0.0,"reason":"..."}]}]}',
     sep = "\n")
-
+  
   user <- paste(
     paste(ctx, collapse = "\n"), "",
     "Sets and their markers:", "",
@@ -297,7 +543,7 @@ ceLLMarkup <- function(sample_source = NULL,
     sprintf("Return JSON with one entry per set (%d sets), up to %d candidates each.",
             length(markers$clusters), top_k),
     sep = "\n")
-
+  
   list(list(role = "system", content = sys), list(role = "user", content = user))
 }
 
@@ -310,7 +556,7 @@ ceLLMarkup <- function(sample_source = NULL,
   json <- if (length(m) && nzchar(m)) m else text
   parsed <- tryCatch(jsonlite::fromJSON(json, simplifyVector = FALSE), error = function(e) NULL)
   if (is.null(parsed) || is.null(parsed$annotations)) return(NULL)
-
+  
   out <- list()
   for (ann in parsed$annotations) {
     cl <- as.character(ann$cluster)
@@ -366,7 +612,7 @@ ceLLMarkup <- function(sample_source = NULL,
       Pos_Markers = pos_str,
       Neg_Markers = neg_str,
       Combined_Markers = if (nzchar(pos_str) && nzchar(neg_str)) paste(pos_str, neg_str, sep = "|")
-                         else if (nzchar(pos_str)) pos_str else neg_str,
+      else if (nzchar(pos_str)) pos_str else neg_str,
       Pos_Count = length(pos),
       Neg_Count = length(neg),
       Combined_Count = length(pos) + length(neg),
@@ -382,7 +628,7 @@ ceLLMarkup <- function(sample_source = NULL,
     )
   })
   names(cell_types) <- names(parsed)
-
+  
   structure(
     list(
       cell_types = cell_types,

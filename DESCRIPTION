@@ -2,7 +2,7 @@ Package: celliverse
 Type: Package
 Title: An Ecosystem for Exploring the Universe of Single-Cell Data
 Language: en-US
-Version: 0.0.1
+Version: 0.0.2
 Authors@R:
     person("Adrian", "Salavaty",
       role = c("aut", "cre"),
@@ -29,15 +29,35 @@ Imports:
     ggnewscale,
     patchwork,
     tidyselect,
+    methods,
     Rcpp
 LinkingTo:
     Rcpp,
     RcppEigen
 Suggests:
-    knitr,
-    rmarkdown
+    R.rsp,
+    htmltools,
+        knitr,
+    rmarkdown,
+    plumber,
+    jsonlite,
+    httr2,
+    processx,
+    later,
+    promises,
+    callr,
+    httpuv,
+    openssl,
+    fs,
+    svglite,
+    zip,
+    withr,
+    SeuratObject,
+    ComplexHeatmap,
+    hdf5r,
+    rstudioapi
 Depends: 
-    R (>= 4.0.0)
+    R (>= 4.1.0)
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 URL: https://github.com/asalavaty/celliverse, https://asalavaty.github.io/celliverse/
 BugReports: https://github.com/asalavaty/celliverse/issues
@@ -46,4 +66,4 @@ Encoding: UTF-8
 LazyData: true
 LazyDataCompression: bzip2
 RoxygenNote: 7.3.3
-VignetteBuilder: knitr
+VignetteBuilder: R.rsp

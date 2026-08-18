@@ -3,9 +3,6 @@
 .RData
 .Ruserdata
 R_Package_CelliVerse.Rproj
-README.Rmd
-NEWS.Rmd
-cran-comments.Rmd
 .DS_Store
 /Meta/
 /doc/
@@ -17,3 +14,5 @@ src/*.dSYM
 *.Rcheck/
 *.tar.gz
 docs
+^doc$
+^Meta$

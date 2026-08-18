@@ -16,13 +16,22 @@ typoClust(
   thresh_mode = c("n", "rank"),
   thresh = 20,
   mode = c("markerDB", "ceLLMarkup"),
+  inherit_major_clusters = TRUE,
+  inherit_score_ratio = 0.5,
   species = c("human", "mouse"),
+  sample_source = NULL,
+  feature_type = "gene",
+  llm_provider = "ollama",
+  llm_model = NULL,
+  llm_api_key = NULL,
+  llm_host = NULL,
+  llm_top_k = 3,
   verbose = TRUE
 )
 }
 \arguments{
 \item{objects}{A list of one or more objects of class \code{ClustoCell} or \code{MarkoCell}
-(e.g. \code{list(obj1, obj2)}). Mandatory if \code{desired_pos_markers} and
+(e.g. \code{list(obj1, obj2)}). Mandatory if \code{desired_pos_markers} and/or
 \code{desired_neg_markers} are not specified.}
 
 \item{desired_sets}{Optional character vector specifying the names of clusters, sub-clusters,
@@ -72,12 +81,102 @@ must match those of \code{desired_pos_markers}, if provided.}
   \item \code{"markerDB"}: Annotates cell sets using curated cell-type
   marker databases.
   \item \code{"ceLLMarkup"}: Annotates cell sets using large language models
-  (LLM).
-}
-Currently, only \code{"markerDB"} is accessible.}
+  (LLM) via \code{\link{ceLLMarkup}}; configure the LLM with
+  \code{llm_provider}, \code{llm_model}, \code{llm_api_key}, \code{llm_host}.
+}}
 
-\item{species}{Character string specifying the species. One of \code{"human"} or
-\code{"mouse"}.}
+\item{inherit_major_clusters}{Logical; whether a sub-cluster should be annotated \emph{within the identity
+of its own major cluster}. Default \code{TRUE}.
+
+When \code{FALSE}, every set is annotated independently and the function
+behaves exactly as it did before this argument existed.
+
+When \code{TRUE}, and the input contains both major clusters and
+sub-clusters, annotation becomes two-stage. Each requested sub-cluster's
+parent major cluster is annotated first, from the \emph{major cluster's own}
+top markers; the sub-cluster is then annotated from \emph{its own} top
+markers, constrained by that parent identity:
+\itemize{
+  \item \code{mode = "markerDB"}: the database is restricted to every cell
+  type whose name contains an admitted parent identity as a whole phrase —
+  so a parent called \code{"CD8+ T Cell"} leaves \code{"CD8+ T Cell"} itself
+  plus \code{"Exhausted CD8+ T Cell"}, \code{"Memory CD8+ T Cell"},
+  \code{"GZMK+ CD8+ T Cell"} and so on — and the sub-cluster is scored
+  against that restricted database only. Which identities count as admitted
+  is set by \code{inherit_score_ratio}.
+  \item \code{mode = "ceLLMarkup"}: the model is told the parent's identity
+  and asked which specific subtype or state of \emph{that} cell type the
+  sub-cluster represents, given the sub-cluster's own markers.
+}
+
+A parent major cluster needed for this is annotated and returned even when it
+was not itself named in \code{desired_sets}; \code{metadata$inheritance}
+records, per sub-cluster, which parent was used and what it was called.
+The restriction is applied per sub-cluster, so one major cluster's identity
+can never constrain a different major cluster's sub-clusters.}
+
+\item{inherit_score_ratio}{Numeric in \code{(0, 1]}, default \code{0.5}. \strong{\code{mode = "markerDB"}
+only}, and only when \code{inherit_major_clusters = TRUE}.
+
+How close to the parent's rank-1 score a runner-up candidate must come before
+it \emph{also} constrains that parent's sub-clusters. At \code{1} only the
+rank-1 label is used; at \code{0.6} any candidate scoring at least 60\% of
+the rank-1 score is admitted alongside it, and the database is restricted to
+the union of their named varieties.
+
+This exists because a major cluster's own label is often not certain, and
+treating it as certain propagates the doubt into every sub-cluster beneath
+it. Measured on the bundled pbmc3k \code{ClustoCell} (\code{thresh = 10},
+Blood/Healthy), each parent's rank-2 candidate as a fraction of its rank-1
+score:
+
+\tabular{lll}{
+  \strong{Parent} \tab \strong{rank-1 vs rank-2} \tab \strong{ratio} \cr
+  C1 \tab NK Cell vs CD8+ Alpha-Beta T Cell \tab 0.653 \cr
+  C2 \tab B Cell vs MS4A1+ B Cell \tab 0.248 \cr
+  C3 \tab T Cell vs CD4+ Alpha-Beta T Cell \tab 0.965 \cr
+  C4 \tab Mononuclear Phagocyte vs Monocyte \tab 0.837 \cr
+  C5 \tab Platelet vs Megakaryocyte \tab 0.846
+}
+
+C1 is a mixed cytotoxic compartment whose sub-clustering separates CD8+ T
+cells from NK cells; on rank-1 alone its T-cell sub-cluster is folded back
+into NK. C4 is the other end of the same problem: exactly one database cell
+type is named as a variety of \code{"Mononuclear Phagocyte"}, so on rank-1
+alone its sub-clusters can only repeat the parent's label, while admitting
+\code{"Monocyte"} restores a vocabulary of 32. At the default, no parent on
+that dataset admits more than three identities.}
+
+\item{species}{Character string specifying the species (either \code{"human"} or
+\code{"mouse"}). Other species names may also be supplied when the mode is set to \code{"ceLLMarkup"}. Default is
+\code{"human"}.}
+
+\item{sample_source}{Free-text description of the sample origin shown to the
+model (e.g. \code{"human peripheral blood"}). Improves accuracy. Only used when mode is set to \code{"ceLLMarkup"}.}
+
+\item{feature_type}{Feature type of the markers (e.g. \code{"gene"},
+\code{"protein"}). Default \code{"gene"}. Only used when mode is set to \code{"ceLLMarkup"}.}
+
+\item{llm_provider}{(\code{mode = "ceLLMarkup"} only) LLM provider. One of \code{"ollama"},
+\code{"lmstudio"}, \code{"openai"}, \code{"anthropic"}, \code{"gemini"},
+\code{"deepseek"}, \code{"groq"}, \code{"openrouter"}, \code{"cerebras"}.
+Default \code{"ollama"}.}
+
+\item{llm_model}{(\code{mode = "ceLLMarkup"} only) Model id for \code{llm_provider}
+(e.g. \code{"qwen3:8b"} for Ollama, \code{"qwen/qwen3-8b"} for LM Studio,
+\code{"gpt-4o-mini"} for OpenAI, \code{"anthropic/claude-3-haiku"} for
+OpenRouter). Mandatory when \code{mode = "ceLLMarkup"}.}
+
+\item{llm_api_key}{(\code{mode = "ceLLMarkup"} only) API key for cloud providers (not needed
+for Ollama/LM Studio). If \code{NULL}, falls back to the provider's standard
+environment variable (e.g. \code{OPENAI_API_KEY}, \code{OPENROUTER_API_KEY}).}
+
+\item{llm_host}{(\code{mode = "ceLLMarkup"} only) Base URL for local providers. Defaults to
+\code{http://localhost:11434} (Ollama) or \code{http://localhost:1234/v1}
+(LM Studio).}
+
+\item{llm_top_k}{(\code{mode = "ceLLMarkup"} only) Number of ranked candidate cell types
+returned per set. Default 3.}
 
 \item{verbose}{Logical; whether to display progress messages.}
 }

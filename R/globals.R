@@ -24,5 +24,8 @@ utils::globalVariables(c(
   "Expression", "median", "quantile", "na.omit", "cor", "desc", "setNames",
   "Class",
   "Feature_ordered",
-  "Purity"
+  "Purity",
+  "Freq_Gini_Score",
+  "private",
+  "super"
 ))

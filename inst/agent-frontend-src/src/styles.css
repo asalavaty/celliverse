@@ -1,0 +1,951 @@
+/* CelliVerse Agent — minimal, dependency-free styling.
+   Phylo-adjacent neutral palette; system font stack for speed. */
+:root {
+  --bg: #f6f8f8;
+  --panel: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --border: #e4e2da;
+
+  /* Round LXXIX (audit #51 + #53). Two items with one answer.
+     WAS #0279ee, which puts white text at 4.22:1 -- below the 4.5:1 floor --
+     and that colour is every user message bubble, the Send button and the
+     active nav item, so the single most-repeated text in the app failed. It
+     was ALSO one of two accent blues: #0072B2, the colourblind-safe Okabe-Ito
+     blue, was already hardcoded in five places for chips, focus rings and the
+     clarification rule.
+     Adopting the one that already existed fixes both: 5.19:1 with white on it
+     AND 5.19:1 as link text on white, and there is now one blue. Every literal
+     #0072B2 and every rgba(2,121,238,...) shadow below now refers to these. */
+  --accent: #0072B2;
+  --accent-weak: #e8f1fe;
+  --accent-rgb: 0, 114, 178;
+
+  --ok: #75a025;
+
+  /* The amber scale. Audit #53 called --warn "declared and never used"; that
+     was true when the audit was written and stopped being true in Round LXIX,
+     which adopted it for the two warning severities. What remained true is the
+     drift beside it: three amber SURFACES and six amber INKS as literals.
+     They are tokens now.
+     They are NOT collapsed into one colour. The three surfaces encode three
+     deliberate loudness levels -- a local-model banner you read before you
+     start, a may_invalidate block you must not miss, and a failed-run card
+     Round XLVII made faint on purpose ("an outcome to act on, not a crash").
+     Flattening them would delete that scale while claiming to tidy it. */
+  --warn: #d17700;          /* borders and rules. 3.31:1 on white: the WCAG
+                               1.4.11 non-text floor is 3:1, and #ff9400 was
+                               2.21:1. */
+  --warn-strong: #a35f00;   /* anything with WHITE text on it (5.01:1) --
+                               #ff9400 was 2.21:1 behind a white glyph. */
+  --warn-ink: #4a3400;      /* body text on any amber surface */
+  --warn-ink-mid: #8a5e05;  /* status text and icons on a faint amber */
+  --warn-bg: #fff8ee;       /* the standard amber surface */
+  --warn-bg-soft: #fffdf7;  /* the faint one (a run that didn't finish) */
+  --warn-bg-loud: #fff5e0;  /* the loudest (local-model caution banner) */
+  --warn-border: #f0d9a8;
+
+  /* WAS #d64545: 4.38:1 on white, just under the floor, and it is used as
+     TEXT (.err-text, the tool-event error line). 5.49:1. */
+  --err: #c13535;
+
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: "Liberation Sans", Arimo, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font-family: var(--sans); color: var(--ink); background: var(--bg); font-size: 14px; }
+
+.app { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+.sidebar { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.brand { padding: 14px 16px; font-weight: 700; font-size: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.brand-logo { width: 34px; height: 34px; object-fit: contain; flex: 0 0 auto; }
+.brand-text { line-height: 1.15; }
+.brand small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; margin-top: 2px; }
+.nav { padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.nav button { text-align: left; padding: 8px 12px; border: none; background: none; border-radius: 6px; cursor: pointer; color: var(--ink); font-size: 13px; }
+.nav button:hover { background: var(--accent-weak); }
+.nav button.active { background: var(--accent); color: #fff; }
+.side-section { padding: 12px 16px; border-top: 1px solid var(--border); overflow-y: auto; }
+.side-section h4 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: .04em; }
+
+.main { display: flex; flex-direction: column; overflow: hidden; }
+.topbar { padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--panel); display: flex; align-items: center; gap: 12px; }
+.topbar .status { margin-left: auto; font-size: 12px; color: var(--muted); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+.dot.ok { background: var(--ok); } .dot.err { background: var(--err); }
+.content { flex: 1; overflow-y: auto; padding: 16px; }
+
+/* Chat */
+.chat-wrap { display: flex; flex-direction: column; height: 100%; }
+.messages { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 12px; }
+.msg { max-width: 860px; padding: 10px 14px; border-radius: 10px; white-space: pre-wrap; word-wrap: break-word; }
+.msg.user { align-self: flex-end; background: var(--accent); color: #fff; }
+.msg.assistant { align-self: flex-start; background: var(--panel); border: 1px solid var(--border); }
+.msg.tool { align-self: flex-start; background: #f4f6f8; border: 1px dashed var(--border); font-family: var(--mono); font-size: 12px; color: #333; }
+.msg .role { font-size: 10px; text-transform: uppercase; opacity: .6; margin-bottom: 4px; letter-spacing: .04em; }
+.composer { display: flex; gap: 8px; padding: 12px 8px; border-top: 1px solid var(--border); }
+.composer textarea { flex: 1; resize: none; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-family: var(--sans); font-size: 14px; height: 46px; }
+.composer button { padding: 0 18px; border: none; border-radius: 8px; background: var(--accent); color: #fff; cursor: pointer; font-weight: 600; }
+.composer button:disabled { background: #a9c8ef; cursor: default; }
+
+.tool-event { font-size: 12px; color: var(--muted); font-style: italic; align-self: flex-start; }
+.tool-event.err { color: var(--err); font-style: normal; }
+.tool-event.skipped { color: var(--muted); font-style: italic; opacity: 0.85; }
+
+/* artifacts */
+.artifact { margin-top: 8px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.artifact img { max-width: 100%; display: block; }
+.artifact .cap { padding: 6px 10px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); display: flex; gap: 10px; }
+.artifact .cap a { color: var(--accent); text-decoration: none; }
+
+table.grid { border-collapse: collapse; width: 100%; font-size: 12px; }
+table.grid th, table.grid td { border: 1px solid var(--border); padding: 4px 8px; text-align: left; }
+table.grid th { background: #f4f6f8; position: sticky; top: 0; }
+.pager { display: flex; gap: 8px; align-items: center; padding: 6px 0; font-size: 12px; }
+.pager button { padding: 2px 8px; border: 1px solid var(--border); background: var(--panel); border-radius: 5px; cursor: pointer; }
+
+/* forms */
+.form-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; max-width: 520px; }
+.form-row label { font-size: 12px; font-weight: 600; color: #333; }
+.form-row input, .form-row select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+.form-row .hint { font-size: 11px; color: var(--muted); }
+.btn { padding: 8px 16px; border: none; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; font-weight: 600; }
+.btn.secondary { background: var(--panel); border: 1px solid var(--border); color: var(--ink); }
+.badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.badge.on { background: #e7f3d8; color: #3f620e; } .badge.off { background: #f0eeea; color: #5a5a5a; }
+.chip { display: inline-block; padding: 2px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; font-family: var(--mono); margin: 2px; background: var(--panel); }
+.badge.free { background: #e7f3d8; color: #3f620e; margin-left: 6px; }
+.badge.ctx { background: #eef3fb; color: #2c5aa0; margin-left: 6px; font-family: var(--mono); }
+
+/* Searchable model combobox (Settings) */
+.combo { position: relative; }
+.combo-row { display: flex; gap: 6px; }
+.combo-row input { flex: 1; }
+.combo-list { position: absolute; z-index: 30; top: calc(100% + 2px); left: 0; right: 0;
+  max-height: 260px; overflow-y: auto; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.combo-opt { padding: 7px 10px; cursor: pointer; display: flex; align-items: center;
+  border-bottom: 1px solid var(--border); font-size: 13px; }
+.combo-opt:last-child { border-bottom: none; }
+.combo-opt:hover, .combo-opt.active { background: var(--accent-weak); }
+.combo-opt .id { font-family: var(--mono); font-size: 12px; }
+.combo-opt .spacer { flex: 1; }
+.combo-empty { padding: 8px 10px; font-size: 12px; color: var(--muted); }
+
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+.card h3 { margin: 0 0 6px; font-size: 14px; }
+.card p { margin: 4px 0; color: #333; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--mono); font-size: 12px; }
+.empty { color: var(--muted); text-align: center; padding: 40px; }
+.err-text { color: var(--err); }
+
+/* Live "thinking" indicator shown while the agent turn is running (async poll). */
+.msg.assistant.thinking { opacity: 0.85; font-style: italic; }
+.msg.assistant.thinking .dots { display: inline-flex; gap: 2px; }
+.msg.assistant.thinking .dots span {
+  animation: cv-blink 1.2s infinite both;
+  font-weight: 700;
+}
+.msg.assistant.thinking .dots span:nth-child(2) { animation-delay: 0.2s; }
+.msg.assistant.thinking .dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes cv-blink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+
+/* Results tab: figures grid + downloadable object/table/text rows ---------- */
+.results-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.results-head h3 { margin: 0; font-size: 15px; }
+.results-head .spacer { flex: 1; }
+.res-section { margin-bottom: 20px; }
+.res-section > h4 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: .04em; }
+.fig-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.fig-card { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.fig-card .thumb { display: block; width: 100%; height: 150px; object-fit: contain; background: #fff; border-bottom: 1px solid var(--border); }
+.fig-card .cap { padding: 6px 10px; font-size: 11px; }
+.fig-card .cap .name { display: block; font-family: var(--mono); margin-bottom: 4px; word-break: break-all; color: var(--ink); }
+.fig-card .cap a { color: var(--accent); text-decoration: none; margin-right: 10px; font-weight: 600; }
+.res-row { display: flex; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.res-row:last-child { border-bottom: none; }
+.res-row .grow { flex: 1; min-width: 0; }
+.res-row .fn { font-family: var(--mono); font-size: 12px; word-break: break-all; }
+.res-row .sub { font-size: 11px; color: var(--muted); margin-top: 3px; word-break: break-word; }
+.res-row .size { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.res-dl { color: var(--accent); text-decoration: none; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.res-dl:hover { text-decoration: underline; }
+
+/* Rendered markdown inside assistant messages --------------------------------
+   The .msg bubble uses white-space:pre-wrap for plain user text; that would
+   insert a blank line between every markdown block element, so reset it here
+   and let the markdown's own margins provide spacing. */
+.msg.assistant { white-space: normal; }
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md p { margin: 6px 0; line-height: 1.5; }
+.md h1, .md h2, .md h3, .md h4 { margin: 12px 0 4px; line-height: 1.25; font-weight: 700; }
+.md h1 { font-size: 17px; } .md h2 { font-size: 16px; } .md h3 { font-size: 15px; } .md h4 { font-size: 14px; }
+.md ul, .md ol { margin: 6px 0; padding-left: 22px; }
+.md li { margin: 2px 0; line-height: 1.45; }
+.md li > ul, .md li > ol { margin: 2px 0; }
+.md code { font-family: var(--mono); font-size: 12px; background: #f0eeea; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+.md pre { background: #f6f5f1; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; overflow-x: auto; margin: 8px 0; }
+.md pre code { background: none; border: none; padding: 0; font-size: 12px; }
+.md blockquote { margin: 6px 0; padding: 2px 12px; border-left: 3px solid var(--border); color: var(--muted); }
+.md table { border-collapse: collapse; margin: 8px 0; font-size: 12.5px; max-width: 100%; }
+.md th, .md td { border: 1px solid var(--border); padding: 4px 10px; text-align: left; vertical-align: top; }
+.md th { background: #f4f6f8; font-weight: 700; }
+.md hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+.md a { color: var(--accent); text-decoration: none; }
+.md a:hover { text-decoration: underline; }
+.md strong { font-weight: 700; }
+
+/* ==========================================================================
+   Help page — accordion categories
+   ========================================================================== */
+.help-acc { display: flex; flex-direction: column; gap: 10px; }
+.acc-item { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: box-shadow .15s ease, border-color .15s ease; }
+.acc-item:hover { border-color: #d3d0c6; }
+.acc-item.open { box-shadow: 0 2px 10px rgba(20, 30, 40, .06); }
+.acc-head { width: 100%; display: flex; align-items: center; gap: 10px; padding: 13px 16px; background: none; border: none; cursor: pointer; text-align: left; font-family: var(--sans); }
+.acc-head:hover { background: var(--accent-weak); }
+.acc-chev { display: inline-block; color: var(--accent); font-size: 13px; transition: transform .18s ease; flex: 0 0 auto; }
+.acc-item.open .acc-chev { transform: rotate(90deg); }
+.acc-title { font-weight: 700; font-size: 14px; color: var(--ink); }
+.acc-sub { margin-left: auto; font-size: 12px; color: var(--muted); font-weight: 400; }
+.acc-body { padding: 4px 18px 16px 42px; border-top: 1px solid var(--border); animation: acc-fade .16s ease; }
+.acc-body h4 { margin: 14px 0 6px; font-size: 13px; color: var(--ink); }
+.acc-body ol, .acc-body ul { margin: 6px 0; padding-left: 22px; }
+.acc-body li { margin: 3px 0; line-height: 1.5; }
+.acc-body p { margin: 6px 0; line-height: 1.5; }
+.provider-block { border-top: 1px solid var(--border); padding: 10px 0 4px; }
+.provider-block:first-of-type { border-top: none; }
+.provider-block > strong { font-size: 13px; }
+@keyframes acc-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ==========================================================================
+   Refined polish — spacing, shadows, states (within the existing system)
+   ========================================================================== */
+.card { border-radius: 10px; box-shadow: 0 1px 3px rgba(20, 30, 40, .05); transition: box-shadow .15s ease; }
+.card:hover { box-shadow: 0 2px 8px rgba(20, 30, 40, .07); }
+
+/* Sidebar / brand */
+.sidebar { box-shadow: 1px 0 0 rgba(20, 30, 40, .03); }
+.brand { padding: 16px; }
+.brand-logo { filter: drop-shadow(0 1px 2px rgba(20,30,40,.12)); }
+.nav button { transition: background .13s ease, color .13s ease, transform .05s ease; }
+.nav button:active { transform: translateY(1px); }
+
+/* Topbar */
+.topbar { box-shadow: 0 1px 0 rgba(20, 30, 40, .03); }
+
+/* Buttons: consistent hover/active feedback */
+.btn, .composer button { transition: background .13s ease, box-shadow .13s ease, transform .05s ease; }
+.btn:hover, .composer button:hover:not(:disabled) { box-shadow: 0 2px 8px rgba(var(--accent-rgb), .28); }
+.btn:active, .composer button:active:not(:disabled) { transform: translateY(1px); }
+.btn.secondary:hover { background: var(--accent-weak); box-shadow: none; }
+
+/* Chat bubbles: softer, clearer separation */
+.msg { border-radius: 12px; box-shadow: 0 1px 2px rgba(20, 30, 40, .04); }
+.msg.assistant { border-color: #e7e5dd; }
+.msg.user { box-shadow: 0 1px 4px rgba(var(--accent-rgb), .25); }
+
+/* Composer: a touch more polish */
+.composer textarea { transition: border-color .13s ease, box-shadow .13s ease; }
+.composer textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .14); }
+
+/* Form inputs: focus ring for accessibility */
+.form-row input:focus, .form-row select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .12); }
+
+/* Links & chips */
+.chip { transition: background .13s ease, border-color .13s ease; }
+.chip:hover { background: var(--accent-weak); border-color: #cfdae8; }
+
+/* Clickable handle chips (clarification prompts + inline handles in markdown).
+   Colorblind-safe accent (Okabe-Ito blue) on hover; mono handle text. */
+.handle-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; margin: 2px 4px 2px 0;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--panel); color: var(--ink);
+  font-family: var(--mono); font-size: 12px; line-height: 1.4;
+  cursor: pointer; transition: background .13s ease, border-color .13s ease, box-shadow .13s ease;
+}
+.handle-chip:hover { background: var(--accent-weak); border-color: var(--accent); box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .12); }
+.handle-chip:active { transform: translateY(1px); }
+.handle-chip .chip-type { font-family: var(--sans); font-size: 10px; color: var(--muted); }
+/* Method-choice chip: a primary action (one-click continue), so it reads as a
+   button rather than a handle tag. Uses the sans font + accent border. */
+.method-chip { font-family: var(--sans); font-weight: 600; border-color: var(--accent); color: var(--accent); }
+.method-chip:disabled { opacity: .5; cursor: default; }
+.clarify-chips { display: flex; flex-wrap: wrap; margin-top: 8px; }
+.msg.clarify { border-left: 3px solid var(--accent); }
+
+/* Tissue/Condition searchable dropdowns (markerDB annotation clarification). */
+.clarify-dropdowns-wrap { margin-top: 10px; }
+.clarify-dropdowns { display: flex; flex-wrap: wrap; gap: 12px; }
+.clarify-continue {
+  margin-top: 12px; padding: 8px 18px; border: none; border-radius: 8px;
+  background: var(--accent); color: #fff; cursor: pointer; font-weight: 600;
+  font-family: var(--sans); font-size: 13px;
+  transition: background .13s ease, box-shadow .13s ease, transform .05s ease;
+}
+.clarify-continue:hover:not(:disabled) { box-shadow: 0 2px 8px rgba(var(--accent-rgb), .28); }
+.clarify-continue:active:not(:disabled) { transform: translateY(1px); }
+.clarify-continue:disabled { background: #a9c8ef; cursor: default; }
+.clarify-note {
+  margin-top: 10px; font-family: var(--sans); font-size: 12px; color: var(--muted);
+  font-style: italic;
+}
+.search-select { position: relative; min-width: 220px; flex: 1 1 220px; max-width: 340px; }
+.search-select-label {
+  display: block; font-family: var(--sans); font-size: 11px; font-weight: 600;
+  color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em;
+}
+.search-select-input {
+  width: 100%; padding: 6px 9px; font-family: var(--sans); font-size: 13px;
+  color: var(--ink); background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; outline: none; transition: border-color .13s ease, box-shadow .13s ease;
+}
+.search-select-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .12); }
+.search-select-input:disabled { opacity: .55; cursor: default; }
+.search-select-list {
+  position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; right: 0;
+  max-height: 240px; overflow-y: auto; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+.search-select-opt {
+  display: block; width: 100%; text-align: left; padding: 6px 10px;
+  font-family: var(--sans); font-size: 13px; color: var(--ink);
+  background: transparent; border: none; cursor: pointer;
+}
+.search-select-opt:hover { background: var(--accent-weak); }
+.search-select-opt.selected { background: var(--accent-weak); font-weight: 600; color: var(--accent); }
+.search-select-empty { padding: 8px 10px; font-family: var(--sans); font-size: 12px; color: var(--muted); }
+
+/* Scrollbars: subtle, modern */
+.content::-webkit-scrollbar, .messages::-webkit-scrollbar, .side-section::-webkit-scrollbar { width: 10px; }
+.content::-webkit-scrollbar-thumb, .messages::-webkit-scrollbar-thumb, .side-section::-webkit-scrollbar-thumb { background: #d8d6cf; border-radius: 6px; border: 2px solid var(--bg); }
+.content::-webkit-scrollbar-thumb:hover, .messages::-webkit-scrollbar-thumb:hover { background: #c2c0b8; }
+
+/* ---- First-run onboarding (banner + welcome card) ---- */
+.onboard-banner { display: flex; align-items: center; gap: 12px; padding: 9px 14px; background: var(--accent-weak); border-bottom: 1px solid var(--border); font-size: 13px; color: var(--ink); }
+.onboard-banner > span { flex: 1; }
+.onboard-close { background: none; border: none; font-size: 20px; line-height: 1; color: var(--muted); cursor: pointer; padding: 0 4px; }
+.onboard-close:hover { color: var(--ink); }
+
+/* ---- Local-model stability warning (Round XLIII) ----
+   Same shape as .onboard-banner but in a caution amber, so it reads as
+   "know this before you start" rather than as an error to fix. Rendered only
+   when a local provider is selected. */
+.local-warn { display: flex; align-items: flex-start; gap: 12px; padding: 9px 14px; background: var(--warn-bg-loud); border-bottom: 1px solid var(--warn-border); font-size: 13px; line-height: 1.5; color: var(--warn-ink); }
+.local-warn > span { flex: 1; }
+.local-warn strong { color: var(--warn-ink); }
+.onboard-card { max-width: 720px; align-self: center; margin: 18px auto 4px; }
+.onboard-key { padding: 10px 12px; background: var(--accent-weak); border: 1px solid #cfdae8; border-radius: 8px; margin-bottom: 12px; }
+.onboard-keyrow { display: flex; gap: 8px; margin-top: 8px; }
+.onboard-keyrow input { flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: var(--mono); }
+.onboard-keyrow input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .12); }
+.onboard-ok { padding: 8px 12px; background: #eef7ee; border: 1px solid #cfe6cf; border-radius: 8px; color: #2c6e2c; font-size: 13px; margin-bottom: 12px; }
+.onboard-err { margin-top: 6px; color: var(--err); font-size: 12px; }
+.onboard-alt { margin-top: 10px; font-size: 13px; line-height: 1.5; }
+
+/* ---- Tool run cards (Round XLVII) ------------------------------------------
+   One card per tool call, alive from start to result. Replaces the three
+   throwaway line styles (.tool-event / .tool-event.err / .msg.tool) that made a
+   retried run look like a pile of unrelated failures.
+
+   Tone matters here and is deliberate: only a genuinely terminal failure gets
+   any warm colour, and even that is amber rather than red. A tool that ran out
+   of time on a big dataset is an outcome to act on, not a crash. */
+.trun {
+  align-self: flex-start;
+  width: 100%;
+  max-width: 760px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px 13px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.trun + .trun { margin-top: 6px; }
+
+.trun-head { display: flex; align-items: center; gap: 8px; }
+.trun-name { font-weight: 600; font-family: var(--mono); font-size: 12.5px; }
+.trun-status { margin-left: auto; font-size: 12px; color: var(--muted); }
+.trun-time { font-variant-numeric: tabular-nums; }
+.trun-icon { display: inline-flex; width: 16px; justify-content: center; font-weight: 700; }
+.trun-ok { color: #2c7a2c; }
+.trun-body { margin-top: 6px; line-height: 1.5; color: #333; }
+.trun-pct { margin-left: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Running -------------------------------------------------------------- */
+.trun-running { border-color: #cfdae8; background: linear-gradient(180deg, #fbfdff, #fff); }
+.trun-spinner {
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid #cfdae8; border-top-color: var(--accent);
+  animation: trun-spin .8s linear infinite;
+}
+@keyframes trun-spin { to { transform: rotate(360deg); } }
+
+.trun-bar {
+  margin-top: 8px; height: 5px; border-radius: 3px;
+  background: #eef2f7; overflow: hidden;
+}
+.trun-bar-fill {
+  height: 100%; border-radius: 3px; background: var(--accent);
+  transition: width .4s ease;
+}
+/* No percent yet: sweep instead of sitting at 0%, which reads as "stuck". */
+.trun-bar-fill.indet { width: 35%; animation: trun-sweep 1.4s ease-in-out infinite; }
+@keyframes trun-sweep {
+  0%   { margin-left: -35%; }
+  100% { margin-left: 100%; }
+}
+
+.trun-hint {
+  margin-top: 8px; padding: 7px 9px; border-radius: 7px;
+  background: #f7f9fc; color: #5b6675; font-size: 12px; line-height: 1.45;
+}
+
+/* Terminal failure ------------------------------------------------------ */
+.trun-failed { border-color: var(--warn-border); background: var(--warn-bg-soft); }
+.trun-failed .trun-icon { color: var(--warn-ink-mid); }
+.trun-failed .trun-status { color: var(--warn-ink-mid); }
+
+.trun-skipped { opacity: .8; }
+
+/* Earlier attempts, folded in ------------------------------------------- */
+.trun-attempts { margin-top: 9px; border-top: 1px solid #eef0f3; padding-top: 8px; }
+.trun-attempts-head {
+  display: flex; align-items: center; gap: 7px; width: 100%;
+  background: none; border: none; padding: 0; cursor: pointer;
+  font-size: 12px; color: var(--muted); font-family: inherit; text-align: left;
+}
+.trun-attempts-head:hover { color: var(--ink); }
+.trun-attempts-icon { color: var(--warn-ink-mid); }
+.trun-attempts-toggle { margin-left: auto; color: var(--accent); }
+.trun-attempts-list { margin: 8px 0 0; padding: 0 0 0 22px; list-style: none; }
+.trun-attempts-list li { margin-bottom: 7px; font-size: 12px; color: #5b6675; }
+.trun-attempt-what { font-weight: 600; color: var(--warn-ink-mid); }
+.trun-attempt-ms { margin-left: 6px; font-variant-numeric: tabular-nums; }
+.trun-attempt-detail { margin-top: 2px; color: var(--muted); line-height: 1.45; }
+
+/* ---- "Interpreting the results…" (Round LI) --------------------------------
+   The gap between a tool's result card and the model's write-up. Sits directly
+   under the card as a continuation of it, so it is deliberately quieter than a
+   message bubble: no border, no background, muted text. It is a status line,
+   not something the user has to read. */
+.interpreting {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 0 4px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--muted);
+}
+.interpreting-dots { display: inline-flex; gap: 2px; font-style: normal; }
+.interpreting-dots span { animation: cv-blink 1.2s infinite both; font-weight: 700; }
+.interpreting-dots span:nth-child(2) { animation-delay: .2s; }
+.interpreting-dots span:nth-child(3) { animation-delay: .4s; }
+.interpreting-time { font-variant-numeric: tabular-nums; font-style: normal; opacity: .8; }
+
+/* Round LXIV (D6): the error-detail disclosure. Native <details>, so it is
+   keyboard-operable and screen-reader-announced without any ARIA of our own.
+   Muted by design: the calm sentence above it is the message, this is the
+   technical cause for someone who asks for it. */
+.err-detail { margin-top: 8px; font-size: 12px; }
+.err-detail > summary { cursor: pointer; color: var(--muted); user-select: none; }
+.err-detail > summary:hover { color: var(--ink); }
+.err-detail > pre {
+  margin: 6px 0 0; padding: 8px; overflow-x: auto;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+  font-family: var(--mono); font-size: 11px; line-height: 1.45;
+  white-space: pre-wrap; word-break: break-word; color: var(--muted);
+}
+
+/* Round LXIV: "New chat" in the sidebar, under the nav. Full width so it reads
+   as a section action rather than a nav item, and visually quieter than the
+   primary accent so it cannot be mistaken for the Send button. */
+.new-chat {
+  margin: 4px 10px 10px; padding: 6px 10px; width: calc(100% - 20px);
+  font-size: 12px; text-align: center;
+}
+
+/* ---- Round LXVIII: the History tab -----------------------------------------
+   The page used to be an unbounded list of ids, so the filters and the Clear
+   button would scroll away from the rows they act on. The list is now a fixed
+   window; everything above it stays put. */
+.hist-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hist-head h3 { margin: 0; }
+
+.hist-filters {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin: 10px 0 6px;
+}
+.hist-search {
+  flex: 1 1 220px; min-width: 160px; padding: 6px 10px; font-size: 13px;
+  border: 1px solid var(--border); border-radius: 6px; background: var(--panel);
+  color: var(--ink); font-family: var(--sans);
+}
+.hist-search:focus-visible, .hist-range input:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
+.hist-range { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.hist-range input {
+  padding: 5px 8px; font-size: 12px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--panel); color: var(--ink);
+  font-family: var(--sans);
+}
+.hist-filters .btn.secondary { padding: 5px 10px; font-size: 12px; }
+
+/* The honest marker beside the display cap. Never hidden, even when everything
+   fits: a count that appears only when something is missing teaches the reader
+   to stop looking for it. */
+.hist-count { font-size: 12px; margin: 2px 0 8px; }
+
+.hist-list {
+  max-height: 58vh; overflow-y: auto;
+  border-top: 1px solid var(--border);
+}
+.hist-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 2px; border-bottom: 1px solid var(--border);
+}
+.hist-row:last-child { border-bottom: none; }
+.hist-row.is-current { background: var(--accent-weak); }
+.hist-open {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--ink); font-family: var(--mono); font-size: 12px; text-align: left;
+}
+.hist-open:hover { color: var(--accent); text-decoration: underline; }
+.hist-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hist-meta { flex: 1; font-size: 12px; font-variant-numeric: tabular-nums; }
+.hist-restore { padding: 3px 10px; font-size: 12px; white-space: nowrap; }
+.hist-current-tag {
+  font-size: 11px; color: var(--accent); border: 1px solid var(--accent);
+  border-radius: 5px; padding: 2px 8px; white-space: nowrap;
+}
+
+/* Clear history is irreversible, so it asks once, inline, naming the number and
+   stating what it does NOT delete. Amber rather than red: this is a deliberate
+   action being confirmed, not an error being reported. */
+.hist-confirm {
+  margin: 8px 0; padding: 10px 12px; font-size: 13px; line-height: 1.5;
+  border: 1px solid var(--warn); border-left-width: 3px; border-radius: 8px;
+  background: var(--warn-bg);
+}
+.hist-confirm-actions { display: flex; gap: 8px; margin-top: 10px; }
+.hist-confirm-actions .btn { padding: 5px 12px; font-size: 12px; }
+.hist-notice {
+  margin: 8px 0; padding: 8px 12px; font-size: 12px; line-height: 1.5;
+  border: 1px solid var(--border); border-left: 3px solid var(--ok);
+  border-radius: 8px; background: var(--panel); color: var(--muted);
+}
+
+/* Round LXVIII (audit #34): a message that reports a failure rather than an
+   answer. This replaces two "⚠ " prefixes that were concatenated into the
+   message text itself -- which put the marker in a different voice from the
+   calm sentence beside it, and made an ordinary "the model returned nothing"
+   read like a crash. A left rule in the error colour is enough to find it in a
+   scrollback; the body stays a normal assistant message so the sentence Round
+   LXII wrote is what the reader actually reads. */
+.msg.assistant.failed { border-left: 3px solid var(--err); }
+.msg.assistant.failed .role::after { content: " · didn't finish"; opacity: .8; }
+
+/* ---- Round LXIX: two warning severities on a tool card ---------------------
+   The audit's complaint was that a results-invalidating cross-tissue caveat and
+   "one cluster had no hits" arrived as the same undifferentiated sentence on the
+   same green tick. These are the two treatments that separate them.
+
+   `--warn` has been declared since the first stylesheet and never used (audit
+   #53 noted four hardcoded ambers beside it); this is its first real use. */
+
+/* A finished run that raised something which may change what its result means.
+   Amber, not red: the run SUCCEEDED. It is not a failure and must not read as
+   one, or the user learns to treat both the same way. */
+.trun-warned { border-color: var(--warn); }
+.trun-warned .trun-status { color: var(--warn-strong); }
+.trun-icon.trun-warn-mark {
+  background: var(--warn-strong); color: #fff; font-weight: 700;
+}
+
+/* The may_invalidate block. Never collapsed, always above the result: hiding
+   this behind a toggle would defeat the reason for raising it. */
+.trun-warns { margin: 8px 0 4px; display: flex; flex-direction: column; gap: 6px; }
+.trun-warn {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 8px 10px; font-size: 12px; line-height: 1.5;
+  border: 1px solid var(--warn); border-left-width: 3px; border-radius: 7px;
+  background: var(--warn-bg); color: var(--warn-ink);
+}
+.trun-warn-icon {
+  flex: none; width: 15px; height: 15px; border-radius: 50%;
+  background: var(--warn-strong); color: #fff; font-size: 10px; font-weight: 700;
+  line-height: 15px; text-align: center; margin-top: 1px;
+}
+
+/* The informational notes. Collapsed by default and styled exactly like
+   `Settings used`, because a run that auto-resolved a handle and turned log1p
+   off is a normal, correct run — it should read as provenance, not a problem. */
+.trun-notes ul { margin: 6px 0 0; padding-left: 18px; }
+.trun-notes li { margin: 3px 0; line-height: 1.5; }
+
+/* ==========================================================================
+   Round LXXIX — Batch 3b (Interface): audit #49, #51, #52, #53, #54, #55, #59
+   ========================================================================== */
+
+/* ---- #52: the one breakpoint, and the wide-monitor half of the same item ---
+   The audit named two symptoms of one thing -- the layout assumes a window it
+   never checks. At ~720px, which is the normal posture (this runs beside
+   RStudio, not full-screen), the 240px sidebar never collapsed and took a third
+   of the width. At the other end, on a wide monitor, `.msg` is max-width 860px
+   inside a full-width flex column with align-self flex-start/flex-end, so a
+   question and its answer pinned to opposite screen edges with a metre of empty
+   space between them.
+
+   The wide half is not a media query at all: the conversation column simply
+   needs a maximum width and a centre. Capping the CONTAINER rather than the
+   bubbles keeps both sides of the exchange in one readable column at any
+   monitor size, which is the actual complaint. */
+.messages, .composer { width: 100%; max-width: 1180px; margin-left: auto; margin-right: auto; }
+
+@media (max-width: 860px) {
+  /* The sidebar becomes a header strip. Nothing is REMOVED -- every nav item,
+     the New chat button and the Objects panel are all still here -- it is laid
+     out along the axis there is room on. */
+  .app { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .sidebar { border-right: none; border-bottom: 1px solid var(--border); overflow: visible; box-shadow: none; }
+  .brand { padding: 9px 12px; font-size: 14px; }
+  .brand-logo { width: 26px; height: 26px; }
+  .nav { flex-direction: row; overflow-x: auto; gap: 4px; padding: 6px 8px; }
+  .nav button { white-space: nowrap; }
+  .new-chat { margin: 0 8px 8px; width: auto; align-self: flex-start; }
+  /* Objects is reference state, not navigation, so on a short window it must
+     not eat the vertical space the conversation needs. */
+  .side-section { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 8px 12px; }
+  .side-section h4 { margin: 0; flex: 0 0 auto; }
+  .obj-card { flex: 0 0 auto; max-width: 230px; }
+  .obj-summary { -webkit-line-clamp: 1; }
+  .content { padding: 10px; }
+  .msg { max-width: 100%; }
+  .trun { max-width: 100%; }
+  .pkg-split { grid-template-columns: 1fr; }
+}
+
+/* ---- #53: the Stop button -------------------------------------------------
+   The only control in the app whose colours lived in a JSX `style={{}}` rather
+   than in this sheet, so it was the one button a palette change could not
+   reach. Same appearance, moved here. */
+.composer-stop {
+  padding: 0 18px; border: 1px solid var(--border); border-radius: 8px;
+  background: #f0eeea; color: #333; cursor: pointer; font-weight: 600;
+  font-family: var(--sans); font-size: 14px;
+}
+.composer-stop:hover { background: #e7e5dd; }
+.composer-stop:active { transform: translateY(1px); }
+
+/* ---- #50: the keyboard-active option in a SearchableSelect ----------------
+   Distinct from `.selected` (what is currently chosen) on purpose: while the
+   arrows are moving, the two are different rows, and a highlight that could not
+   be told apart from the selection would make Enter unpredictable. */
+.search-select-opt.active { background: var(--accent-weak); outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ---- #55: the sidebar object summary -------------------------------------- */
+.obj-card {
+  border: 1px solid var(--border); border-radius: 7px; background: var(--panel);
+  padding: 6px 8px; margin: 4px 0; line-height: 1.35;
+}
+.obj-handle { font-size: 11px; color: var(--ink); word-break: break-all; }
+.obj-summary {
+  font-size: 11px; color: var(--muted); margin-top: 2px;
+  /* Two lines, then ellipsis. The full text stays in `title`, so nothing is
+     lost -- but a 200-character Seurat summary must not push the Jobs panel off
+     the bottom of the sidebar. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- #49 + #54: Package Browser ------------------------------------------- */
+.pkg-split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pkg-list { display: flex; flex-direction: column; }
+.pkg-row {
+  display: block; width: 100%; text-align: left; padding: 5px 6px;
+  background: none; border: none; border-radius: 5px; cursor: pointer;
+  color: var(--ink); font-weight: 600; font-size: 12px;
+}
+.pkg-row:hover { background: var(--accent-weak); }
+.pkg-row.is-sel { background: var(--accent-weak); color: var(--accent); }
+.pkg-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pkg-params { margin: 6px 0 0; }
+.pkg-param { padding: 7px 0; border-top: 1px solid var(--border); }
+.pkg-param:first-child { border-top: none; }
+.pkg-param dt { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.pkg-param dd { margin: 3px 0 0; font-size: 12px; line-height: 1.5; }
+.pkg-param-name { font-weight: 700; font-size: 12.5px; }
+.pkg-param-type { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.pkg-param-req {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--warn-strong);
+}
+.pkg-param-opt { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.pkg-raw, .job-raw, .hist-raw { margin-top: 12px; font-size: 12px; }
+.pkg-raw > summary, .job-raw > summary, .hist-raw > summary { cursor: pointer; color: var(--muted); user-select: none; }
+.pkg-raw > summary:hover, .job-raw > summary:hover, .hist-raw > summary:hover { color: var(--ink); }
+.pkg-raw > pre, .job-raw > pre, .hist-raw > pre {
+  margin: 6px 0 0; padding: 8px; max-height: 320px; overflow: auto;
+  background: #f4f6f8; border: 1px solid var(--border); border-radius: 6px;
+  white-space: pre-wrap; word-break: break-word; font-size: 11px; line-height: 1.45;
+}
+
+/* ---- #49 + #54: Logs ------------------------------------------------------ */
+.job-list { display: flex; flex-direction: column; }
+.job-row {
+  display: block; width: 100%; text-align: left; padding: 5px 6px;
+  background: none; border: none; border-radius: 5px; cursor: pointer;
+  color: var(--ink); font-size: 12px;
+}
+.job-row:hover { background: var(--accent-weak); }
+.job-row.is-sel { background: var(--accent-weak); }
+.job-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.job-detail { margin: 4px 0 0; }
+.job-detail > div { display: flex; gap: 10px; padding: 4px 0; border-top: 1px solid var(--border); font-size: 12.5px; }
+.job-detail > div:first-child { border-top: none; }
+.job-detail dt { flex: 0 0 110px; color: var(--muted); }
+.job-detail dd { margin: 0; flex: 1; min-width: 0; word-break: break-word; }
+.job-error {
+  margin-top: 10px; padding: 8px 10px; border: 1px solid var(--warn-border);
+  border-left: 3px solid var(--warn); border-radius: 7px; background: var(--warn-bg);
+  color: var(--warn-ink); font-size: 12px;
+}
+.job-error-head { font-weight: 700; margin-bottom: 4px; }
+.job-error pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 11px; line-height: 1.45; }
+
+/* ---- #54: the History session transcript ---------------------------------- */
+.hist-transcript { max-height: 340px; overflow-y: auto; padding-right: 4px; }
+.hist-turn { padding: 7px 0; border-top: 1px solid var(--border); }
+.hist-turn:first-child { border-top: none; }
+.hist-turn-role { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 3px; }
+.hist-turn-text { font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.hist-turn-you .hist-turn-text { color: var(--ink); }
+.hist-turn-agent .hist-turn-text { color: #333; }
+
+/* ---- #59: rerun, and taking back a mis-clicked chip ----------------------- */
+.trun-rerun {
+  margin-top: 9px; padding: 3px 10px; font-size: 12px; font-family: var(--sans);
+  background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--ink); cursor: pointer;
+}
+.trun-rerun:hover { background: var(--accent-weak); border-color: var(--accent); }
+.trun-rerun:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Deliberately quiet. This is a short-lived offer, not a result -- and it sits
+   in the transcript, where anything loud would read as another message. */
+.chip-undo {
+  align-self: flex-start; display: flex; align-items: center; gap: 10px;
+  margin: -2px 0 0 4px; font-size: 12.5px; color: var(--muted); font-style: italic;
+}
+.chip-undo-btn {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--accent); font-size: 12.5px; font-family: var(--sans); font-weight: 600;
+  text-decoration: underline; font-style: normal;
+}
+.chip-undo-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ==========================================================================
+   Round LXXX — Batch 3c (Voice) + Batch 4a (first use) + 4b (observability)
+   ========================================================================== */
+
+/* ---- #60/#61/#62/#63: the first screen ------------------------------------
+   It used to be two lines of centred grey prose offering one unclickable
+   example and naming one of seven readable formats. It is now the shortest
+   path from "the app opened" to "something ran". */
+.empty-intro { text-align: left; max-width: 640px; margin: 32px auto; padding: 0; color: var(--ink); }
+.empty-lead { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.empty-sub { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 7px; }
+.empty-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.empty-note { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+/* ---- #60: what the agent can do, on the onboarding card ------------------- */
+.onboard-can { margin: 6px 0 12px; padding-left: 20px; font-size: 13px; line-height: 1.6; }
+.onboard-can li { margin: 2px 0; }
+
+/* ---- #64: the glossary --------------------------------------------------- */
+.glossary { margin: 4px 0 0; }
+.glossary > div { padding: 9px 0; border-top: 1px solid var(--border); }
+.glossary > div:first-child { border-top: none; }
+.glossary dt { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+.glossary dd { margin: 0; font-size: 13px; line-height: 1.55; color: #333; }
+
+/* ==========================================================================
+   Round LXXXI — the two rails (E1: objects, E2: saved prompts)
+   ==========================================================================
+
+   The conversation is capped at 1180px and centred (#52), so on any monitor
+   wider than that the two outer thirds of the window were empty while the
+   Objects panel was squeezed into a 240px sidebar it shared with the nav. This
+   grid puts the two reference panels in that empty space and leaves the
+   conversation exactly where it was.
+
+   Each rail folds to a 34px labelled tab, which is the part that makes the
+   layout safe at the ~720px posture the audit's #52 note records as normal
+   here: folded, the whole grid is the conversation plus two thin tabs, and
+   nothing has become unreachable. */
+.chat-3col {
+  flex: 1; min-height: 0; display: grid; gap: 12px;
+  grid-template-columns: 250px minmax(0, 1fr) 285px;
+}
+.chat-3col.no-left  { grid-template-columns: 34px minmax(0, 1fr) 285px; }
+.chat-3col.no-right { grid-template-columns: 250px minmax(0, 1fr) 34px; }
+.chat-3col.no-left.no-right { grid-template-columns: 34px minmax(0, 1fr) 34px; }
+.chat-center { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+
+.rail {
+  display: flex; flex-direction: column; min-height: 0; min-width: 0;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden;
+}
+.rail-head {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 10px 8px; border-bottom: 1px solid var(--border);
+}
+.rail-head h4 {
+  margin: 0; font-size: 11px; text-transform: uppercase; color: var(--muted);
+  letter-spacing: .04em; flex: 1; min-width: 0;
+}
+.rail-toggle {
+  flex: 0 0 auto; width: 22px; height: 22px; padding: 0; line-height: 1;
+  background: none; border: 1px solid var(--border); border-radius: 5px;
+  color: var(--muted); cursor: pointer; font-size: 13px;
+}
+.rail-toggle:hover { background: var(--accent-weak); color: var(--accent); border-color: var(--accent); }
+.rail-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* The folded state. Vertical text so the label stays readable in 34px -- a
+   tab reading "Prompts" is the difference between a fold and a disappearance. */
+.rail-tab {
+  flex: 1; width: 100%; padding: 10px 0; border: none; background: none; cursor: pointer;
+  color: var(--muted); font-family: var(--sans); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .06em;
+  writing-mode: vertical-rl; text-orientation: mixed;
+}
+.rail-left .rail-tab { transform: rotate(180deg); }
+.rail-tab:hover { background: var(--accent-weak); color: var(--accent); }
+.rail-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.rail-body { display: flex; flex-direction: column; min-height: 0; flex: 1; padding: 8px 10px 10px; }
+.rail-scroll { flex: 1; min-height: 0; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+.rail-empty { font-size: 12px; color: var(--muted); line-height: 1.5; padding: 4px 0; }
+.rail-foot { font-size: 11px; color: var(--muted); line-height: 1.45; margin-top: 8px;
+             padding-top: 7px; border-top: 1px solid var(--border); }
+.rail-err { font-size: 12px; color: var(--err); line-height: 1.45; margin-top: 6px; }
+.rail-link {
+  background: none; border: none; padding: 0; cursor: pointer; color: var(--accent);
+  font-family: var(--sans); font-size: 12px; font-weight: 600; text-decoration: underline;
+}
+.rail-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rail-filter {
+  width: 100%; padding: 5px 8px; margin-bottom: 7px; font-size: 12px;
+  font-family: var(--sans); border: 1px solid var(--border); border-radius: 6px;
+  background: #fff; color: var(--ink);
+}
+.rail-filter:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+/* Category filters. Counts come from the UNFILTERED list on purpose -- see
+   categoryCounts() -- so they do not move while you type. */
+.rail-cats { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.rail-cat {
+  padding: 2px 8px; font-size: 11px; font-family: var(--sans); cursor: pointer;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px; color: var(--ink);
+}
+.rail-cat:hover { background: var(--accent-weak); border-color: var(--accent); }
+.rail-cat.is-on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.rail-cat.is-on .rail-cat-n { color: #fff; opacity: .8; }
+.rail-cat:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rail-cat-n { color: var(--muted); font-size: 10px; }
+.rail-group + .rail-group { margin-top: 10px; }
+.rail-group-head {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+  padding: 2px 0 4px; position: sticky; top: 0; background: var(--panel);
+}
+
+/* The object card, now a button. Round LXXIX's two-line clamped summary and
+   the `title` holding the full text are both kept exactly as they were. */
+.obj-card-btn {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  font-family: var(--sans); color: var(--ink);
+}
+.obj-card-btn .obj-handle, .obj-card-btn .obj-summary { display: block; }
+.obj-card-btn:hover { background: var(--accent-weak); border-color: var(--accent); }
+.obj-card-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* A saved prompt: the label is the button, the × beside it removes. */
+.prompt-row { display: flex; align-items: stretch; gap: 4px; margin: 3px 0; }
+.prompt-btn {
+  flex: 1; min-width: 0; text-align: left; padding: 6px 8px; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 7px;
+  color: var(--ink); font-family: var(--sans); font-size: 12px; line-height: 1.35;
+}
+.prompt-btn:hover:not(:disabled) { background: var(--accent-weak); border-color: var(--accent); }
+.prompt-btn:disabled { color: var(--muted); cursor: default; }
+.prompt-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.prompt-del {
+  flex: 0 0 auto; width: 22px; padding: 0; cursor: pointer; line-height: 1;
+  background: none; border: 1px solid transparent; border-radius: 6px;
+  color: var(--muted); font-size: 14px;
+}
+.prompt-del:hover { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-strong); }
+.prompt-del:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.prompt-add { margin-top: 8px; display: flex; flex-direction: column; gap: 3px; }
+.rail-lab { font-size: 11px; font-weight: 600; color: #333; }
+.rail-input {
+  width: 100%; padding: 5px 8px; font-size: 12px; font-family: var(--sans);
+  border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--ink);
+  resize: vertical;
+}
+.rail-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.rail-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.rail-row .btn { padding: 5px 12px; font-size: 12px; }
+.rail-add-btn { flex: 0 0 auto; }
+
+/* Below the width at which the conversation stops growing, the rails stop
+   being free space and start being a tax on it. They stack ABOVE the
+   transcript as short, independently scrolling strips: still there, still
+   filterable, no longer competing for the reading column. */
+@media (max-width: 1179px) {
+  .chat-3col,
+  .chat-3col.no-left,
+  .chat-3col.no-right,
+  .chat-3col.no-left.no-right { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .rail { max-height: 190px; }
+  .rail-left { order: 1; }
+  .rail-right { order: 2; }
+  .chat-center { order: 3; }
+  .rail-tab {
+    writing-mode: horizontal-tb; text-orientation: mixed;
+    flex: 0 0 auto; padding: 7px 10px; text-align: left;
+  }
+  .rail-left .rail-tab { transform: none; }
+  /* #52's 860px block narrows an .obj-card to 230px and clamps its summary to
+     one line, because there it was a chip in a horizontal strip. In the rail it
+     is a full-width row again, so both are undone here rather than by loosening
+     the older rule -- which is still correct for the sidebar it was written
+     for. This block is later in the sheet, so it wins at equal specificity. */
+  .rail .obj-card { max-width: none; }
+  .rail .obj-summary { -webkit-line-clamp: 2; }
+}
+
+/* ==========================================================================
+   Round LXXXII — the size warning on the Upload page
+   ==========================================================================
+   Amber, not red: nothing has failed and nothing is refused. It says what this
+   file would cost and points at the box that avoids the cost, and the Upload
+   button beside it stays live -- there is no upload size limit here and there
+   must not become one. */
+.upload-warn {
+  margin: -2px 0 12px; padding: 9px 11px; font-size: 12.5px; line-height: 1.5;
+  background: var(--warn-bg); border: 1px solid var(--warn-border);
+  border-left: 3px solid var(--warn); border-radius: 7px; color: var(--warn-ink);
+}
