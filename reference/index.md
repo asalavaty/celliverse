@@ -2,8 +2,6 @@
 
 ## All functions
 
-- [`CV_DESC_MAX_IDS`](https://asalavaty.github.io/celliverse/reference/CV_DESC_MAX_IDS.md)
-  : Upper bound on how many ids a descriptor stores.
 - [`addClustoData()`](https://asalavaty.github.io/celliverse/reference/addClustoData.md)
   : Add ClustoCell cluster annotations to a Seurat or
   SingleCellExperiment object

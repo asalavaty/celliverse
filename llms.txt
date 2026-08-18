@@ -286,8 +286,6 @@ issue.
 
 ## All functions
 
-- [`CV_DESC_MAX_IDS`](https://asalavaty.github.io/celliverse/reference/CV_DESC_MAX_IDS.md)
-  : Upper bound on how many ids a descriptor stores.
 - [`addClustoData()`](https://asalavaty.github.io/celliverse/reference/addClustoData.md)
   : Add ClustoCell cluster annotations to a Seurat or
   SingleCellExperiment object
@@ -345,3 +343,9 @@ issue.
 - [`typoPrompt()`](https://asalavaty.github.io/celliverse/reference/typoPrompt.md)
   : Generate an LLM-ready prompt for cell-type annotation
 
+# Articles
+
+### Getting Started
+
+- [Introduction to
+  CelliVerse](https://asalavaty.github.io/celliverse/articles/Introduction-to-CelliVerse.md):
