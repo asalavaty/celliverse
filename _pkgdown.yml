@@ -6,5 +6,6 @@ template:
     bootswatch: flatly
 home:
   links:
-    - text: Personal Website
-      href: https://asalavaty.com/
+  - text: Personal Website
+    href: https://asalavaty.com/
+
