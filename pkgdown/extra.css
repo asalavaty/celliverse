@@ -6,12 +6,18 @@
  *
  * No wrapper is required in Introduction-to-CelliVerse.Rmd.
  *
- * All article presentation rules are scoped to:
- *   .template-article .contents
+ * Current pkgdown Bootstrap 5 article structure:
+ *   .template-article main#main     -> article body (Bootstrap col-md-9)
+ *   .template-article aside #toc   -> article TOC  (Bootstrap col-md-3)
  *
- * This limits the custom vignette styling to pkgdown article content and
- * avoids restyling the navbar, homepage, reference pages, article index, or
- * other pkgdown page types.
+ * IMPORTANT:
+ * The stylesheet deliberately does NOT set width, max-width, margin, padding,
+ * border, border-radius, box-shadow, or overflow on main#main. Bootstrap owns
+ * that grid layout, which preserves the right-hand pkgdown TOC.
+ *
+ * Article-specific presentation rules remain scoped to the article body/TOC,
+ * so the navbar, homepage, reference pages, article index, and other pkgdown
+ * page types are not restyled.
  *
  * The :root custom properties are intentionally global because all variables
  * are namespaced with --cv-.
@@ -21,10 +27,14 @@
  */
 
 /* pkgdown integration safety */
-.template-article .contents,
-.template-article .contents *,
-.template-article .contents *::before,
-.template-article .contents *::after {
+.template-article main#main,
+.template-article main#main *,
+.template-article main#main *::before,
+.template-article main#main *::after,
+.template-article aside #toc,
+.template-article aside #toc *,
+.template-article aside #toc *::before,
+.template-article aside #toc *::after {
   box-sizing: border-box;
 }
 
@@ -68,17 +78,10 @@
 /* Main article layout                                                         */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents {
-  box-sizing: border-box;
-  max-width: 1040px;
-  margin: 28px auto;
-  padding: 44px 56px 64px;
-  overflow-x: auto;
+.template-article main#main {
+  /* Bootstrap owns this element's col-md-9 width and spacing. */
+  min-width: 0;
   color: var(--cv-text);
-  background: var(--cv-surface);
-  border: 1px solid rgba(203, 216, 226, 0.9);
-  border-radius: var(--cv-radius-lg);
-  box-shadow: var(--cv-shadow-md);
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
@@ -89,28 +92,13 @@
   text-rendering: optimizeLegibility;
 }
 
-.template-article .contents ::selection {
+.template-article main#main ::selection {
   background: #dceeff;
   color: #17314a;
 }
 
-@media screen and (max-width: 1080px) {
-  .template-article .contents {
-    background: var(--cv-surface);
-  }
-
-  .template-article .contents {
-    max-width: 100%;
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
-}
-
 @media screen and (max-width: 768px) {
-  .template-article .contents {
-    padding: 24px 18px 42px;
+  .template-article main#main {
     font-size: 14px;
   }
 }
@@ -119,7 +107,7 @@
 /* Article-local header selectors                                              */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents #header {
+.template-article main#main .page-header {
   position: relative;
   overflow: hidden;
   margin: -12px 0 34px;
@@ -133,7 +121,7 @@
   box-shadow: 0 14px 32px rgba(28, 62, 91, 0.18);
 }
 
-.template-article .contents #header::after {
+.template-article main#main .page-header::after {
   content: "";
   position: absolute;
   width: 210px;
@@ -144,7 +132,7 @@
   border-radius: 50%;
 }
 
-.template-article .contents #header h1 {
+.template-article main#main .page-header h1 {
   position: relative;
   z-index: 1;
   margin: 0 0 8px;
@@ -156,7 +144,7 @@
   letter-spacing: -0.025em;
 }
 
-.template-article .contents #header .subtitle {
+.template-article main#main .page-header .subtitle {
   position: relative;
   z-index: 1;
   max-width: 790px;
@@ -166,9 +154,9 @@
   line-height: 1.5;
 }
 
-.template-article .contents #header .author,
-.template-article .contents #header .date,
-.template-article .contents #header h4 {
+.template-article main#main .page-header .author,
+.template-article main#main .page-header .date,
+.template-article main#main .page-header h4 {
   position: relative;
   z-index: 1;
   margin: 10px 0 0;
@@ -181,12 +169,12 @@
 /* Table of contents                                                           */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents #TOC {
+.template-article aside #toc {
   clear: both;
   box-sizing: border-box;
   width: 100%;
-  max-width: 900px;
-  margin: 0 auto 34px;
+  max-width: none;
+  margin: 0 0 34px;
   padding: 18px 22px;
   color: var(--cv-text);
   background:
@@ -198,7 +186,7 @@
   line-height: 1.45;
 }
 
-.template-article .contents #TOC .toctitle {
+.template-article aside #toc h2 {
   margin: 0 0 8px;
   color: #203140;
   font-size: 15px;
@@ -206,26 +194,26 @@
   letter-spacing: 0.01em;
 }
 
-.template-article .contents #TOC ul {
+.template-article aside #toc ul {
   margin: 5px 0;
   padding-left: 22px;
 }
 
-.template-article .contents #TOC ul ul {
+.template-article aside #toc ul ul {
   margin: 3px 0;
 }
 
-.template-article .contents #TOC li {
+.template-article aside #toc li {
   margin-bottom: 3px;
   line-height: 1.45;
 }
 
-.template-article .contents #TOC a {
+.template-article aside #toc a {
   color: var(--cv-primary-dark);
   text-decoration: none;
 }
 
-.template-article .contents #TOC a:hover {
+.template-article aside #toc a:hover {
   color: var(--cv-primary);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -235,17 +223,17 @@
 /* Headings                                                                    */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents h1,
-.template-article .contents h2,
-.template-article .contents h3,
-.template-article .contents h4,
-.template-article .contents h5,
-.template-article .contents h6 {
+.template-article main#main h1,
+.template-article main#main h2,
+.template-article main#main h3,
+.template-article main#main h4,
+.template-article main#main h5,
+.template-article main#main h6 {
   color: #1b2b38;
   font-weight: 720;
 }
 
-.template-article .contents h1 {
+.template-article main#main h1 {
   position: relative;
   margin: 46px 0 20px;
   padding: 0 0 10px;
@@ -255,7 +243,7 @@
   letter-spacing: -0.018em;
 }
 
-.template-article .contents h1::after {
+.template-article main#main h1::after {
   content: "";
   position: absolute;
   left: 0;
@@ -266,11 +254,11 @@
   border-radius: 99px;
 }
 
-.template-article .contents #header h1::after {
+.template-article main#main .page-header h1::after {
   display: none;
 }
 
-.template-article .contents h2 {
+.template-article main#main h2 {
   margin: 36px 0 15px;
   padding: 10px 14px;
   color: #1b3448;
@@ -282,7 +270,7 @@
   line-height: 1.3;
 }
 
-.template-article .contents h3 {
+.template-article main#main h3 {
   margin: 28px 0 10px;
   padding-top: 4px;
   color: #243a49;
@@ -290,14 +278,14 @@
   line-height: 1.35;
 }
 
-.template-article .contents h4 {
+.template-article main#main h4 {
   margin: 22px 0 8px;
   color: #314756;
   font-size: 114%;
 }
 
-.template-article .contents h5,
-.template-article .contents h6 {
+.template-article main#main h5,
+.template-article main#main h6 {
   margin-bottom: 5px;
   color: #394a56;
   font-size: 100%;
@@ -307,20 +295,20 @@
 /* Text elements                                                               */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents p {
+.template-article main#main p {
   margin: 0.72em 0;
 }
 
-.template-article .contents strong {
+.template-article main#main strong {
   color: #172b3a;
   font-weight: 720;
 }
 
-.template-article .contents em {
+.template-article main#main em {
   color: #394957;
 }
 
-.template-article .contents blockquote {
+.template-article main#main blockquote {
   margin: 1.2em 0;
   padding: 0.85em 1.05em;
   color: #344754;
@@ -329,50 +317,50 @@
   border-radius: 0 8px 8px 0;
 }
 
-.template-article .contents hr {
+.template-article main#main hr {
   margin: 36px 0;
   border: 0;
   border-top: 1px solid var(--cv-border);
 }
 
-.template-article .contents dl {
+.template-article main#main dl {
   margin-left: 0;
 }
 
-.template-article .contents dl dt {
+.template-article main#main dl dt {
   color: #1f3545;
   font-weight: 700;
 }
 
-.template-article .contents dl dd {
+.template-article main#main dl dd {
   margin: 0 0 13px 18px;
 }
 
-.template-article .contents ul,
-.template-article .contents ol {
+.template-article main#main ul,
+.template-article main#main ol {
   margin-top: 0.45em;
   margin-bottom: 1em;
   padding-left: 1.55em;
 }
 
-.template-article .contents ul li,
-.template-article .contents ol li {
+.template-article main#main ul li,
+.template-article main#main ol li {
   margin-bottom: 5px;
 }
 
-.template-article .contents ul li::marker {
+.template-article main#main ul li::marker {
   color: #5c91b5;
 }
 
-.template-article .contents ol li::marker {
+.template-article main#main ol li::marker {
   color: var(--cv-primary-dark);
   font-weight: 700;
 }
 
-.template-article .contents ul ul,
-.template-article .contents ol ol,
-.template-article .contents ul ol,
-.template-article .contents ol ul {
+.template-article main#main ul ul,
+.template-article main#main ol ol,
+.template-article main#main ul ol,
+.template-article main#main ol ul {
   margin-bottom: 0;
 }
 
@@ -380,28 +368,28 @@
 /* Links and buttons                                                           */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents a {
+.template-article main#main a {
   color: var(--cv-primary);
   text-decoration: none;
 }
 
-.template-article .contents a:visited {
+.template-article main#main a:visited {
   color: var(--cv-primary);
 }
 
-.template-article .contents a:hover,
-.template-article .contents a:visited:hover {
+.template-article main#main a:hover,
+.template-article main#main a:visited:hover {
   color: var(--cv-primary-dark);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.template-article .contents a[href^="http:"]:not(.celliverse-button),
-.template-article .contents a[href^="https:"]:not(.celliverse-button) {
+.template-article main#main a[href^="http:"]:not(.celliverse-button),
+.template-article main#main a[href^="https:"]:not(.celliverse-button) {
   text-decoration-thickness: 1px;
 }
 
-.template-article .contents a[href="#top"] {
+.template-article main#main a[href="#top"] {
   display: inline-flex;
   align-items: center;
   margin: 12px 0 4px;
@@ -415,18 +403,18 @@
   text-decoration: none;
 }
 
-.template-article .contents a[href="#top"]::before {
+.template-article main#main a[href="#top"]::before {
   content: "↑";
   margin-right: 5px;
 }
 
-.template-article .contents a[href="#top"]:hover {
+.template-article main#main a[href="#top"]:hover {
   color: var(--cv-primary-dark);
   background: #eef5fa;
   text-decoration: none;
 }
 
-.template-article .contents .celliverse-button {
+.template-article main#main .celliverse-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -442,16 +430,16 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.template-article .contents .celliverse-button:hover {
+.template-article main#main .celliverse-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 7px 18px rgba(31, 61, 90, 0.17);
 }
 
-.template-article .contents .celliverse-button-primary {
+.template-article main#main .celliverse-button-primary {
   background: linear-gradient(135deg, #2b7fc1, #765bd0);
 }
 
-.template-article .contents .celliverse-button-warm {
+.template-article main#main .celliverse-button-warm {
   color: #33260a !important;
   background: linear-gradient(135deg, #ffd95a, #f6a21a);
 }
@@ -460,7 +448,7 @@
 /* Tables                                                                      */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents table {
+.template-article main#main table {
   width: 100%;
   max-width: 100%;
   margin: 1.35em auto;
@@ -475,7 +463,7 @@
   box-shadow: 0 2px 8px rgba(31, 50, 67, 0.035);
 }
 
-.template-article .contents table th {
+.template-article main#main table th {
   padding: 9px 11px;
   color: #203444;
   background: #edf4f8;
@@ -485,7 +473,7 @@
   text-align: left;
 }
 
-.template-article .contents table td {
+.template-article main#main table td {
   padding: 8px 11px;
   border: 0;
   border-bottom: 1px solid #e8edf1;
@@ -493,20 +481,20 @@
   vertical-align: top;
 }
 
-.template-article .contents tbody tr:last-child td {
+.template-article main#main tbody tr:last-child td {
   border-bottom: 0;
 }
 
-.template-article .contents tbody tr:nth-child(even) {
+.template-article main#main tbody tr:nth-child(even) {
   background: #fbfcfd;
 }
 
-.template-article .contents tbody tr:hover {
+.template-article main#main tbody tr:hover {
   background: #f5f9fc;
 }
 
-.template-article .contents .table,
-.template-article .contents .pagedtable-wrapper {
+.template-article main#main .table,
+.template-article main#main .pagedtable-wrapper {
   max-width: 100%;
   overflow-x: auto;
 }
@@ -515,14 +503,14 @@
 /* Code blocks                                                                 */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents pre,
-.template-article .contents code {
+.template-article main#main pre,
+.template-article main#main code {
   color: #15212a;
   background: var(--cv-code);
   border-radius: 5px;
 }
 
-.template-article .contents pre {
+.template-article main#main pre {
   margin: 12px 0 19px;
   padding: 14px 16px;
   overflow-x: auto;
@@ -534,7 +522,7 @@
   text-align: left;
 }
 
-.template-article .contents pre code {
+.template-article main#main pre code {
   padding: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -542,22 +530,22 @@
   background: transparent;
 }
 
-.template-article .contents .sourceCode,
-.template-article .contents div.sourceCode {
+.template-article main#main .sourceCode,
+.template-article main#main div.sourceCode {
   max-width: 100%;
   overflow-x: auto;
 }
 
-.template-article .contents pre.sourceCode,
-.template-article .contents div.sourceCode pre,
-.template-article .contents pre > code.sourceCode {
+.template-article main#main pre.sourceCode,
+.template-article main#main div.sourceCode pre,
+.template-article main#main pre > code.sourceCode {
   max-width: 100%;
   white-space: pre-wrap !important;
   overflow-wrap: anywhere;
   word-break: normal;
 }
 
-.template-article .contents pre > code.sourceCode > span {
+.template-article main#main pre > code.sourceCode > span {
   display: block !important;
   max-width: 100%;
   white-space: pre-wrap !important;
@@ -565,21 +553,21 @@
   word-break: normal;
 }
 
-.template-article .contents pre:not([class]) {
+.template-article main#main pre:not([class]) {
   background: var(--cv-code);
 }
 
-.template-article .contents code {
+.template-article main#main code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Monaco,
     "Courier New", monospace;
   font-size: 91%;
 }
 
-.template-article .contents p > code,
-.template-article .contents li > code,
-.template-article .contents td > code,
-.template-article .contents h3 > code,
-.template-article .contents h4 > code {
+.template-article main#main p > code,
+.template-article main#main li > code,
+.template-article main#main td > code,
+.template-article main#main h3 > code,
+.template-article main#main h4 > code {
   padding: 2px 5px;
   color: #1b4e70;
   background: #edf4f8;
@@ -591,16 +579,16 @@
 /* Figures and images                                                          */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents div.figure {
+.template-article main#main div.figure {
   margin: 1.45em auto;
   text-align: center;
 }
 
-.template-article .contents div.figure img {
+.template-article main#main div.figure img {
   border-radius: 9px;
 }
 
-.template-article .contents img {
+.template-article main#main img {
   display: block;
   max-width: 100%;
   height: auto;
@@ -609,7 +597,7 @@
   vertical-align: middle;
 }
 
-.template-article .contents .youtube-thumbnail {
+.template-article main#main .youtube-thumbnail {
   display: block;
   width: 80%;
   max-width: 720px;
@@ -620,7 +608,7 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.template-article .contents .youtube-thumbnail:hover {
+.template-article main#main .youtube-thumbnail:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
 }
@@ -629,9 +617,9 @@
 /* Callout boxes                                                               */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents .celliverse-note,
-.template-article .contents .celliverse-tip,
-.template-article .contents .celliverse-warning {
+.template-article main#main .celliverse-note,
+.template-article main#main .celliverse-tip,
+.template-article main#main .celliverse-warning {
   position: relative;
   margin: 1.35em 0;
   padding: 0.95em 1.05em 0.95em 1.15em;
@@ -641,24 +629,24 @@
   line-height: 1.58;
 }
 
-.template-article .contents .celliverse-note {
+.template-article main#main .celliverse-note {
   background: linear-gradient(135deg, #f4f9fc, #f8fbfd);
   border-left: 4px solid #5da8d5;
 }
 
-.template-article .contents .celliverse-tip {
+.template-article main#main .celliverse-tip {
   background: linear-gradient(135deg, #f1faf5, #f8fcfa);
   border-left: 4px solid #4fae78;
 }
 
-.template-article .contents .celliverse-warning {
+.template-article main#main .celliverse-warning {
   background: linear-gradient(135deg, #fff8ec, #fffdf8);
   border-left: 4px solid #e3a13c;
 }
 
-.template-article .contents .celliverse-note strong:first-child,
-.template-article .contents .celliverse-tip strong:first-child,
-.template-article .contents .celliverse-warning strong:first-child {
+.template-article main#main .celliverse-note strong:first-child,
+.template-article main#main .celliverse-tip strong:first-child,
+.template-article main#main .celliverse-warning strong:first-child {
   font-weight: 760;
 }
 
@@ -666,7 +654,7 @@
 /* Badges                                                                      */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents .celliverse-badge {
+.template-article main#main .celliverse-badge {
   display: inline-block;
   margin-bottom: 7px;
   padding: 3px 8px;
@@ -684,26 +672,26 @@
 /* Workflow cards                                                              */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents .workflow-grid {
+.template-article main#main .workflow-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 13px;
   margin: 20px 0 28px;
 }
 
-.template-article .contents .workflow-card {
+.template-article main#main .workflow-card {
   grid-column: span 2;
 }
 
-.template-article .contents .workflow-card:nth-child(4) {
+.template-article main#main .workflow-card:nth-child(4) {
   grid-column: 2 / span 2;
 }
 
-.template-article .contents .workflow-card:nth-child(5) {
+.template-article main#main .workflow-card:nth-child(5) {
   grid-column: 4 / span 2;
 }
 
-.template-article .contents .workflow-card {
+.template-article main#main .workflow-card {
   position: relative;
   min-height: 146px;
   padding: 18px 17px 16px;
@@ -714,21 +702,21 @@
   box-shadow: var(--cv-shadow-sm);
 }
 
-.template-article .contents .workflow-card h3 {
+.template-article main#main .workflow-card h3 {
   margin: 4px 0 7px;
   padding: 0;
   color: #243a49;
   font-size: 15px;
 }
 
-.template-article .contents .workflow-card p {
+.template-article main#main .workflow-card p {
   margin: 0;
   color: var(--cv-muted);
   font-size: 12.5px;
   line-height: 1.55;
 }
 
-.template-article .contents .workflow-number {
+.template-article main#main .workflow-number {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -746,14 +734,14 @@
 /* Annotation route cards                                                      */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents .annotation-route-grid {
+.template-article main#main .annotation-route-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   margin: 20px 0 24px;
 }
 
-.template-article .contents .annotation-route {
+.template-article main#main .annotation-route {
   padding: 17px 18px;
   text-align: left;
   background: #ffffff;
@@ -762,20 +750,20 @@
   box-shadow: var(--cv-shadow-sm);
 }
 
-.template-article .contents .annotation-route h3 {
+.template-article main#main .annotation-route h3 {
   margin: 8px 0 7px;
   padding: 0;
   font-size: 14px;
 }
 
-.template-article .contents .annotation-route p {
+.template-article main#main .annotation-route p {
   margin: 0;
   color: var(--cv-muted);
   font-size: 12.5px;
   line-height: 1.55;
 }
 
-.template-article .contents .route-label {
+.template-article main#main .route-label {
   display: inline-flex;
   padding: 3px 8px;
   border-radius: 999px;
@@ -785,17 +773,17 @@
   text-transform: uppercase;
 }
 
-.template-article .contents .route-markerdb {
+.template-article main#main .route-markerdb {
   color: #155f87;
   background: #e9f5fb;
 }
 
-.template-article .contents .route-llm {
+.template-article main#main .route-llm {
   color: #5c458f;
   background: #f0ebfb;
 }
 
-.template-article .contents .route-portable {
+.template-article main#main .route-portable {
   color: #27734e;
   background: #eaf8f0;
 }
@@ -804,14 +792,14 @@
 /* Agent section                                                               */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents .agent-capability-grid {
+.template-article main#main .agent-capability-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   margin: 20px 0 24px;
 }
 
-.template-article .contents .agent-capability {
+.template-article main#main .agent-capability {
   padding: 18px;
   text-align: left;
   background:
@@ -821,27 +809,27 @@
   box-shadow: var(--cv-shadow-sm);
 }
 
-.template-article .contents .agent-capability > strong {
+.template-article main#main .agent-capability > strong {
   display: block;
   margin: 1px 0 5px;
   font-size: 14px;
 }
 
-.template-article .contents .agent-capability p {
+.template-article main#main .agent-capability p {
   margin: 0;
   color: var(--cv-muted);
   font-size: 12.5px;
   line-height: 1.55;
 }
 
-.template-article .contents .format-chip-row {
+.template-article main#main .format-chip-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 11px;
 }
 
-.template-article .contents .format-chip-row span {
+.template-article main#main .format-chip-row span {
   display: inline-flex;
   align-items: center;
   padding: 4px 7px;
@@ -854,11 +842,11 @@
   line-height: 1.3;
 }
 
-.template-article .contents .agent-steps {
+.template-article main#main .agent-steps {
   margin: 18px 0 24px;
 }
 
-.template-article .contents .agent-step {
+.template-article main#main .agent-step {
   display: flex;
   gap: 13px;
   align-items: flex-start;
@@ -870,7 +858,7 @@
   border-radius: 11px;
 }
 
-.template-article .contents .agent-step > span {
+.template-article main#main .agent-step > span {
   display: inline-flex;
   flex: 0 0 29px;
   align-items: center;
@@ -884,24 +872,24 @@
   font-weight: 800;
 }
 
-.template-article .contents .agent-step strong {
+.template-article main#main .agent-step strong {
   display: block;
   margin: 1px 0 2px;
 }
 
-.template-article .contents .agent-step p {
+.template-article main#main .agent-step p {
   margin: 0;
   color: var(--cv-muted);
   font-size: 12.5px;
 }
 
-.template-article .contents .prompt-examples {
+.template-article main#main .prompt-examples {
   display: grid;
   gap: 8px;
   margin: 14px 0 22px;
 }
 
-.template-article .contents .prompt-examples > div {
+.template-article main#main .prompt-examples > div {
   position: relative;
   padding: 11px 14px 11px 38px;
   text-align: left;
@@ -911,7 +899,7 @@
   box-shadow: 0 4px 11px rgba(17, 35, 51, 0.09);
 }
 
-.template-article .contents .prompt-examples > div::before {
+.template-article main#main .prompt-examples > div::before {
   content: "›";
   position: absolute;
   left: 15px;
@@ -921,7 +909,7 @@
   font-weight: 800;
 }
 
-.template-article .contents .prompt-examples code {
+.template-article main#main .prompt-examples code {
   color: #edf6fc;
   background: transparent;
   border: 0;
@@ -932,7 +920,7 @@
 /* Embedded TypoPrompt viewer                                                  */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents .typo-prompt-shell {
+.template-article main#main .typo-prompt-shell {
   margin: 20px 0 26px;
   padding: 0;
   overflow: hidden;
@@ -942,7 +930,7 @@
   box-shadow: 0 9px 26px rgba(31, 50, 67, 0.08);
 }
 
-.template-article .contents .typo-prompt-shell-header {
+.template-article main#main .typo-prompt-shell-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -953,27 +941,27 @@
   border-bottom: 1px solid var(--cv-border);
 }
 
-.template-article .contents .typo-prompt-shell-title {
+.template-article main#main .typo-prompt-shell-title {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
-.template-article .contents .typo-prompt-shell-title .celliverse-badge {
+.template-article main#main .typo-prompt-shell-title .celliverse-badge {
   margin-bottom: 4px;
 }
 
-.template-article .contents .typo-prompt-shell-header strong {
+.template-article main#main .typo-prompt-shell-header strong {
   font-size: 13px;
 }
 
-.template-article .contents .typo-prompt-shell-hint {
+.template-article main#main .typo-prompt-shell-hint {
   color: var(--cv-muted);
   font-size: 10.5px;
   text-align: right;
 }
 
-.template-article .contents .typo-prompt-frame {
+.template-article main#main .typo-prompt-frame {
   display: block;
   width: 100%;
   height: 760px;
@@ -987,46 +975,46 @@
 /* Colours adapted from https://gist.github.com/robsimmons/1172277             */
 /* -------------------------------------------------------------------------- */
 
-.template-article .contents code > span.kw {
+.template-article main#main code > span.kw {
   color: #555555;
   font-weight: bold;
 }
 
-.template-article .contents code > span.dt {
+.template-article main#main code > span.dt {
   color: #902000;
 }
 
-.template-article .contents code > span.dv {
+.template-article main#main code > span.dv {
   color: #27885b;
 }
 
-.template-article .contents code > span.bn,
-.template-article .contents code > span.fl,
-.template-article .contents code > span.ch,
-.template-article .contents code > span.st {
+.template-article main#main code > span.bn,
+.template-article main#main code > span.fl,
+.template-article main#main code > span.ch,
+.template-article main#main code > span.st {
   color: #b91f4b;
 }
 
-.template-article .contents code > span.co {
+.template-article main#main code > span.co {
   color: #7b8790;
   font-style: italic;
 }
 
-.template-article .contents code > span.ot {
+.template-article main#main code > span.ot {
   color: #067038;
 }
 
-.template-article .contents code > span.al {
+.template-article main#main code > span.al {
   color: #d31919;
   font-weight: bold;
 }
 
-.template-article .contents code > span.fu {
+.template-article main#main code > span.fu {
   color: #8d1b1b;
   font-weight: bold;
 }
 
-.template-article .contents code > span.er {
+.template-article main#main code > span.er {
   color: #a61717;
   background: #f6dddd;
 }
@@ -1036,61 +1024,61 @@
 /* -------------------------------------------------------------------------- */
 
 @media screen and (max-width: 900px) and (min-width: 761px) {
-  .template-article .contents .workflow-grid {
+  .template-article main#main .workflow-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .template-article .contents .workflow-card,
-.template-article .contents .workflow-card:nth-child(4),
-.template-article .contents .workflow-card:nth-child(5) {
+  .template-article main#main .workflow-card,
+.template-article main#main .workflow-card:nth-child(4),
+.template-article main#main .workflow-card:nth-child(5) {
     grid-column: auto;
   }
 }
 
 @media screen and (max-width: 760px) {
-  .template-article .contents #header {
+  .template-article main#main .page-header {
     margin-top: 0;
     padding: 27px 22px 25px;
     border-radius: 14px;
   }
 
-  .template-article .contents #TOC {
+  .template-article aside #toc {
     padding: 15px 16px;
   }
 
-  .template-article .contents h1 {
+  .template-article main#main h1 {
     font-size: 180%;
   }
 
-  .template-article .contents h2 {
+  .template-article main#main h2 {
     font-size: 145%;
   }
 
-  .template-article .contents .annotation-route-grid,
-.template-article .contents .agent-capability-grid {
+  .template-article main#main .annotation-route-grid,
+.template-article main#main .agent-capability-grid {
     grid-template-columns: 1fr;
   }
 
-  .template-article .contents .workflow-grid {
+  .template-article main#main .workflow-grid {
     grid-template-columns: 1fr;
   }
 
-  .template-article .contents .workflow-card,
-.template-article .contents .workflow-card:nth-child(4),
-.template-article .contents .workflow-card:nth-child(5) {
+  .template-article main#main .workflow-card,
+.template-article main#main .workflow-card:nth-child(4),
+.template-article main#main .workflow-card:nth-child(5) {
     grid-column: auto;
   }
 
-  .template-article .contents .typo-prompt-shell-header {
+  .template-article main#main .typo-prompt-shell-header {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .template-article .contents .typo-prompt-shell-hint {
+  .template-article main#main .typo-prompt-shell-hint {
     text-align: left;
   }
 
-  .template-article .contents .typo-prompt-frame {
+  .template-article main#main .typo-prompt-frame {
     height: 650px;
   }
 }
@@ -1100,63 +1088,59 @@
 /* -------------------------------------------------------------------------- */
 
 @media print {
-  .template-article .contents {
+  .template-article main#main {
+    color: #000000;
     background: #ffffff !important;
   }
 
-  .template-article .contents {
-    max-width: 100%;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    color: #000000;
-  }
-
-  .template-article .contents #header {
+  .template-article main#main .page-header {
     color: #000000;
     background: #ffffff;
     border: 1px solid #dddddd;
     box-shadow: none;
   }
 
-  .template-article .contents #header h1,
-.template-article .contents #header .subtitle,
-.template-article .contents #header .author,
-.template-article .contents #header .date,
-.template-article .contents #header h4 {
+  .template-article main#main .page-header h1,
+.template-article main#main .page-header .subtitle,
+.template-article main#main .page-header .author,
+.template-article main#main .page-header .date,
+.template-article main#main .page-header h4 {
     color: #000000 !important;
   }
 
-  .template-article .contents #TOC,
-.template-article .contents .workflow-card,
-.template-article .contents .annotation-route,
-.template-article .contents .agent-capability,
-.template-article .contents .agent-step,
-.template-article .contents .celliverse-note,
-.template-article .contents .celliverse-tip,
-.template-article .contents .celliverse-warning,
-.template-article .contents .typo-prompt-shell {
+  .template-article aside #toc,
+.template-article main#main .workflow-card,
+.template-article main#main .annotation-route,
+.template-article main#main .agent-capability,
+.template-article main#main .agent-step,
+.template-article main#main .celliverse-note,
+.template-article main#main .celliverse-tip,
+.template-article main#main .celliverse-warning,
+.template-article main#main .typo-prompt-shell {
     box-shadow: none;
   }
 
-  .template-article .contents a[href="#top"] {
+  .template-article main#main a[href="#top"] {
     display: none;
   }
 
-  .template-article .contents .typo-prompt-frame {
+  .template-article main#main .typo-prompt-frame {
     height: 600px;
   }
 
-  .template-article .contents pre,
-.template-article .contents table,
-.template-article .contents .celliverse-note,
-.template-article .contents .celliverse-tip,
-.template-article .contents .celliverse-warning,
-.template-article .contents .workflow-card,
-.template-article .contents .annotation-route,
-.template-article .contents .agent-capability {
+  .template-article main#main pre,
+.template-article main#main table,
+.template-article main#main .celliverse-note,
+.template-article main#main .celliverse-tip,
+.template-article main#main .celliverse-warning,
+.template-article main#main .workflow-card,
+.template-article main#main .annotation-route,
+.template-article main#main .agent-capability {
     break-inside: avoid;
   }
+}
+
+/* Space between pkgdown navbar and article */
+.template-article {
+  padding-top: 26px;
 }

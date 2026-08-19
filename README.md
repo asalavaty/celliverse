@@ -65,8 +65,8 @@ interpretable analyses across diverse datasets.
 | ✨ **Feature Explorer** | [Explore CelliVerse capabilities](https://asalavaty.com/widgets/CelliVerse) |
 | 🧭 **Adoption Hub** | [Interactive onboarding, function guidance, and troubleshooting](https://asalavaty.com/widgets/celliverse_adoption_hub) |
 | 📦 **CRAN** | [cran.r-project.org/package=celliverse](https://cran.r-project.org/package=celliverse) |
-| 📖 **Full vignette** | [CelliVerse documentation](https://cran.r-project.org/web/packages/celliverse/vignettes/Introduction-to-CelliVerse.html) |
-| 🤖 **CelliVerse Agent setup** | [Setup Guide](https://cran.r-project.org/web/packages/celliverse/vignettes/Introduction-to-CelliVerse.html#installAgent) |
+| 📖 **Full vignette** | [CelliVerse documentation](https://asalavaty.github.io/celliverse/articles/Introduction-to-CelliVerse.html) |
+| 🤖 **CelliVerse Agent setup** | [Setup Guide](https://asalavaty.github.io/celliverse/articles/Introduction-to-CelliVerse.html#installAgent) |
 | 🤗 **Interactive demo** | [Hugging Face Space](https://huggingface.co/spaces/asalavaty/celliverse) |
 | 🧬 **Reproducibility resources** | [CelliVerse-Project](https://github.com/asalavaty/CelliVerse-Project) |
 | 🐞 **Issues & feature requests** | [GitHub issue tracker](https://github.com/asalavaty/celliverse/issues) |
@@ -188,7 +188,7 @@ capable models generally handle multi-step requests more reliably.
 
 For installation, provider configuration, security details, and advanced
 setup, see the [CelliVerse
-vignette](https://cran.r-project.org/web/packages/celliverse/vignettes/Introduction-to-CelliVerse.html).
+vignette](https://asalavaty.github.io/celliverse/articles/Introduction-to-CelliVerse.html).
 
 ------------------------------------------------------------------------
 
@@ -263,7 +263,7 @@ A comprehensive introduction to CelliVerse and its workflows is
 available in the package vignette:
 
 **[Read the CelliVerse
-vignette](https://cran.r-project.org/web/packages/celliverse/vignettes/Introduction-to-CelliVerse.html)**
+vignette](https://asalavaty.github.io/celliverse/articles/Introduction-to-CelliVerse.html)**
 
 You can also browse installed vignettes directly from R:
 
