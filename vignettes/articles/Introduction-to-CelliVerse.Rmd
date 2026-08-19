@@ -15,8 +15,6 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-::: {.celliverse-vignette}
-
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -1758,5 +1756,3 @@ pbmc3k_so <- addClustoData(
 ```
 
 <a href="#top">Back to top</a>
-
-:::

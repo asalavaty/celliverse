@@ -1,25 +1,30 @@
 /*
  * CelliVerse pkgdown article stylesheet
  *
- * This is the pkgdown-safe counterpart of celliverseVignette.css.
- * All presentation rules are scoped to .celliverse-vignette so they do not
- * alter the pkgdown navbar, homepage, reference pages, article index, or other
- * documentation pages. The :root block is intentionally global because all
- * custom properties are namespaced with --cv-.
+ * pkgdown-only counterpart of:
+ *   vignettes/articles/celliverseVignette.css
  *
- * In Introduction-to-CelliVerse.Rmd, wrap the vignette body with:
+ * No wrapper is required in Introduction-to-CelliVerse.Rmd.
  *
- *   ::: {.celliverse-vignette}
- *   ... vignette content ...
- *   :::
+ * All article presentation rules are scoped to:
+ *   .template-article .contents
+ *
+ * This limits the custom vignette styling to pkgdown article content and
+ * avoids restyling the navbar, homepage, reference pages, article index, or
+ * other pkgdown page types.
+ *
+ * The :root custom properties are intentionally global because all variables
+ * are namespaced with --cv-.
+ *
+ * Install this file as:
+ *   pkgdown/extra.css
  */
 
-
 /* pkgdown integration safety */
-.celliverse-vignette,
-.celliverse-vignette *,
-.celliverse-vignette *::before,
-.celliverse-vignette *::after {
+.template-article .contents,
+.template-article .contents *,
+.template-article .contents *::before,
+.template-article .contents *::after {
   box-sizing: border-box;
 }
 
@@ -60,15 +65,10 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* Main page layout                                                            */
+/* Main article layout                                                         */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette {
-  background: var(--cv-page);
-  scroll-behavior: smooth;
-}
-
-.celliverse-vignette {
+.template-article .contents {
   box-sizing: border-box;
   max-width: 1040px;
   margin: 28px auto;
@@ -89,17 +89,17 @@
   text-rendering: optimizeLegibility;
 }
 
-.celliverse-vignette ::selection {
+.template-article .contents ::selection {
   background: #dceeff;
   color: #17314a;
 }
 
 @media screen and (max-width: 1080px) {
-  .celliverse-vignette {
+  .template-article .contents {
     background: var(--cv-surface);
   }
 
-  .celliverse-vignette {
+  .template-article .contents {
     max-width: 100%;
     margin: 0;
     border: 0;
@@ -109,17 +109,17 @@
 }
 
 @media screen and (max-width: 768px) {
-  .celliverse-vignette {
+  .template-article .contents {
     padding: 24px 18px 42px;
     font-size: 14px;
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/* Header                                                                      */
+/* Article-local header selectors                                              */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette #header {
+.template-article .contents #header {
   position: relative;
   overflow: hidden;
   margin: -12px 0 34px;
@@ -133,7 +133,7 @@
   box-shadow: 0 14px 32px rgba(28, 62, 91, 0.18);
 }
 
-.celliverse-vignette #header::after {
+.template-article .contents #header::after {
   content: "";
   position: absolute;
   width: 210px;
@@ -144,7 +144,7 @@
   border-radius: 50%;
 }
 
-.celliverse-vignette #header h1 {
+.template-article .contents #header h1 {
   position: relative;
   z-index: 1;
   margin: 0 0 8px;
@@ -156,7 +156,7 @@
   letter-spacing: -0.025em;
 }
 
-.celliverse-vignette #header .subtitle {
+.template-article .contents #header .subtitle {
   position: relative;
   z-index: 1;
   max-width: 790px;
@@ -166,9 +166,9 @@
   line-height: 1.5;
 }
 
-.celliverse-vignette #header .author,
-.celliverse-vignette #header .date,
-.celliverse-vignette #header h4 {
+.template-article .contents #header .author,
+.template-article .contents #header .date,
+.template-article .contents #header h4 {
   position: relative;
   z-index: 1;
   margin: 10px 0 0;
@@ -181,7 +181,7 @@
 /* Table of contents                                                           */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette #TOC {
+.template-article .contents #TOC {
   clear: both;
   box-sizing: border-box;
   width: 100%;
@@ -198,7 +198,7 @@
   line-height: 1.45;
 }
 
-.celliverse-vignette #TOC .toctitle {
+.template-article .contents #TOC .toctitle {
   margin: 0 0 8px;
   color: #203140;
   font-size: 15px;
@@ -206,26 +206,26 @@
   letter-spacing: 0.01em;
 }
 
-.celliverse-vignette #TOC ul {
+.template-article .contents #TOC ul {
   margin: 5px 0;
   padding-left: 22px;
 }
 
-.celliverse-vignette #TOC ul ul {
+.template-article .contents #TOC ul ul {
   margin: 3px 0;
 }
 
-.celliverse-vignette #TOC li {
+.template-article .contents #TOC li {
   margin-bottom: 3px;
   line-height: 1.45;
 }
 
-.celliverse-vignette #TOC a {
+.template-article .contents #TOC a {
   color: var(--cv-primary-dark);
   text-decoration: none;
 }
 
-.celliverse-vignette #TOC a:hover {
+.template-article .contents #TOC a:hover {
   color: var(--cv-primary);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -235,17 +235,17 @@
 /* Headings                                                                    */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette h1,
-.celliverse-vignette h2,
-.celliverse-vignette h3,
-.celliverse-vignette h4,
-.celliverse-vignette h5,
-.celliverse-vignette h6 {
+.template-article .contents h1,
+.template-article .contents h2,
+.template-article .contents h3,
+.template-article .contents h4,
+.template-article .contents h5,
+.template-article .contents h6 {
   color: #1b2b38;
   font-weight: 720;
 }
 
-.celliverse-vignette h1 {
+.template-article .contents h1 {
   position: relative;
   margin: 46px 0 20px;
   padding: 0 0 10px;
@@ -255,7 +255,7 @@
   letter-spacing: -0.018em;
 }
 
-.celliverse-vignette h1::after {
+.template-article .contents h1::after {
   content: "";
   position: absolute;
   left: 0;
@@ -266,11 +266,11 @@
   border-radius: 99px;
 }
 
-.celliverse-vignette #header h1::after {
+.template-article .contents #header h1::after {
   display: none;
 }
 
-.celliverse-vignette h2 {
+.template-article .contents h2 {
   margin: 36px 0 15px;
   padding: 10px 14px;
   color: #1b3448;
@@ -282,7 +282,7 @@
   line-height: 1.3;
 }
 
-.celliverse-vignette h3 {
+.template-article .contents h3 {
   margin: 28px 0 10px;
   padding-top: 4px;
   color: #243a49;
@@ -290,14 +290,14 @@
   line-height: 1.35;
 }
 
-.celliverse-vignette h4 {
+.template-article .contents h4 {
   margin: 22px 0 8px;
   color: #314756;
   font-size: 114%;
 }
 
-.celliverse-vignette h5,
-.celliverse-vignette h6 {
+.template-article .contents h5,
+.template-article .contents h6 {
   margin-bottom: 5px;
   color: #394a56;
   font-size: 100%;
@@ -307,20 +307,20 @@
 /* Text elements                                                               */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette p {
+.template-article .contents p {
   margin: 0.72em 0;
 }
 
-.celliverse-vignette strong {
+.template-article .contents strong {
   color: #172b3a;
   font-weight: 720;
 }
 
-.celliverse-vignette em {
+.template-article .contents em {
   color: #394957;
 }
 
-.celliverse-vignette blockquote {
+.template-article .contents blockquote {
   margin: 1.2em 0;
   padding: 0.85em 1.05em;
   color: #344754;
@@ -329,50 +329,50 @@
   border-radius: 0 8px 8px 0;
 }
 
-.celliverse-vignette hr {
+.template-article .contents hr {
   margin: 36px 0;
   border: 0;
   border-top: 1px solid var(--cv-border);
 }
 
-.celliverse-vignette dl {
+.template-article .contents dl {
   margin-left: 0;
 }
 
-.celliverse-vignette dl dt {
+.template-article .contents dl dt {
   color: #1f3545;
   font-weight: 700;
 }
 
-.celliverse-vignette dl dd {
+.template-article .contents dl dd {
   margin: 0 0 13px 18px;
 }
 
-.celliverse-vignette ul,
-.celliverse-vignette ol {
+.template-article .contents ul,
+.template-article .contents ol {
   margin-top: 0.45em;
   margin-bottom: 1em;
   padding-left: 1.55em;
 }
 
-.celliverse-vignette ul li,
-.celliverse-vignette ol li {
+.template-article .contents ul li,
+.template-article .contents ol li {
   margin-bottom: 5px;
 }
 
-.celliverse-vignette ul li::marker {
+.template-article .contents ul li::marker {
   color: #5c91b5;
 }
 
-.celliverse-vignette ol li::marker {
+.template-article .contents ol li::marker {
   color: var(--cv-primary-dark);
   font-weight: 700;
 }
 
-.celliverse-vignette ul ul,
-.celliverse-vignette ol ol,
-.celliverse-vignette ul ol,
-.celliverse-vignette ol ul {
+.template-article .contents ul ul,
+.template-article .contents ol ol,
+.template-article .contents ul ol,
+.template-article .contents ol ul {
   margin-bottom: 0;
 }
 
@@ -380,28 +380,28 @@
 /* Links and buttons                                                           */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette a {
+.template-article .contents a {
   color: var(--cv-primary);
   text-decoration: none;
 }
 
-.celliverse-vignette a:visited {
+.template-article .contents a:visited {
   color: var(--cv-primary);
 }
 
-.celliverse-vignette a:hover,
-.celliverse-vignette a:visited:hover {
+.template-article .contents a:hover,
+.template-article .contents a:visited:hover {
   color: var(--cv-primary-dark);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.celliverse-vignette a[href^="http:"]:not(.celliverse-button),
-.celliverse-vignette a[href^="https:"]:not(.celliverse-button) {
+.template-article .contents a[href^="http:"]:not(.celliverse-button),
+.template-article .contents a[href^="https:"]:not(.celliverse-button) {
   text-decoration-thickness: 1px;
 }
 
-.celliverse-vignette a[href="#top"] {
+.template-article .contents a[href="#top"] {
   display: inline-flex;
   align-items: center;
   margin: 12px 0 4px;
@@ -415,18 +415,18 @@
   text-decoration: none;
 }
 
-.celliverse-vignette a[href="#top"]::before {
+.template-article .contents a[href="#top"]::before {
   content: "↑";
   margin-right: 5px;
 }
 
-.celliverse-vignette a[href="#top"]:hover {
+.template-article .contents a[href="#top"]:hover {
   color: var(--cv-primary-dark);
   background: #eef5fa;
   text-decoration: none;
 }
 
-.celliverse-vignette .celliverse-button {
+.template-article .contents .celliverse-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -442,16 +442,16 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.celliverse-vignette .celliverse-button:hover {
+.template-article .contents .celliverse-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 7px 18px rgba(31, 61, 90, 0.17);
 }
 
-.celliverse-vignette .celliverse-button-primary {
+.template-article .contents .celliverse-button-primary {
   background: linear-gradient(135deg, #2b7fc1, #765bd0);
 }
 
-.celliverse-vignette .celliverse-button-warm {
+.template-article .contents .celliverse-button-warm {
   color: #33260a !important;
   background: linear-gradient(135deg, #ffd95a, #f6a21a);
 }
@@ -460,7 +460,7 @@
 /* Tables                                                                      */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette table {
+.template-article .contents table {
   width: 100%;
   max-width: 100%;
   margin: 1.35em auto;
@@ -475,7 +475,7 @@
   box-shadow: 0 2px 8px rgba(31, 50, 67, 0.035);
 }
 
-.celliverse-vignette table th {
+.template-article .contents table th {
   padding: 9px 11px;
   color: #203444;
   background: #edf4f8;
@@ -485,7 +485,7 @@
   text-align: left;
 }
 
-.celliverse-vignette table td {
+.template-article .contents table td {
   padding: 8px 11px;
   border: 0;
   border-bottom: 1px solid #e8edf1;
@@ -493,20 +493,20 @@
   vertical-align: top;
 }
 
-.celliverse-vignette tbody tr:last-child td {
+.template-article .contents tbody tr:last-child td {
   border-bottom: 0;
 }
 
-.celliverse-vignette tbody tr:nth-child(even) {
+.template-article .contents tbody tr:nth-child(even) {
   background: #fbfcfd;
 }
 
-.celliverse-vignette tbody tr:hover {
+.template-article .contents tbody tr:hover {
   background: #f5f9fc;
 }
 
-.celliverse-vignette .table,
-.celliverse-vignette .pagedtable-wrapper {
+.template-article .contents .table,
+.template-article .contents .pagedtable-wrapper {
   max-width: 100%;
   overflow-x: auto;
 }
@@ -515,14 +515,14 @@
 /* Code blocks                                                                 */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette pre,
-.celliverse-vignette code {
+.template-article .contents pre,
+.template-article .contents code {
   color: #15212a;
   background: var(--cv-code);
   border-radius: 5px;
 }
 
-.celliverse-vignette pre {
+.template-article .contents pre {
   margin: 12px 0 19px;
   padding: 14px 16px;
   overflow-x: auto;
@@ -534,7 +534,7 @@
   text-align: left;
 }
 
-.celliverse-vignette pre code {
+.template-article .contents pre code {
   padding: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -542,22 +542,22 @@
   background: transparent;
 }
 
-.celliverse-vignette .sourceCode,
-.celliverse-vignette div.sourceCode {
+.template-article .contents .sourceCode,
+.template-article .contents div.sourceCode {
   max-width: 100%;
   overflow-x: auto;
 }
 
-.celliverse-vignette pre.sourceCode,
-.celliverse-vignette div.sourceCode pre,
-.celliverse-vignette pre > code.sourceCode {
+.template-article .contents pre.sourceCode,
+.template-article .contents div.sourceCode pre,
+.template-article .contents pre > code.sourceCode {
   max-width: 100%;
   white-space: pre-wrap !important;
   overflow-wrap: anywhere;
   word-break: normal;
 }
 
-.celliverse-vignette pre > code.sourceCode > span {
+.template-article .contents pre > code.sourceCode > span {
   display: block !important;
   max-width: 100%;
   white-space: pre-wrap !important;
@@ -565,21 +565,21 @@
   word-break: normal;
 }
 
-.celliverse-vignette pre:not([class]) {
+.template-article .contents pre:not([class]) {
   background: var(--cv-code);
 }
 
-.celliverse-vignette code {
+.template-article .contents code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Monaco,
     "Courier New", monospace;
   font-size: 91%;
 }
 
-.celliverse-vignette p > code,
-.celliverse-vignette li > code,
-.celliverse-vignette td > code,
-.celliverse-vignette h3 > code,
-.celliverse-vignette h4 > code {
+.template-article .contents p > code,
+.template-article .contents li > code,
+.template-article .contents td > code,
+.template-article .contents h3 > code,
+.template-article .contents h4 > code {
   padding: 2px 5px;
   color: #1b4e70;
   background: #edf4f8;
@@ -591,16 +591,16 @@
 /* Figures and images                                                          */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette div.figure {
+.template-article .contents div.figure {
   margin: 1.45em auto;
   text-align: center;
 }
 
-.celliverse-vignette div.figure img {
+.template-article .contents div.figure img {
   border-radius: 9px;
 }
 
-.celliverse-vignette img {
+.template-article .contents img {
   display: block;
   max-width: 100%;
   height: auto;
@@ -609,7 +609,7 @@
   vertical-align: middle;
 }
 
-.celliverse-vignette .youtube-thumbnail {
+.template-article .contents .youtube-thumbnail {
   display: block;
   width: 80%;
   max-width: 720px;
@@ -620,7 +620,7 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.celliverse-vignette .youtube-thumbnail:hover {
+.template-article .contents .youtube-thumbnail:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
 }
@@ -629,9 +629,9 @@
 /* Callout boxes                                                               */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette .celliverse-note,
-.celliverse-vignette .celliverse-tip,
-.celliverse-vignette .celliverse-warning {
+.template-article .contents .celliverse-note,
+.template-article .contents .celliverse-tip,
+.template-article .contents .celliverse-warning {
   position: relative;
   margin: 1.35em 0;
   padding: 0.95em 1.05em 0.95em 1.15em;
@@ -641,24 +641,24 @@
   line-height: 1.58;
 }
 
-.celliverse-vignette .celliverse-note {
+.template-article .contents .celliverse-note {
   background: linear-gradient(135deg, #f4f9fc, #f8fbfd);
   border-left: 4px solid #5da8d5;
 }
 
-.celliverse-vignette .celliverse-tip {
+.template-article .contents .celliverse-tip {
   background: linear-gradient(135deg, #f1faf5, #f8fcfa);
   border-left: 4px solid #4fae78;
 }
 
-.celliverse-vignette .celliverse-warning {
+.template-article .contents .celliverse-warning {
   background: linear-gradient(135deg, #fff8ec, #fffdf8);
   border-left: 4px solid #e3a13c;
 }
 
-.celliverse-vignette .celliverse-note strong:first-child,
-.celliverse-vignette .celliverse-tip strong:first-child,
-.celliverse-vignette .celliverse-warning strong:first-child {
+.template-article .contents .celliverse-note strong:first-child,
+.template-article .contents .celliverse-tip strong:first-child,
+.template-article .contents .celliverse-warning strong:first-child {
   font-weight: 760;
 }
 
@@ -666,7 +666,7 @@
 /* Badges                                                                      */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette .celliverse-badge {
+.template-article .contents .celliverse-badge {
   display: inline-block;
   margin-bottom: 7px;
   padding: 3px 8px;
@@ -684,26 +684,26 @@
 /* Workflow cards                                                              */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette .workflow-grid {
+.template-article .contents .workflow-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 13px;
   margin: 20px 0 28px;
 }
 
-.celliverse-vignette .workflow-card {
+.template-article .contents .workflow-card {
   grid-column: span 2;
 }
 
-.celliverse-vignette .workflow-card:nth-child(4) {
+.template-article .contents .workflow-card:nth-child(4) {
   grid-column: 2 / span 2;
 }
 
-.celliverse-vignette .workflow-card:nth-child(5) {
+.template-article .contents .workflow-card:nth-child(5) {
   grid-column: 4 / span 2;
 }
 
-.celliverse-vignette .workflow-card {
+.template-article .contents .workflow-card {
   position: relative;
   min-height: 146px;
   padding: 18px 17px 16px;
@@ -714,21 +714,21 @@
   box-shadow: var(--cv-shadow-sm);
 }
 
-.celliverse-vignette .workflow-card h3 {
+.template-article .contents .workflow-card h3 {
   margin: 4px 0 7px;
   padding: 0;
   color: #243a49;
   font-size: 15px;
 }
 
-.celliverse-vignette .workflow-card p {
+.template-article .contents .workflow-card p {
   margin: 0;
   color: var(--cv-muted);
   font-size: 12.5px;
   line-height: 1.55;
 }
 
-.celliverse-vignette .workflow-number {
+.template-article .contents .workflow-number {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -746,14 +746,14 @@
 /* Annotation route cards                                                      */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette .annotation-route-grid {
+.template-article .contents .annotation-route-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   margin: 20px 0 24px;
 }
 
-.celliverse-vignette .annotation-route {
+.template-article .contents .annotation-route {
   padding: 17px 18px;
   text-align: left;
   background: #ffffff;
@@ -762,20 +762,20 @@
   box-shadow: var(--cv-shadow-sm);
 }
 
-.celliverse-vignette .annotation-route h3 {
+.template-article .contents .annotation-route h3 {
   margin: 8px 0 7px;
   padding: 0;
   font-size: 14px;
 }
 
-.celliverse-vignette .annotation-route p {
+.template-article .contents .annotation-route p {
   margin: 0;
   color: var(--cv-muted);
   font-size: 12.5px;
   line-height: 1.55;
 }
 
-.celliverse-vignette .route-label {
+.template-article .contents .route-label {
   display: inline-flex;
   padding: 3px 8px;
   border-radius: 999px;
@@ -785,17 +785,17 @@
   text-transform: uppercase;
 }
 
-.celliverse-vignette .route-markerdb {
+.template-article .contents .route-markerdb {
   color: #155f87;
   background: #e9f5fb;
 }
 
-.celliverse-vignette .route-llm {
+.template-article .contents .route-llm {
   color: #5c458f;
   background: #f0ebfb;
 }
 
-.celliverse-vignette .route-portable {
+.template-article .contents .route-portable {
   color: #27734e;
   background: #eaf8f0;
 }
@@ -804,14 +804,14 @@
 /* Agent section                                                               */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette .agent-capability-grid {
+.template-article .contents .agent-capability-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   margin: 20px 0 24px;
 }
 
-.celliverse-vignette .agent-capability {
+.template-article .contents .agent-capability {
   padding: 18px;
   text-align: left;
   background:
@@ -821,27 +821,27 @@
   box-shadow: var(--cv-shadow-sm);
 }
 
-.celliverse-vignette .agent-capability > strong {
+.template-article .contents .agent-capability > strong {
   display: block;
   margin: 1px 0 5px;
   font-size: 14px;
 }
 
-.celliverse-vignette .agent-capability p {
+.template-article .contents .agent-capability p {
   margin: 0;
   color: var(--cv-muted);
   font-size: 12.5px;
   line-height: 1.55;
 }
 
-.celliverse-vignette .format-chip-row {
+.template-article .contents .format-chip-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 11px;
 }
 
-.celliverse-vignette .format-chip-row span {
+.template-article .contents .format-chip-row span {
   display: inline-flex;
   align-items: center;
   padding: 4px 7px;
@@ -854,11 +854,11 @@
   line-height: 1.3;
 }
 
-.celliverse-vignette .agent-steps {
+.template-article .contents .agent-steps {
   margin: 18px 0 24px;
 }
 
-.celliverse-vignette .agent-step {
+.template-article .contents .agent-step {
   display: flex;
   gap: 13px;
   align-items: flex-start;
@@ -870,7 +870,7 @@
   border-radius: 11px;
 }
 
-.celliverse-vignette .agent-step > span {
+.template-article .contents .agent-step > span {
   display: inline-flex;
   flex: 0 0 29px;
   align-items: center;
@@ -884,24 +884,24 @@
   font-weight: 800;
 }
 
-.celliverse-vignette .agent-step strong {
+.template-article .contents .agent-step strong {
   display: block;
   margin: 1px 0 2px;
 }
 
-.celliverse-vignette .agent-step p {
+.template-article .contents .agent-step p {
   margin: 0;
   color: var(--cv-muted);
   font-size: 12.5px;
 }
 
-.celliverse-vignette .prompt-examples {
+.template-article .contents .prompt-examples {
   display: grid;
   gap: 8px;
   margin: 14px 0 22px;
 }
 
-.celliverse-vignette .prompt-examples > div {
+.template-article .contents .prompt-examples > div {
   position: relative;
   padding: 11px 14px 11px 38px;
   text-align: left;
@@ -911,7 +911,7 @@
   box-shadow: 0 4px 11px rgba(17, 35, 51, 0.09);
 }
 
-.celliverse-vignette .prompt-examples > div::before {
+.template-article .contents .prompt-examples > div::before {
   content: "›";
   position: absolute;
   left: 15px;
@@ -921,7 +921,7 @@
   font-weight: 800;
 }
 
-.celliverse-vignette .prompt-examples code {
+.template-article .contents .prompt-examples code {
   color: #edf6fc;
   background: transparent;
   border: 0;
@@ -932,7 +932,7 @@
 /* Embedded TypoPrompt viewer                                                  */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette .typo-prompt-shell {
+.template-article .contents .typo-prompt-shell {
   margin: 20px 0 26px;
   padding: 0;
   overflow: hidden;
@@ -942,7 +942,7 @@
   box-shadow: 0 9px 26px rgba(31, 50, 67, 0.08);
 }
 
-.celliverse-vignette .typo-prompt-shell-header {
+.template-article .contents .typo-prompt-shell-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -953,27 +953,27 @@
   border-bottom: 1px solid var(--cv-border);
 }
 
-.celliverse-vignette .typo-prompt-shell-title {
+.template-article .contents .typo-prompt-shell-title {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
-.celliverse-vignette .typo-prompt-shell-title .celliverse-badge {
+.template-article .contents .typo-prompt-shell-title .celliverse-badge {
   margin-bottom: 4px;
 }
 
-.celliverse-vignette .typo-prompt-shell-header strong {
+.template-article .contents .typo-prompt-shell-header strong {
   font-size: 13px;
 }
 
-.celliverse-vignette .typo-prompt-shell-hint {
+.template-article .contents .typo-prompt-shell-hint {
   color: var(--cv-muted);
   font-size: 10.5px;
   text-align: right;
 }
 
-.celliverse-vignette .typo-prompt-frame {
+.template-article .contents .typo-prompt-frame {
   display: block;
   width: 100%;
   height: 760px;
@@ -987,46 +987,46 @@
 /* Colours adapted from https://gist.github.com/robsimmons/1172277             */
 /* -------------------------------------------------------------------------- */
 
-.celliverse-vignette code > span.kw {
+.template-article .contents code > span.kw {
   color: #555555;
   font-weight: bold;
 }
 
-.celliverse-vignette code > span.dt {
+.template-article .contents code > span.dt {
   color: #902000;
 }
 
-.celliverse-vignette code > span.dv {
+.template-article .contents code > span.dv {
   color: #27885b;
 }
 
-.celliverse-vignette code > span.bn,
-.celliverse-vignette code > span.fl,
-.celliverse-vignette code > span.ch,
-.celliverse-vignette code > span.st {
+.template-article .contents code > span.bn,
+.template-article .contents code > span.fl,
+.template-article .contents code > span.ch,
+.template-article .contents code > span.st {
   color: #b91f4b;
 }
 
-.celliverse-vignette code > span.co {
+.template-article .contents code > span.co {
   color: #7b8790;
   font-style: italic;
 }
 
-.celliverse-vignette code > span.ot {
+.template-article .contents code > span.ot {
   color: #067038;
 }
 
-.celliverse-vignette code > span.al {
+.template-article .contents code > span.al {
   color: #d31919;
   font-weight: bold;
 }
 
-.celliverse-vignette code > span.fu {
+.template-article .contents code > span.fu {
   color: #8d1b1b;
   font-weight: bold;
 }
 
-.celliverse-vignette code > span.er {
+.template-article .contents code > span.er {
   color: #a61717;
   background: #f6dddd;
 }
@@ -1036,61 +1036,61 @@
 /* -------------------------------------------------------------------------- */
 
 @media screen and (max-width: 900px) and (min-width: 761px) {
-  .celliverse-vignette .workflow-grid {
+  .template-article .contents .workflow-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .celliverse-vignette .workflow-card,
-.celliverse-vignette .workflow-card:nth-child(4),
-.celliverse-vignette .workflow-card:nth-child(5) {
+  .template-article .contents .workflow-card,
+.template-article .contents .workflow-card:nth-child(4),
+.template-article .contents .workflow-card:nth-child(5) {
     grid-column: auto;
   }
 }
 
 @media screen and (max-width: 760px) {
-  .celliverse-vignette #header {
+  .template-article .contents #header {
     margin-top: 0;
     padding: 27px 22px 25px;
     border-radius: 14px;
   }
 
-  .celliverse-vignette #TOC {
+  .template-article .contents #TOC {
     padding: 15px 16px;
   }
 
-  .celliverse-vignette h1 {
+  .template-article .contents h1 {
     font-size: 180%;
   }
 
-  .celliverse-vignette h2 {
+  .template-article .contents h2 {
     font-size: 145%;
   }
 
-  .celliverse-vignette .annotation-route-grid,
-.celliverse-vignette .agent-capability-grid {
+  .template-article .contents .annotation-route-grid,
+.template-article .contents .agent-capability-grid {
     grid-template-columns: 1fr;
   }
 
-  .celliverse-vignette .workflow-grid {
+  .template-article .contents .workflow-grid {
     grid-template-columns: 1fr;
   }
 
-  .celliverse-vignette .workflow-card,
-.celliverse-vignette .workflow-card:nth-child(4),
-.celliverse-vignette .workflow-card:nth-child(5) {
+  .template-article .contents .workflow-card,
+.template-article .contents .workflow-card:nth-child(4),
+.template-article .contents .workflow-card:nth-child(5) {
     grid-column: auto;
   }
 
-  .celliverse-vignette .typo-prompt-shell-header {
+  .template-article .contents .typo-prompt-shell-header {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .celliverse-vignette .typo-prompt-shell-hint {
+  .template-article .contents .typo-prompt-shell-hint {
     text-align: left;
   }
 
-  .celliverse-vignette .typo-prompt-frame {
+  .template-article .contents .typo-prompt-frame {
     height: 650px;
   }
 }
@@ -1100,11 +1100,11 @@
 /* -------------------------------------------------------------------------- */
 
 @media print {
-  .celliverse-vignette {
+  .template-article .contents {
     background: #ffffff !important;
   }
 
-  .celliverse-vignette {
+  .template-article .contents {
     max-width: 100%;
     margin: 0;
     padding: 0;
@@ -1114,49 +1114,49 @@
     color: #000000;
   }
 
-  .celliverse-vignette #header {
+  .template-article .contents #header {
     color: #000000;
     background: #ffffff;
     border: 1px solid #dddddd;
     box-shadow: none;
   }
 
-  .celliverse-vignette #header h1,
-.celliverse-vignette #header .subtitle,
-.celliverse-vignette #header .author,
-.celliverse-vignette #header .date,
-.celliverse-vignette #header h4 {
+  .template-article .contents #header h1,
+.template-article .contents #header .subtitle,
+.template-article .contents #header .author,
+.template-article .contents #header .date,
+.template-article .contents #header h4 {
     color: #000000 !important;
   }
 
-  .celliverse-vignette #TOC,
-.celliverse-vignette .workflow-card,
-.celliverse-vignette .annotation-route,
-.celliverse-vignette .agent-capability,
-.celliverse-vignette .agent-step,
-.celliverse-vignette .celliverse-note,
-.celliverse-vignette .celliverse-tip,
-.celliverse-vignette .celliverse-warning,
-.celliverse-vignette .typo-prompt-shell {
+  .template-article .contents #TOC,
+.template-article .contents .workflow-card,
+.template-article .contents .annotation-route,
+.template-article .contents .agent-capability,
+.template-article .contents .agent-step,
+.template-article .contents .celliverse-note,
+.template-article .contents .celliverse-tip,
+.template-article .contents .celliverse-warning,
+.template-article .contents .typo-prompt-shell {
     box-shadow: none;
   }
 
-  .celliverse-vignette a[href="#top"] {
+  .template-article .contents a[href="#top"] {
     display: none;
   }
 
-  .celliverse-vignette .typo-prompt-frame {
+  .template-article .contents .typo-prompt-frame {
     height: 600px;
   }
 
-  .celliverse-vignette pre,
-.celliverse-vignette table,
-.celliverse-vignette .celliverse-note,
-.celliverse-vignette .celliverse-tip,
-.celliverse-vignette .celliverse-warning,
-.celliverse-vignette .workflow-card,
-.celliverse-vignette .annotation-route,
-.celliverse-vignette .agent-capability {
+  .template-article .contents pre,
+.template-article .contents table,
+.template-article .contents .celliverse-note,
+.template-article .contents .celliverse-tip,
+.template-article .contents .celliverse-warning,
+.template-article .contents .workflow-card,
+.template-article .contents .annotation-route,
+.template-article .contents .agent-capability {
     break-inside: avoid;
   }
 }
