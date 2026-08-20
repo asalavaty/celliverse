@@ -21,8 +21,6 @@ RNA-sequencing analysis.
 [![Documentation](https://img.shields.io/badge/docs-pkgdown-34495E)](https://asalavaty.github.io/celliverse/)
 [![Hugging Face
 Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/asalavaty/celliverse)
-[![License:
-GPL-3](https://img.shields.io/badge/License-GPL--3-blue.svg)](LICENSE)
 
 <!-- badges: end -->
 
@@ -293,8 +291,7 @@ resources, are available in the dedicated reproducibility repository:
 Public bulk and single-cell RNA-seq datasets used in the study are also
 archived on Zenodo:
 
-**[Zenodo DOI:
-10.5281/zenodo.20550512](https://doi.org/10.5281/zenodo.20550512)**
+<!-- **[Zenodo DOI: 10.5281/zenodo.20550512](https://doi.org/10.5281/zenodo.20550512)** -->
 
 This separation keeps the R package lightweight while providing
 transparent access to the manuscript workflows and study resources.

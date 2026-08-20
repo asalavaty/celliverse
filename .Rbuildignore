@@ -30,4 +30,5 @@ logo.png
 ^dev-vignettes$
 ^vignettes/articles$
 ^pkgdown$
-
+.positai
+^CRAN-SUBMISSION$
