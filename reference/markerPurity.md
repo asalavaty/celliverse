@@ -113,7 +113,25 @@ Seurat objects and matrix-based inputs.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-mp <- markerPurity(data = my_seurat_obj, cluster_labels = "seurat_clusters")
-} # }
+utils::data("pbmc_small", package = "SeuratObject")
+
+pbmc_small$example_clusters <- as.character(
+  SeuratObject::Idents(pbmc_small)
+)
+
+cluster_ids <- utils::head(
+  unique(pbmc_small$example_clusters),
+  2
+)
+
+mp <- markerPurity(
+  data = pbmc_small,
+  desired_markers = rownames(pbmc_small)[1:10],
+  cluster_labels = "example_clusters",
+  desired_clusters = cluster_ids,
+  num_threads = 1,
+  verbose = FALSE
+)
+#> 
+#> ── Calculating the Purity of Markers Within Desired Cluster ────────────────────
 ```

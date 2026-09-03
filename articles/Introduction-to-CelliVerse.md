@@ -1769,15 +1769,25 @@ It can also be exported programmatically:
 
 ``` r
 
-saveTypoPrompt(
-  pbmc_typoPrompt,
-  file = "pbmc_cell_annotation_prompt.txt",
-  format = "txt"
+txt_file <- file.path(
+  tempdir(),
+  "pbmc_cell_annotation_prompt.txt"
 )
 
 saveTypoPrompt(
   pbmc_typoPrompt,
-  file = "pbmc_cell_annotation_prompt.html",
+  file = txt_file,
+  format = "txt"
+)
+
+html_file <- file.path(
+  tempdir(),
+  "pbmc_cell_annotation_prompt.html"
+)
+
+saveTypoPrompt(
+  pbmc_typoPrompt,
+  file = html_file,
   format = "html"
 )
 ```

@@ -186,18 +186,31 @@ classes (e.g., positive, negative, medium).
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Example usage with a ClustoCell object
-plt <- markoClustVis(
-  obj = my_clustocell_object,
-  desired_sets = c("Cluster1", "Cluster2"),
-  show_pos_markers = TRUE,
-  show_neg_markers = TRUE,
-  thresh_mode = "n",
-  thresh = 5,
-  title = "Marker visualization"
+utils::data("pbmc_small", package = "SeuratObject")
+
+pbmc_small$example_clusters <- as.character(
+  SeuratObject::Idents(pbmc_small)
 )
 
-print(plt)
-} # }
+cc <- markoClust(
+  data = pbmc_small,
+  cluster_labels = "example_clusters",
+  identify_subclusters = FALSE,
+  num_threads = 1,
+  verbose = FALSE
+)
+
+plt <- markoClustVis(
+  obj = cc,
+  show_pos_markers = TRUE,
+  show_neg_markers = FALSE,
+  thresh_mode = "n",
+  thresh = 2
+)
+#> ℹ Since `desired_sets` is not specified, the top markers of all clusters/cell subsets of `obj` will be visualized!
+
+plt
+#> Bin width defaults to 1/30 of the range of the data. Pick better value with
+#> `binwidth`.
+
 ```

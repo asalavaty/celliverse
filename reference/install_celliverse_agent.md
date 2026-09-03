@@ -2,11 +2,12 @@
 
 The agent is **cloud-first**: it runs out of the box with a cloud
 provider (set an API key in Settings) and needs *no* local model. This
-installer verifies the R web-stack, creates `~/.celliverse` + a default
-config, and *optionally* sets up a local runtime - it detects Ollama
-(and pulls a tier model when found) and detects LM Studio (via its `lms`
-CLI). A local model is never required; you can install Ollama and/or LM
-Studio at any time later and switch providers in Settings. The config
+installer verifies the R web-stack, creates
+`tools::R_user_dir("celliverse", "cache")` + a default config, and
+*optionally* sets up a local runtime - it detects Ollama (and pulls a
+tier model when found) and detects LM Studio (via its `lms` CLI). A
+local model is never required; you can install Ollama and/or LM Studio
+at any time later and switch providers in Settings. The config
 `default_model` is only pointed at a local Ollama model when Ollama is
 actually present (or you pass `model =` explicitly); otherwise the cloud
 default is left untouched.
@@ -17,8 +18,7 @@ default is left untouched.
 install_celliverse_agent(
   tier = c("auto", "light", "recommended", "strong", "both", "all"),
   model = NULL,
-  pull_model = TRUE,
-  install_r_deps = TRUE
+  pull_model = TRUE
 )
 ```
 
@@ -43,10 +43,6 @@ install_celliverse_agent(
 - pull_model:
 
   actually run \`ollama pull\` if Ollama is found.
-
-- install_r_deps:
-
-  install any missing R web-stack packages from Suggests.
 
 ## Value
 

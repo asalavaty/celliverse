@@ -243,13 +243,12 @@ and do not require integer count matrices.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+utils::data("pbmc_small", package = "SeuratObject")
+
 cc <- clustoCell(
-  data = seurat_obj,
-  subset_to_HVG = TRUE,
-  identify_subclusters = TRUE,
-  sketch = TRUE,
-  sketch_ncells = 10000
+  data = pbmc_small,
+  identify_subclusters = FALSE,
+  num_threads = 1,
+  verbose = FALSE
 )
-} # }
 ```

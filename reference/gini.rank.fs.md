@@ -46,7 +46,16 @@ analysis.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-fs <- gini.rank.fs(mat)
-} # }
+utils::data("pbmc_small", package = "SeuratObject")
+
+mat <- SeuratObject::LayerData(
+  pbmc_small,
+  assay = "RNA",
+  layer = "counts"
+)
+
+fs <- gini.rank.fs(
+  mat,
+  num_threads = 1
+)
 ```

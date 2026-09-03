@@ -29,7 +29,19 @@ A numeric matrix of Jaccard similarity scores.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-jac <- jaccard.sparse(mat)
-} # }
+utils::data("pbmc_small", package = "SeuratObject")
+
+mat <- SeuratObject::LayerData(
+  pbmc_small,
+  assay = "RNA",
+  layer = "counts"
+)
+
+binary_mat <- mat
+binary_mat@x[] <- 1
+
+jac <- jaccard.sparse(
+  binary_mat,
+  num_threads = 1
+)
 ```

@@ -232,20 +232,33 @@ marker purity. Otherwise, discrete colors are used to represent marker classes
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Example usage with a ClustoCell object</span></span></span>
-<span class="r-in"><span><span class="va">plt</span> <span class="op">&lt;-</span> <span class="fu">markoClustVis</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  obj <span class="op">=</span> <span class="va">my_clustocell_object</span>,</span></span>
-<span class="r-in"><span>  desired_sets <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Cluster1"</span>, <span class="st">"Cluster2"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  show_pos_markers <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>  show_neg_markers <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>  thresh_mode <span class="op">=</span> <span class="st">"n"</span>,</span></span>
-<span class="r-in"><span>  thresh <span class="op">=</span> <span class="fl">5</span>,</span></span>
-<span class="r-in"><span>  title <span class="op">=</span> <span class="st">"Marker visualization"</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"pbmc_small"</span>, package <span class="op">=</span> <span class="st">"SeuratObject"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">pbmc_small</span><span class="op">$</span><span class="va">example_clusters</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu">SeuratObject</span><span class="fu">::</span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/Idents.html" class="external-link">Idents</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">plt</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="va">cc</span> <span class="op">&lt;-</span> <span class="fu"><a href="markoClust.html">markoClust</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">pbmc_small</span>,</span></span>
+<span class="r-in"><span>  cluster_labels <span class="op">=</span> <span class="st">"example_clusters"</span>,</span></span>
+<span class="r-in"><span>  identify_subclusters <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
+<span class="r-in"><span>  num_threads <span class="op">=</span> <span class="fl">1</span>,</span></span>
+<span class="r-in"><span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">plt</span> <span class="op">&lt;-</span> <span class="fu">markoClustVis</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  obj <span class="op">=</span> <span class="va">cc</span>,</span></span>
+<span class="r-in"><span>  show_pos_markers <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  show_neg_markers <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
+<span class="r-in"><span>  thresh_mode <span class="op">=</span> <span class="st">"n"</span>,</span></span>
+<span class="r-in"><span>  thresh <span class="op">=</span> <span class="fl">2</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Since `desired_sets` is not specified, the top markers of all clusters/cell subsets of `obj` will be visualized!</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">plt</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Bin width defaults to 1/30 of the range of the data. Pick better value with</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> `binwidth`.</span>
+<span class="r-plt img"><img src="markoClustVis-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

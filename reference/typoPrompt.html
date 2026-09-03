@@ -224,43 +224,35 @@ falls back to the plain-text prompt.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Generate a prompt using all clusters/sub-clusters in a ClustoCell object</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"pbmc_small"</span>, package <span class="op">=</span> <span class="st">"SeuratObject"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">cc</span> <span class="op">&lt;-</span> <span class="fu"><a href="clustoCell.html">clustoCell</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">pbmc_small</span>,</span></span>
+<span class="r-in"><span>  identify_subclusters <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
+<span class="r-in"><span>  num_threads <span class="op">=</span> <span class="fl">1</span>,</span></span>
+<span class="r-in"><span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">desired_set</span> <span class="op">&lt;-</span> <span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">cc</span><span class="op">$</span><span class="va">clusters</span><span class="op">$</span><span class="va">major_clusters</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="fl">1</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">prompt</span> <span class="op">&lt;-</span> <span class="fu">typoPrompt</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  object <span class="op">=</span> <span class="va">clust_obj</span>,</span></span>
+<span class="r-in"><span>  object <span class="op">=</span> <span class="va">cc</span>,</span></span>
+<span class="r-in"><span>  desired_sets <span class="op">=</span> <span class="va">desired_set</span>,</span></span>
 <span class="r-in"><span>  sample_source <span class="op">=</span> <span class="st">"human peripheral blood"</span>,</span></span>
 <span class="r-in"><span>  tissue <span class="op">=</span> <span class="st">"Blood"</span>,</span></span>
 <span class="r-in"><span>  condition <span class="op">=</span> <span class="st">"Healthy"</span>,</span></span>
 <span class="r-in"><span>  species <span class="op">=</span> <span class="st">"human"</span>,</span></span>
-<span class="r-in"><span>  thresh <span class="op">=</span> <span class="fl">20</span>,</span></span>
-<span class="r-in"><span>  top_k <span class="op">=</span> <span class="fl">3</span></span></span>
+<span class="r-in"><span>  use_neg_markers <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
+<span class="r-in"><span>  thresh <span class="op">=</span> <span class="fl">10</span>,</span></span>
+<span class="r-in"><span>  top_k <span class="op">=</span> <span class="fl">3</span>,</span></span>
+<span class="r-in"><span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Display the formatted prompt in the RStudio Viewer or web browser.</span></span></span>
-<span class="r-in"><span><span class="co"># From the displayed page, the complete prompt can be copied or saved</span></span></span>
-<span class="r-in"><span><span class="co"># with a single click.</span></span></span>
-<span class="r-in"><span><span class="va">prompt</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Alternatively, display the underlying plain-text prompt</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="va">prompt</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Generate a prompt for selected sets only</span></span></span>
-<span class="r-in"><span><span class="va">prompt_selected</span> <span class="op">&lt;-</span> <span class="fu">typoPrompt</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  object <span class="op">=</span> <span class="va">clust_obj</span>,</span></span>
-<span class="r-in"><span>  desired_sets <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"C1"</span>, <span class="st">"C1-Sub1"</span>, <span class="st">"C1-Sub2"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  sample_source <span class="op">=</span> <span class="st">"human melanoma tumor"</span>,</span></span>
-<span class="r-in"><span>  species <span class="op">=</span> <span class="st">"human"</span>,</span></span>
-<span class="r-in"><span>  use_neg_markers <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>  thresh_mode <span class="op">=</span> <span class="st">"n"</span>,</span></span>
-<span class="r-in"><span>  thresh <span class="op">=</span> <span class="fl">25</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Save the prompt programmatically</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="saveTypoPrompt.html">saveTypoPrompt</a></span><span class="op">(</span><span class="va">prompt_selected</span>,</span></span>
-<span class="r-in"><span>  file <span class="op">=</span> <span class="st">"cell_annotation_prompt.txt"</span>, format <span class="op">=</span> <span class="st">"txt"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="saveTypoPrompt.html">saveTypoPrompt</a></span><span class="op">(</span><span class="va">prompt_selected</span>,</span></span>
-<span class="r-in"><span>  file <span class="op">=</span> <span class="st">"cell_annotation_prompt.html"</span>, format <span class="op">=</span> <span class="st">"html"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">prompt</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "TypoPrompt" "character" </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

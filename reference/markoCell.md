@@ -155,11 +155,24 @@ the normalized assay and layer specified by `norm_assay` and
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-mc <- markoCell(
-  data = seurat_obj,
-  cluster_labels = "seurat_clusters",
-  desired_clusters = c("0", "1")
+utils::data("pbmc_small", package = "SeuratObject")
+
+pbmc_small$example_clusters <- as.character(
+  SeuratObject::Idents(pbmc_small)
 )
-} # }
+
+cluster_ids <- utils::head(
+  unique(pbmc_small$example_clusters),
+  2
+)
+
+mc <- markoCell(
+  data = pbmc_small,
+  cluster_labels = "example_clusters",
+  desired_clusters = cluster_ids,
+  num_threads = 1,
+  verbose = FALSE
+)
+#> 
+#> ── Identification of Markers of Desired Clusters ───────────────────────────────
 ```
