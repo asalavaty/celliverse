@@ -141,7 +141,7 @@ full_counts <- SeuratObject::LayerData(
   layer = "counts"
 )
 
-full_ewcsr <- ewcsr.sparse(full_counts)
+full_ewcsr <- ewcsr.sparse(full_counts, num_threads = 1)
 
 cc_full <- clustoCell_TransferLabel(
   clustoCell = cc_reference,

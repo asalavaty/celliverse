@@ -6,7 +6,7 @@ expression matrix, calculated per column (cell).
 ## Usage
 
 ``` r
-ewcsr.sparse(mat)
+ewcsr.sparse(mat, num_threads = -1L)
 ```
 
 ## Arguments
@@ -15,6 +15,11 @@ ewcsr.sparse(mat)
 
   A matrix with features (genes) as rows and cells or samples as
   columns.
+
+- num_threads:
+
+  Integer; number of threads to use. The default is `-1` which uses all
+  available cores.
 
 ## Value
 
@@ -42,5 +47,5 @@ mat <- SeuratObject::LayerData(
   layer = "counts"
 )
 
-ewcsr_mat <- ewcsr.sparse(mat)
+ewcsr_mat <- ewcsr.sparse(mat, num_threads = 1)
 ```
