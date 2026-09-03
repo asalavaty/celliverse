@@ -10,14 +10,10 @@ RNA-sequencing analysis.
 
 <!-- badges: start -->
 
-<!-- [![R-CMD-check](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml) -->
-
+[![R-CMD-check](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml)
 <!-- [![CRAN Version](https://www.r-pkg.org/badges/version/celliverse?color=blue)](https://cran.r-project.org/package=celliverse) -->
-
 <!-- [![Total CRAN Downloads](https://cranlogs.r-pkg.org/badges/grand-total/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse) -->
-
 <!-- [![Monthly CRAN Downloads](https://cranlogs.r-pkg.org/badges/celliverse?color=8B0000)](https://cran.r-project.org/package=celliverse) -->
-
 [![Documentation](https://img.shields.io/badge/docs-pkgdown-34495E)](https://asalavaty.github.io/celliverse/)
 [![Hugging Face
 Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/asalavaty/celliverse)
