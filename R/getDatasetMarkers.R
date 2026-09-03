@@ -52,9 +52,21 @@
 #' \code{\link{clustoCell}}, \code{\link{markoClust}}
 #'
 #' @examples
-#' \dontrun{
-#' markers <- getDatasetMarkers(cc)
-#' }
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' cc <- clustoCell(
+#'   data = pbmc_small,
+#'   identify_subclusters = FALSE,
+#'   num_threads = 1,
+#'   verbose = FALSE
+#' )
+#'
+#' markers <- getDatasetMarkers(
+#'   obj = cc,
+#'   sub_clusters = FALSE,
+#'   pos_thresh = 20,
+#'   verbose = FALSE
+#' )
 #' 
 #' @export
 

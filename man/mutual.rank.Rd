@@ -21,9 +21,25 @@ or dissimilarity matrix, a robust measure frequently used to stabilize
 pairwise similarity relationships.
 }
 \examples{
-\dontrun{
-mr <- mutual.rank(similarity_matrix)
-}
+utils::data("pbmc_small", package = "SeuratObject")
+
+mat <- SeuratObject::LayerData(
+  pbmc_small,
+  assay = "RNA",
+  layer = "counts"
+)
+
+binary_mat <- sign(mat)
+
+similarity_matrix <- jaccard.sparse(
+  binary_mat,
+  num_threads = 1
+)
+
+mr <- mutual.rank(
+  similarity_matrix,
+  num_threads = 1
+)
 
 }
 \seealso{

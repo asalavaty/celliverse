@@ -861,63 +861,39 @@ cv_detect_log_transformed <- function(x, assay = NULL, layer = "counts") {
     } else {
       v <- as.numeric(as.matrix(m))
     }
-    # Round LXXXII: SUBSAMPLE BEFORE FILTERING when the vector is large.
-    #
-    # MEASURED, on the user's own failure. `v[is.finite(v) & v != 0]` on a real
-    # dataset's non-zero vector allocates four full-length temporaries -- two
-    # logicals, their `&`, and the subset copy -- and then throws 99.94% of the
-    # result away one line later, because the classification only ever looks at
-    # a 200,000-value sample. On a 27,578 x 208,506 matrix (330M stored values,
-    # 3.7 GB) that is roughly 3.2 GB of transient allocation and ~14 s spent
-    # deciding one word: "counts" or "log".
-    #
-    # Timed at quarter scale in the Round LXXXII sandbox (70M stored values):
-    # the mask cost 1.3 s and 266 MB, the subset 2.2 s and 533 MB -- and this
-    # ran inside cv_object_put(), so every load of a large matrix paid it twice
-    # (once for the matrix, once for the Seurat built from it).
-    #
-    # Taking the sample first makes the whole thing O(200k) instead of O(nnz).
-    # It is NOT a different statistic: for a dgCMatrix `v` is the stored entries
-    # by construction, so `!= 0` removes only explicitly-stored zeros, and both
-    # orders sample from the same population. The seeded-and-restored RNG idiom
-    # below is unchanged, so the answer stays reproducible -- which is the whole
-    # point of Round LXIV (D2), recorded there.
+    
+    # Deterministically subsample large vectors before filtering to keep
+    # memory use bounded without modifying the user's RNG state.
     n_sample <- 2e5
+    
     if (length(v) > n_sample) {
-      old <- if (exists(".Random.seed", envir = .GlobalEnv))
-               get(".Random.seed", envir = .GlobalEnv) else NULL
-      set.seed(1234L)
-      # Over-sample, because the finite/non-zero filter below removes some.
-      v <- v[sample.int(length(v), min(length(v), n_sample * 2))]
-      if (!is.null(old)) assign(".Random.seed", old, envir = .GlobalEnv)
+      # Over-sample before filtering because non-finite values and any
+      # explicitly stored zeros are removed below.
+      n_take <- min(length(v), n_sample * 2)
+      
+      idx <- unique(as.integer(round(
+        seq.int(
+          from = 1,
+          to = length(v),
+          length.out = n_take
+        )
+      )))
+      
+      v <- v[idx]
     }
+    
     v <- v[is.finite(v) & v != 0]
-    # BOTH set.seed() calls below are belt and braces, and break-verification is
-    # what established it: removing EITHER one alone leaves the result
-    # reproducible, because the surviving seed fixes the RNG state that the
-    # other sampling step then starts from. Removing both makes the verdict a
-    # coin toss on knife-edge data (measured: 10 "counts" / 10 "log" over 20
-    # calls on a matrix whose only large values are three in a million). They
-    # are both kept because a future edit that deletes one must not silently
-    # depend on the other.
-    #
-    # Round LXIV (D2): this subsample decides `log1p` for every downstream
-    # clustoCell run via cv_adjust_log1p_layer(), so it MUST be reproducible.
-    # Unseeded, the classification below (has_fraction || max < 30) flipped
-    # between runs on the same object whenever the largest values were rare --
-    # measured 27x "counts" / 3x "log" across 30 identical calls on one matrix.
-    # The consequence was not cosmetic: the same request could run a materially
-    # different analysis on consecutive turns and announce it as a deliberate
-    # decision. Uses the same local-seed idiom as cv_make_cellset(), which also
-    # restores the global RNG so a describe call never perturbs the user's own
-    # stream (verified: set.seed(7); runif(1) was returning a different value
-    # when a describe call ran in between).
+    
     if (length(v) > n_sample) {
-      old <- if (exists(".Random.seed", envir = .GlobalEnv))
-               get(".Random.seed", envir = .GlobalEnv) else NULL
-      set.seed(1234L)
-      v <- sample(v, n_sample)
-      if (!is.null(old)) assign(".Random.seed", old, envir = .GlobalEnv)
+      idx <- unique(as.integer(round(
+        seq.int(
+          from = 1,
+          to = length(v),
+          length.out = n_sample
+        )
+      )))
+      
+      v <- v[idx]
     }
     v
   }, error = function(e) numeric(0))

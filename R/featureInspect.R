@@ -692,111 +692,33 @@
 #' @seealso \code{\link{clustoCell}}, \code{\link{markoClust}}
 #'
 #' @examples
-#' \dontrun{
-#' # --- Basic usage: return a table only ---
-#' result_table <- featureInspect(
-#'   clustoCell = my_clustocell_obj,
-#'   features   = c("CD3D", "MS4A1", "FOXP3")
-#' )
-#' print(result_table)
+#' utils::data("pbmc_small", package = "SeuratObject")
 #'
-#' # --- Filter to a single level ---
-#' result_major <- featureInspect(
-#'   clustoCell = my_clustocell_obj,
-#'   features   = c("CD3D", "MS4A1", "FOXP3"),
-#'   level      = "Major cluster"
+#' cc <- clustoCell(
+#'   data = pbmc_small,
+#'   identify_subclusters = FALSE,
+#'   num_threads = 1,
+#'   verbose = FALSE
 #' )
 #'
-#' # --- Filter to multiple levels ---
-#' result_sub <- featureInspect(
-#'   clustoCell = my_clustocell_obj,
-#'   features   = c("CD3D", "MS4A1", "FOXP3"),
-#'   level      = c("Major cluster", "Sub-cluster")
+#' markers <- getDatasetMarkers(
+#'   obj = cc,
+#'   sub_clusters = FALSE,
+#'   pos_thresh = 5,
+#'   verbose = FALSE
 #' )
 #'
-#' # --- Return table sorted by Gini score ---
-#' result_gini <- featureInspect(
-#'   clustoCell = my_clustocell_obj,
-#'   features   = c("CD3D", "MS4A1", "FOXP3"),
-#'   sort_by    = "gini"
+#' features <- utils::head(
+#'   markers$combined_markers,
+#'   3
 #' )
 #'
-#' # --- Return table and plot (default aesthetics) ---
-#' result_list <- featureInspect(
-#'   clustoCell = my_clustocell_obj,
-#'   features   = c("CD3D", "MS4A1", "FOXP3"),
-#'   plot       = TRUE
-#' )
-#' result_list$table
-#' result_list$plot
-#'
-#' # --- Customise the plot ---
-#' result_custom <- featureInspect(
-#'   clustoCell    = my_clustocell_obj,
-#'   features      = c("CD3D", "MS4A1", "FOXP3"),
-#'   plot          = TRUE,
-#'   title         = "Feature Membership Overview",
-#'   subtitle      = "ClustoCell marker hierarchy",
-#'   show_purity   = TRUE,
-#'   color_low     = "navy",
-#'   color_high    = "gold",
-#'   dotsize       = 4,
-#'   nrow_panels   = 2,
-#'   legend_position = "bottom"
-#' )
-#' result_custom$plot
-#'
-#' # --- Colour dots by Type instead of Purity ---
-#' result_type <- featureInspect(
-#'   clustoCell    = my_clustocell_obj,
-#'   features      = c("CD3D", "MS4A1"),
-#'   plot          = TRUE,
-#'   show_purity   = FALSE,
-#'   class_palette = c(
-#'     Positive    = "#2166AC",
-#'     Negative    = "#D6604D",
-#'     Medium      = "#4DAC26",
-#'     "Pure High" = "#762A83"
-#'   )
-#' )
-#' result_type$plot
-#'
-#' # --- Filter to positive markers only ---
-#' result_pos <- featureInspect(
-#'   clustoCell = my_clustocell_obj,
-#'   features   = c("CD3D", "MS4A1", "FOXP3"),
-#'   type       = "Positive"
+#' result <- featureInspect(
+#'   clustoCell = cc,
+#'   features = features
 #' )
 #'
-#' # --- Filter to all global (pure) features using the shorthand ---
-#' result_pure <- featureInspect(
-#'   clustoCell = my_clustocell_obj,
-#'   features   = c("CD3D", "MS4A1", "FOXP3"),
-#'   type       = "Pure"
-#' )
-#'
-#' # --- Combine level and type filters ---
-#' result_combo <- featureInspect(
-#'   clustoCell = my_clustocell_obj,
-#'   features   = c("CD3D", "MS4A1", "FOXP3"),
-#'   level      = c("Major cluster", "Sub-cluster"),
-#'   type       = c("Positive", "Negative")
-#' )
-#'
-#' # --- Safe use when a level or type may not exist ---
-#' # Returns a zero-row data.frame with a warning (no error)
-#' result_empty <- featureInspect(
-#'   clustoCell = my_clustocell_obj,
-#'   features   = c("CD3D"),
-#'   level      = "Cross-cluster"
-#' )
-#'
-#' result_empty2 <- featureInspect(
-#'   clustoCell = my_clustocell_obj,
-#'   features   = c("CD3D"),
-#'   type       = "Pure"
-#' )
-#' }
+#' result
 #'
 #' @export
 featureInspect <- function(

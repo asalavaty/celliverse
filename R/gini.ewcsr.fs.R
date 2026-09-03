@@ -34,9 +34,18 @@
 #' \code{\link{ewcsr.sparse}}, \code{\link{gini.rank.fs}}
 #'
 #' @examples
-#' \dontrun{
-#' fs <- gini.ewcsr.fs(mat)
-#' }
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' mat <- SeuratObject::LayerData(
+#'   pbmc_small,
+#'   assay = "RNA",
+#'   layer = "counts"
+#' )
+#'
+#' fs <- gini.ewcsr.fs(
+#'   mat,
+#'   num_threads = 1
+#' )
 #' 
 #' @useDynLib celliverse, .registration = TRUE
 #' @export

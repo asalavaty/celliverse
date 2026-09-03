@@ -10,7 +10,7 @@
 #
 # Persistence model (as approved): sessions live in memory for speed; history +
 # object *metadata* (descriptors, NOT the giant objects) + artifacts are
-# snapshotted to ~/.celliverse/sessions/<id>/ so a restart can restore context.
+# snapshotted to sessions/<id>/ under the directory returned by tools::R_user_dir("celliverse", "cache") so a restart can restore context.
 # Large objects are re-loaded on demand (re-run), never serialized wholesale.
 # =============================================================================
 
@@ -531,7 +531,7 @@ cv_session_has_live_job <- function(session_id) {
 #'
 #' Round LXVIII (audit #67): until now there was no way to erase a transcript
 #' at all — a conversation containing embargoed marker genes stayed in
-#' `~/.celliverse/sessions/` for good.
+#' `sessions/` under the directory returned by tools::R_user_dir("celliverse", "cache") for good.
 #'
 #' The session's `artifacts/` directory is KEPT by default and removed only on
 #' an explicit `include_artifacts = TRUE`. The transcript and the files it

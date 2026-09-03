@@ -9,7 +9,7 @@
 # a private window, or from a second machine pointed at the same R server -- and
 # it would be silently lost by the same "clear site data" click that people use
 # to fix an unrelated glitch. The rest of this package already keeps durable
-# user state under ~/.celliverse (config.json, sessions/, logs/); prompts belong
+# user state under the directory returned by tools::R_user_dir("celliverse", "cache") (config.json, sessions/, logs/); prompts belong
 # beside them, in the same tree the user can back up, edit by hand, and copy to
 # another machine.
 #

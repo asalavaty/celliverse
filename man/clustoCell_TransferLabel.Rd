@@ -86,12 +86,33 @@ Seurat's native label transfer workflows (\code{\link[Seurat]{ProjectData}},
 \code{\link[Seurat]{TransferData}}) and do not require integer count matrices.
 }
 \examples{
-\dontrun{
-cc_full <- clustoCell_TransferLabel(
-  clustoCell = cc_sketched,
-  query_expr_mat = expr_mat_full,
-  method = "seurat-knn"
+utils::data("pbmc_small", package = "SeuratObject")
+
+reference_cells <- colnames(pbmc_small)[1:60]
+
+pbmc_reference <- pbmc_small[, reference_cells]
+
+cc_reference <- clustoCell(
+  data = pbmc_reference,
+  identify_subclusters = FALSE,
+  num_threads = 1,
+  verbose = FALSE
 )
-}
+
+full_counts <- SeuratObject::LayerData(
+  pbmc_small,
+  assay = "RNA",
+  layer = "counts"
+)
+
+full_ewcsr <- ewcsr.sparse(full_counts)
+
+cc_full <- clustoCell_TransferLabel(
+  clustoCell = cc_reference,
+  query_ewcsr_mat = full_ewcsr,
+  method = "ewcsr-cor",
+  num_threads = 1,
+  verbose = FALSE
+)
 
 }

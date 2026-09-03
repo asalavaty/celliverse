@@ -303,47 +303,58 @@ cv_check_seurat_version <- function(min_version = CV_MIN_SEURAT) {
 #' @param install logical; if TRUE, attempt to install any missing packages.
 #' @return invisibly TRUE if all present (after optional install), else errors.
 #' @noRd
-cv_require_agent_deps <- function(pkgs = .cv_agent_runtime_pkgs, install = FALSE) {
+cv_require_agent_deps <- function(pkgs = .cv_agent_runtime_pkgs) {
   # Round LXXX (audit #73): the Seurat floor is checked HERE, at the gate every
   # broken install hits first, rather than left to fail silently at analysis
   # time. Checked before the missing-package branch because a too-old Seurat is
   # not fixed by installing anything from `pkgs`, so reporting it first is the
   # actionable order.
   cv_check_seurat_version()
-  missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]
+  
+  missing <- pkgs[
+    !vapply(
+      pkgs,
+      requireNamespace,
+      logical(1),
+      quietly = TRUE
+    )
+  ]
+  
   if (length(missing) == 0L) {
     return(invisible(TRUE))
   }
-  if (install) {
-    cli::cli_alert_info("Installing missing agent dependencies: {.pkg {missing}}")
-    utils::install.packages(missing)
-    still <- missing[!vapply(missing, requireNamespace, logical(1), quietly = TRUE)]
-    if (length(still) > 0L) {
-      cli::cli_abort(c(
-        "Could not install required agent packages: {.pkg {still}}",
-        i = "Install them manually with {.code install.packages(c({paste0('\"', still, '\"', collapse = ', ')}))}"
-      ))
-    }
-    return(invisible(TRUE))
-  }
+  
   cli::cli_abort(c(
-    "The CelliVerse agent needs these packages, which are not installed: {.pkg {missing}}",
-    i = "Run {.code celliverse::install_celliverse_agent()} (recommended), or",
-    i = "install manually: {.code install.packages(c({paste0('\"', missing, '\"', collapse = ', ')}))}"
+    "The CelliVerse agent needs packages that are not installed: {.pkg {missing}}.",
+    i = "Install the missing packages manually and then restart the agent.",
+    i = paste0(
+      "For example: install.packages(c(",
+      paste(sprintf('\"%s\"', missing), collapse = ", "),
+      "))"
+    )
   ))
 }
 
 # ---- Paths ------------------------------------------------------------------
 
-#' Root directory for CelliVerse agent state (~/.celliverse)
+#' Root directory for CelliVerse agent state (the directory returned by tools::R_user_dir("celliverse", "cache"))
 #' @noRd
 cv_home_dir <- function() {
   # Allow override for testing / non-standard installs.
-  override <- Sys.getenv("CELLIVERSE_HOME", unset = NA)
+  
+  override <- Sys.getenv(
+    "CELLIVERSE_HOME",
+    unset = NA_character_
+  )
+  
   if (!is.na(override) && nzchar(override)) {
-    return(override)
+    return(path.expand(override))
   }
-  file.path(path.expand("~"), ".celliverse")
+  
+  tools::R_user_dir(
+    "celliverse",
+    which = "cache"
+  )
 }
 
 #' Path to the agent config file
@@ -358,7 +369,7 @@ cv_sessions_dir <- function() {
   file.path(cv_home_dir(), "sessions")
 }
 
-#' Ensure the ~/.celliverse tree exists
+#' Ensure the directory returned by tools::R_user_dir("celliverse", "cache") tree exists
 #' @noRd
 cv_ensure_home <- function() {
   dir.create(cv_home_dir(), recursive = TRUE, showWarnings = FALSE)
@@ -564,7 +575,7 @@ cv_load_config <- function() {
   cfg
 }
 
-#' Write agent config to disk (creates ~/.celliverse if needed)
+#' Write agent config to disk (creates the directory returned by tools::R_user_dir("celliverse", "cache") if needed)
 #'
 #' Note: this persists whatever is passed, including keys. The API layer keeps
 #' keys write-only from the client and never returns them in responses.

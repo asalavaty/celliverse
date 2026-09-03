@@ -22,9 +22,15 @@ within each cell while accounting for expression magnitude. The output matrix
 retains the same dimensions as the input.
 }
 \examples{
-\dontrun{
+utils::data("pbmc_small", package = "SeuratObject")
+
+mat <- SeuratObject::LayerData(
+  pbmc_small,
+  assay = "RNA",
+  layer = "counts"
+)
+
 ewcsr_mat <- ewcsr.sparse(mat)
-}
 
 }
 \seealso{

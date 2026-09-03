@@ -16,9 +16,21 @@
 #' \code{\link{mutual.rank}}
 #'
 #' @examples
-#' \dontrun{
-#' jac <- jaccard.sparse(mat)
-#' }
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' mat <- SeuratObject::LayerData(
+#'   pbmc_small,
+#'   assay = "RNA",
+#'   layer = "counts"
+#' )
+#'
+#' binary_mat <- mat
+#' binary_mat@x[] <- 1
+#'
+#' jac <- jaccard.sparse(
+#'   binary_mat,
+#'   num_threads = 1
+#' )
 #' 
 #' @useDynLib celliverse, .registration = TRUE
 #' @export

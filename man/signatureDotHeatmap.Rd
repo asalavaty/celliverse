@@ -109,14 +109,31 @@ Dot size typically encodes the percentage of cells expressing a feature,
 while color intensity reflects average expression.
 }
 \examples{
-\dontrun{
+utils::data("pbmc_small", package = "SeuratObject")
+
+pbmc_small$example_clusters <- as.character(
+  SeuratObject::Idents(pbmc_small)
+)
+
+features <- rownames(pbmc_small)[1:6]
+
+signatures <- data.frame(
+  Features = features,
+  Signature = rep(
+    c("Signature 1", "Signature 2"),
+    each = 3
+  )
+)
+
 p <- signatureDotHeatmap(
-  seurat_obj = so,
+  seurat_obj = pbmc_small,
+  cluster_col = "example_clusters",
   row_data = signatures,
   features_col = "Features",
   signature_col = "Signature"
 )
-}
+
+p
 
 }
 \seealso{

@@ -128,7 +128,8 @@ Exactly one of \code{marker_set_list},
 }
 \examples{
 \dontrun{
-# Annotate marker panels using a locally running Ollama model
+# Requires an externally running Ollama server and an installed
+# qwen3:8b model.
 markers <- list(
   Cluster1 = c("CD3D", "CD3E", "TRBC1", "IL7R", "LTB"),
   Cluster2 = c("MS4A1", "CD79A", "CD37", "CD74", "HLA-DRA")

@@ -39,9 +39,18 @@ Features are categorized into specific, non-specific, and no-occurrence
 groups based on Gini thresholds and optional binarization of EWCSR values.
 }
 \examples{
-\dontrun{
-fs <- gini.ewcsr.fs(mat)
-}
+utils::data("pbmc_small", package = "SeuratObject")
+
+mat <- SeuratObject::LayerData(
+  pbmc_small,
+  assay = "RNA",
+  layer = "counts"
+)
+
+fs <- gini.ewcsr.fs(
+  mat,
+  num_threads = 1
+)
 
 }
 \seealso{

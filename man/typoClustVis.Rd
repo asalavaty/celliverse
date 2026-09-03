@@ -120,14 +120,40 @@ The visualization integrates categorical labels, quantitative annotation
 scores, marker support, and purity metrics.
 }
 \examples{
-\dontrun{
+utils::data("pbmc_small", package = "SeuratObject")
+
+cc <- clustoCell(
+  data = pbmc_small,
+  identify_subclusters = FALSE,
+  num_threads = 1,
+  verbose = FALSE
+)
+
+desired_sets <- utils::head(
+  sort(unique(as.character(cc$clusters$major_clusters))),
+  2
+)
+
+tc <- typoClust(
+  objects = list(cc),
+  desired_sets = desired_sets,
+  tissue = "Blood",
+  condition = "Healthy",
+  use_neg_markers = FALSE,
+  thresh = 10,
+  mode = "markerDB",
+  species = "human",
+  verbose = FALSE
+)
+
 p <- typoClustVis(
   typoClust = tc,
   rank_thresh = 1,
-  refine = TRUE
+  refine = FALSE,
+  order_by = "Cluster"
 )
-print(p)
-}
+
+p
 
 }
 \seealso{

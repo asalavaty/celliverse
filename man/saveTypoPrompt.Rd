@@ -22,10 +22,42 @@ Saves a \code{TypoPrompt} object as either its exact plain-text prompt or a
 self-contained interactive HTML page.
 }
 \examples{
-\dontrun{
-prompt <- typoPrompt(clust_obj)
-saveTypoPrompt(prompt, "cell_annotation_prompt.txt", format = "txt")
-saveTypoPrompt(prompt, "cell_annotation_prompt.html", format = "html")
+utils::data("pbmc_small", package = "SeuratObject")
+
+cc <- clustoCell(
+  data = pbmc_small,
+  identify_subclusters = FALSE,
+  num_threads = 1,
+  verbose = FALSE
+)
+
+desired_set <- utils::head(
+  sort(unique(as.character(cc$clusters$major_clusters))),
+  1
+)
+
+prompt <- typoPrompt(
+  object = cc,
+  desired_sets = desired_set,
+  sample_source = "human peripheral blood",
+  tissue = "Blood",
+  condition = "Healthy",
+  species = "human",
+  use_neg_markers = FALSE,
+  thresh = 10,
+  verbose = FALSE
+)
+
+txt_file <- tempfile(fileext = ".txt")
+
+saveTypoPrompt(
+  prompt,
+  file = txt_file,
+  format = "txt"
+)
+
+\dontshow{
+unlink(txt_file)
 }
 
 }

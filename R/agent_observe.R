@@ -22,7 +22,7 @@
 # looking for the "send this somewhere" hook should stop here: its absence is
 # the design.
 #
-# The log lives under ~/.celliverse/logs/ as newline-delimited JSON, one object
+# The log lives under logs/ under the directory returned by tools::R_user_dir("celliverse", "cache") as newline-delimited JSON, one object
 # per line, because that is the format you can answer a question with using
 # tools the user already has -- `jq`, `readLines`, `grep` -- without this
 # package's help and without a schema migration when a field is added.
@@ -90,7 +90,7 @@ cv_log_event <- function(event, session = NULL, ...) {
     dir.create(cv_log_dir(), recursive = TRUE, showWarnings = FALSE)
     line <- jsonlite::toJSON(rec, auto_unbox = TRUE, null = "null", digits = 6)
     # append = TRUE with a single write is atomic enough for one process; the
-    # agent is single-writer by construction (one R session owns ~/.celliverse).
+    # agent is single-writer by construction (one R session owns the directory returned by tools::R_user_dir("celliverse", "cache")).
     cat(line, "\n", sep = "", file = cv_log_path(), append = TRUE)
     invisible(TRUE)
   }, error = function(e) invisible(FALSE))

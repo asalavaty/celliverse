@@ -453,7 +453,7 @@ cv_api_list_sessions <- function() cv_api_ok(list(sessions = cv_session_list()))
 #' Delete one saved session (audit #67).
 #'
 #' Round LXVIII. There was no way to erase a transcript at all: a conversation
-#' containing embargoed marker genes stayed in `~/.celliverse/sessions/`
+#' containing embargoed marker genes stayed in `sessions/` under the directory returned by tools::R_user_dir("celliverse", "cache")
 #' indefinitely, and the History tab could only ever add to the pile.
 #'
 #' The session's `artifacts/` directory is KEPT - see `cv_session_delete()`.

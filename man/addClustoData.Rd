@@ -42,14 +42,21 @@ cluster labels as metadata columns. Major clusters and sub-clusters can be
 added independently and assigned custom column names.
 }
 \examples{
-\dontrun{
-so <- addClustoData(
-  obj = so,
-  clustoCell = cc,
+utils::data("pbmc_small", package = "SeuratObject")
+
+pbmc_small_cc <- clustoCell(
+  data = pbmc_small,
+  identify_subclusters = TRUE,
+  num_threads = 1,
+  verbose = FALSE
+)
+
+pbmc_small <- addClustoData(
+  obj = pbmc_small,
+  clustoCell = pbmc_small_cc,
   add_major_clusters = TRUE,
   add_sub_clusters = TRUE
 )
-}
 
 }
 \seealso{

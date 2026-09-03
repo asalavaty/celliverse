@@ -1016,19 +1016,66 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
 #' @noRd
 .cv_extract_marker_predicates <- function(lt, columns) {
   cmap <- .cv_marker_concept_map()
-  preds <- list(); unknown <- character(0)
+
+  acc <- new.env(parent = emptyenv())
+  
+  acc$preds <- list()
+  acc$unknown <- character(0)
+  
   add_pred <- function(concept, op, v1, v2 = NA) {
-    actual <- .cv_resolve_col(concept, columns)
-    if (is.na(actual)) { unknown <<- c(unknown, concept); return(invisible()) }
+    
+    actual <- .cv_resolve_col(
+      concept,
+      columns
+    )
+    
+    if (is.na(actual)) {
+      acc$unknown <- c(
+        acc$unknown,
+        concept
+      )
+      return(invisible())
+    }
+    
     if (identical(concept, "Feature")) {
-      vals <- toupper(trimws(strsplit(as.character(v1), ",")[[1]])); vals <- vals[nzchar(vals)]
-      preds[[length(preds) + 1L]] <<- list(col = actual, op = op, value = vals, value2 = NA)
+      
+      vals <- toupper(
+        trimws(
+          strsplit(
+            as.character(v1),
+            ","
+          )[[1]]
+        )
+      )
+      
+      vals <- vals[nzchar(vals)]
+      
+      acc$preds[[
+        length(acc$preds) + 1L
+      ]] <- list(
+        col = actual,
+        op = op,
+        value = vals,
+        value2 = NA
+      )
+      
     } else {
-      preds[[length(preds) + 1L]] <<- list(col = actual, op = op,
-        value = suppressWarnings(as.numeric(v1)),
-        value2 = suppressWarnings(as.numeric(v2)))
+      
+      acc$preds[[
+        length(acc$preds) + 1L
+      ]] <- list(
+        col = actual,
+        op = op,
+        value = suppressWarnings(
+          as.numeric(v1)
+        ),
+        value2 = suppressWarnings(
+          as.numeric(v2)
+        )
+      )
     }
   }
+  
   numval <- "(-?\\d+(?:\\.\\d+)?)"
   op_pat <- paste0("(greater than or equal to|less than or equal to|no less than|",
                    "no fewer than|no greater than|no more than|greater than|less than|",
@@ -1054,7 +1101,10 @@ CV_CLUSTO_DEFAULT_COLS <- c("ClustoCell_Clusters", "ClustoCell_SubClusters")
       "\\s+(is not|isn't|not equal to|not|named|called|equals|equal to|equal|is|==|!=|=)\\s+([a-z0-9][a-z0-9._,-]*)"), lt)) {
     if (length(gm) >= 3) add_pred("Feature", if (grepl("not|!=|isn't", gm[2])) "!=" else "==", gm[3])
   }
-  list(preds = preds, unknown = unique(unknown))
+  list(
+    preds = acc$preds,
+    unknown = unique(acc$unknown)
+  )
 }
 
 # Detect the "ranked" intent (Rank <= N with ties) and its N, if present.
@@ -2009,7 +2059,7 @@ cv_cluster_cell_names <- function(obj, cluster, level = "major",
 # Returns list(cellset=<CellSet>, sampled=<bool>, n_total=<int>, seed=<int|NA>).
 #' @noRd
 cv_make_cellset <- function(cells, cluster, level, source_handle,
-                            n = NULL, seed = 9999L) {
+                            n = NULL, seed = 121L) {
   n_total <- length(cells)
   sampled <- FALSE
   used_seed <- NA_integer_
@@ -2025,11 +2075,13 @@ cv_make_cellset <- function(cells, cluster, level, source_handle,
       sampled <- TRUE
       used_seed <- NA_integer_
     } else if (!is.na(n) && n > 0L && n < n_total) {
-      seed <- as.integer(seed %||% 9999L)
+      seed <- as.integer(seed %||% 121L)
       # Local, reproducible sampling that does NOT disturb the global RNG state.
       old <- if (exists(".Random.seed", envir = .GlobalEnv))
                get(".Random.seed", envir = .GlobalEnv) else NULL
-      set.seed(seed)
+      if (!is.null(seed)) {
+        set.seed(seed)
+      }
       take <- sample(cells, n)
       if (!is.null(old)) assign(".Random.seed", old, envir = .GlobalEnv)
       sampled <- TRUE
@@ -2177,7 +2229,7 @@ cv_register_core_tools <- function() {
         layer = cv_param("string", "Layer/slot to use.", default = "counts"),
         log1p = cv_param("boolean", "Log1p-transform the data.", default = TRUE),
         num_threads = cv_param("integer", "Threads (-1 = all).", default = -1L),
-        seed = cv_param("integer", "Random seed.", default = 9999L)
+        seed = cv_param("integer", "Random seed.", default = 121L)
       ),
       input_object_types = c("Seurat", "SingleCellExperiment", "SpatialExperiment"),
       output_object_type = "MarkoCell",
@@ -2416,7 +2468,7 @@ cv_register_core_tools <- function() {
           "exceeds the cluster size, all cells are returned with a note.")),
         seed = cv_param("integer", paste(
           "Random seed for reproducible sampling (only used when n triggers",
-          "sampling)."), default = 9999L),
+          "sampling)."), default = 121L),
         name = cv_param("string", paste(
           "Optional name for the stored CellSet (used as the subset name when",
           "fed to markoCell). If omitted, an automatic name",

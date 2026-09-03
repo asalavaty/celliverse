@@ -3,7 +3,7 @@
 #
 # install_celliverse_agent() prepares a machine to run the agent:
 #   1. verify the R web-stack deps (from Suggests) are installed
-#   2. create ~/.celliverse and a default config.json
+#   2. create the directory returned by tools::R_user_dir("celliverse", "cache") and a default config.json
 #   3. detect Node.js (optional - only needed to REBUILD the frontend)
 #   4. detect Ollama; if present, pull the default local model
 #   5. verify the bundled React app + plumber file are present
@@ -18,7 +18,7 @@
 #'
 #' The agent is \strong{cloud-first}: it runs out of the box with a cloud
 #' provider (set an API key in Settings) and needs \emph{no} local model. This
-#' installer verifies the R web-stack, creates \code{~/.celliverse} + a default
+#' installer verifies the R web-stack, creates \code{tools::R_user_dir("celliverse", "cache")} + a default
 #' config, and \emph{optionally} sets up a local runtime - it detects Ollama
 #' (and pulls a tier model when found) and detects LM Studio (via its \code{lms}
 #' CLI). A local model is never required; you can install Ollama and/or LM
@@ -36,31 +36,34 @@
 #'   supplied, and (unlike `tier`) also sets the config `default_model` even if
 #'   Ollama is not yet installed. Defaults to the hardware-recommended tier.
 #' @param pull_model actually run `ollama pull` if Ollama is found.
-#' @param install_r_deps install any missing R web-stack packages from Suggests.
 #' @return invisibly, a named list summarising what was found/done.
 #' @export
 install_celliverse_agent <- function(tier = c("auto", "light", "recommended",
                                               "strong", "both", "all"),
-                                      model = NULL, pull_model = TRUE,
-                                      install_r_deps = TRUE) {
+                                      model = NULL, pull_model = TRUE) {
   tier <- match.arg(tier)
   cli::cli_h1("CelliVerse agent setup")
   summary <- list()
 
   # 1. R deps ------------------------------------------------------------------
   missing <- cv_missing_agent_deps()
+  
   if (length(missing)) {
-    if (isTRUE(install_r_deps)) {
-      cli::cli_alert_info("Installing missing R packages: {.pkg {missing}}")
-      utils::install.packages(missing)
-      missing <- cv_missing_agent_deps()
-    }
+    cli::cli_abort(c(
+      "Additional R packages required by the CelliVerse agent are not installed: {.pkg {missing}}.",
+      i = "Please install them manually and then re-run {.fn install_celliverse_agent}.",
+      i = paste0(
+        "For example: install.packages(c(",
+        paste(sprintf('\"%s\"', missing), collapse = ", "),
+        "))"
+      )
+    ))
   }
-  if (length(missing)) {
-    cli::cli_alert_danger("Still missing R packages: {.pkg {missing}}. Install them, then re-run.")
-  } else {
-    cli::cli_alert_success("All R web-stack dependencies present.")
-  }
+  
+  cli::cli_alert_success(
+    "All required R dependencies are available."
+  )
+  
   summary$missing_r_deps <- missing
 
   # 2. Home + config -----------------------------------------------------------

@@ -66,13 +66,34 @@
 #'   major and sub-cluster labels for the full dataset.
 #'
 #' @examples
-#' \dontrun{
-#' cc_full <- clustoCell_TransferLabel(
-#'   clustoCell = cc_sketched,
-#'   query_expr_mat = expr_mat_full,
-#'   method = "seurat-knn"
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' reference_cells <- colnames(pbmc_small)[1:60]
+#'
+#' pbmc_reference <- pbmc_small[, reference_cells]
+#'
+#' cc_reference <- clustoCell(
+#'   data = pbmc_reference,
+#'   identify_subclusters = FALSE,
+#'   num_threads = 1,
+#'   verbose = FALSE
 #' )
-#' }
+#'
+#' full_counts <- SeuratObject::LayerData(
+#'   pbmc_small,
+#'   assay = "RNA",
+#'   layer = "counts"
+#' )
+#'
+#' full_ewcsr <- ewcsr.sparse(full_counts)
+#'
+#' cc_full <- clustoCell_TransferLabel(
+#'   clustoCell = cc_reference,
+#'   query_ewcsr_mat = full_ewcsr,
+#'   method = "ewcsr-cor",
+#'   num_threads = 1,
+#'   verbose = FALSE
+#' )
 #'
 #' @useDynLib celliverse, .registration = TRUE
 #' @export
@@ -96,17 +117,7 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
                                      inherit_major_clusters = TRUE, # logical, whether to inherit the major cluster labels and label transfer sub-clusters (if present) within each major cluster or transfer labels of all cell based on the skeched data labels regardless of their original major cluster label. This is only used if all cells of the data are available within the major_cluster slot of the clustoCell object.
                                      seed = 121, # The seed for randomization and making consistent results
                                      verbose = TRUE # Logical, whether to show progress messages
-                                     ) { 
-  
-  #________________________________________
-  # Dealing with warnings
-  ## Save current warning setting and disable warnings
-  old_warn <- getOption("warn")
-  options(warn = -1)   # -1 = suppress all warnings
-  
-  on.exit(options(warn = old_warn), add = TRUE)  # restore when function exits
-  
-  #________________________________________
+                                     ) {
   
   # Defining the default logs for info messages
   log_message <- function(...) {
@@ -152,7 +163,9 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
   #________________________________________
   
   # Setting the seed
-  set.seed(seed)
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
   
   log_space()
   

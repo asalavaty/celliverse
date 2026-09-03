@@ -104,14 +104,31 @@
 #' \code{\link{typoClustVis}}, \code{\link{markoCell}}
 #'
 #' @examples
-#' \dontrun{
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' pbmc_small$example_clusters <- as.character(
+#'   SeuratObject::Idents(pbmc_small)
+#' )
+#'
+#' features <- rownames(pbmc_small)[1:6]
+#'
+#' signatures <- data.frame(
+#'   Features = features,
+#'   Signature = rep(
+#'     c("Signature 1", "Signature 2"),
+#'     each = 3
+#'   )
+#' )
+#'
 #' p <- signatureDotHeatmap(
-#'   seurat_obj = so,
+#'   seurat_obj = pbmc_small,
+#'   cluster_col = "example_clusters",
 #'   row_data = signatures,
 #'   features_col = "Features",
 #'   signature_col = "Signature"
 #' )
-#' }
+#'
+#' p
 #' 
 #' @export
 
@@ -163,16 +180,6 @@ signatureDotHeatmap <- function(
     block_border_color      = "grey90",
     feature_label_face      = "plain"
 ) {
-  
-  #________________________________________
-  # Dealing with warnings
-  ## Save current warning setting and disable warnings
-  old_warn <- getOption("warn")
-  options(warn = -1)   # -1 = suppress all warnings
-  
-  on.exit(options(warn = old_warn), add = TRUE)  # restore when function exits
-  
-  #________________________________________
   
   # Checking arguments
   

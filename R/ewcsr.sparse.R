@@ -19,9 +19,15 @@
 #' \code{\link{gini.ewcsr.fs}}, \code{\link{markoCell}}
 #'
 #' @examples
-#' \dontrun{
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' mat <- SeuratObject::LayerData(
+#'   pbmc_small,
+#'   assay = "RNA",
+#'   layer = "counts"
+#' )
+#'
 #' ewcsr_mat <- ewcsr.sparse(mat)
-#' }
 #' 
 #' @useDynLib celliverse, .registration = TRUE
 #' @export

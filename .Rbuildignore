@@ -32,3 +32,4 @@ logo.png
 ^pkgdown$
 .positai
 ^CRAN-SUBMISSION$
+^.*\.DS_Store$

@@ -128,15 +128,14 @@
 #' \code{\link{typoClust}}, \code{\link{markoClust}}
 #'
 #' @examples
-#' \dontrun{
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
 #' cc <- clustoCell(
-#'   data = seurat_obj,
-#'   subset_to_HVG = TRUE,
-#'   identify_subclusters = TRUE,
-#'   sketch = TRUE,
-#'   sketch_ncells = 10000
+#'   data = pbmc_small,
+#'   identify_subclusters = FALSE,
+#'   num_threads = 1,
+#'   verbose = FALSE
 #' )
-#' }
 #'
 #' @useDynLib celliverse, .registration = TRUE
 #' @export
@@ -182,16 +181,6 @@ clustoCell <- function(
     seed = 121, # The seed for randomization and making consistent results
     verbose = TRUE # Logical, whether to show progress messages
 ) {
-  
-  #________________________________________
-  # Dealing with warnings
-  ## Save current warning setting and disable warnings
-  old_warn <- getOption("warn")
-  options(warn = -1)   # -1 = suppress all warnings
-  
-  on.exit(options(warn = old_warn), add = TRUE)  # restore when function exits
-  
-  #________________________________________
   
   # Defining the default logs for info messages
   log_message <- function(...) {
@@ -245,7 +234,9 @@ clustoCell <- function(
   #________________________________________
   
   # Setting the seed
-  set.seed(seed)
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
   
   # Start of function
   if(verbose) {
@@ -558,7 +549,14 @@ clustoCell <- function(
       original_seu <- Seurat::CreateSeuratObject(counts = original_expr_mat)
     }
     original_seu <- suppressWarnings(Seurat::NormalizeData(original_seu, normalization.method = "LogNormalize", scale.factor = 10000, verbose = FALSE))
-    original_seu <- suppressMessages(Seurat::SketchData(object = original_seu, ncells = sketch_ncells, method = "Uniform", seed = seed, verbose = FALSE))
+    
+    sketch_seed <- if (is.null(seed)) {
+      sample.int(.Machine$integer.max, 1L)
+    } else {
+      as.integer(seed)
+    }
+    
+    original_seu <- suppressMessages(Seurat::SketchData(object = original_seu, ncells = sketch_ncells, method = "Uniform", seed = sketch_seed, verbose = FALSE))
     
     sketch_cells <- colnames(original_seu@assays$sketch$counts)
     all_sketch_cells <- c(sketch_cells, quiescent_cells) %>% unique()

@@ -143,43 +143,34 @@ require the optional \pkg{htmltools} package; when it is unavailable, printing
 falls back to the plain-text prompt.
 }
 \examples{
-\dontrun{
-# Generate a prompt using all clusters/sub-clusters in a ClustoCell object
+utils::data("pbmc_small", package = "SeuratObject")
+
+cc <- clustoCell(
+  data = pbmc_small,
+  identify_subclusters = FALSE,
+  num_threads = 1,
+  verbose = FALSE
+)
+
+desired_set <- utils::head(
+  sort(unique(as.character(cc$clusters$major_clusters))),
+  1
+)
+
 prompt <- typoPrompt(
-  object = clust_obj,
+  object = cc,
+  desired_sets = desired_set,
   sample_source = "human peripheral blood",
   tissue = "Blood",
   condition = "Healthy",
   species = "human",
-  thresh = 20,
-  top_k = 3
+  use_neg_markers = FALSE,
+  thresh = 10,
+  top_k = 3,
+  verbose = FALSE
 )
 
-# Display the formatted prompt in the RStudio Viewer or web browser.
-# From the displayed page, the complete prompt can be copied or saved
-# with a single click.
-prompt
-
-# Alternatively, display the underlying plain-text prompt
-cat(prompt)
-
-# Generate a prompt for selected sets only
-prompt_selected <- typoPrompt(
-  object = clust_obj,
-  desired_sets = c("C1", "C1-Sub1", "C1-Sub2"),
-  sample_source = "human melanoma tumor",
-  species = "human",
-  use_neg_markers = TRUE,
-  thresh_mode = "n",
-  thresh = 25
-)
-
-# Save the prompt programmatically
-saveTypoPrompt(prompt_selected,
-  file = "cell_annotation_prompt.txt", format = "txt")
-saveTypoPrompt(prompt_selected,
-  file = "cell_annotation_prompt.html", format = "html")
-}
+class(prompt)
 
 }
 \seealso{

@@ -115,14 +115,40 @@
 #' \code{\link{typoClust}}, \code{\link{signatureDotHeatmap}}
 #'
 #' @examples
-#' \dontrun{
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' cc <- clustoCell(
+#'   data = pbmc_small,
+#'   identify_subclusters = FALSE,
+#'   num_threads = 1,
+#'   verbose = FALSE
+#' )
+#'
+#' desired_sets <- utils::head(
+#'   sort(unique(as.character(cc$clusters$major_clusters))),
+#'   2
+#' )
+#'
+#' tc <- typoClust(
+#'   objects = list(cc),
+#'   desired_sets = desired_sets,
+#'   tissue = "Blood",
+#'   condition = "Healthy",
+#'   use_neg_markers = FALSE,
+#'   thresh = 10,
+#'   mode = "markerDB",
+#'   species = "human",
+#'   verbose = FALSE
+#' )
+#'
 #' p <- typoClustVis(
 #'   typoClust = tc,
 #'   rank_thresh = 1,
-#'   refine = TRUE
+#'   refine = FALSE,
+#'   order_by = "Cluster"
 #' )
-#' print(p)
-#' }
+#'
+#' p
 #' 
 #' @export
 
@@ -171,16 +197,6 @@ typoClustVis <- function(
     legend_box_just = "left",
     legend_position = "right"
 ) {
-  
-  #________________________________________
-  # Dealing with warnings
-  ## Save current warning setting and disable warnings
-  old_warn <- getOption("warn")
-  options(warn = -1)   # -1 = suppress all warnings
-  
-  on.exit(options(warn = old_warn), add = TRUE)  # restore when function exits
-  
-  #________________________________________
   
   # A helper functions
   

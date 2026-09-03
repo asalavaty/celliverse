@@ -44,13 +44,39 @@
 #' \code{\link{typoClust}}, \code{\link{typoClustVis}}
 #'
 #' @examples
-#' \dontrun{
-#' so <- addTypoData(
-#'   obj = so,
-#'   typoClust = tc,
-#'   clusters = "ClustoCell_Clusters"
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' cc <- clustoCell(
+#'   data = pbmc_small,
+#'   identify_subclusters = FALSE,
+#'   num_threads = 1,
+#'   verbose = FALSE
 #' )
-#' }
+#'
+#' pbmc_small <- addClustoData(
+#'   obj = pbmc_small,
+#'   clustoCell = cc,
+#'   add_major_clusters = TRUE,
+#'   add_sub_clusters = FALSE
+#' )
+#'
+#' tc <- typoClust(
+#'   objects = list(cc),
+#'   tissue = "Blood",
+#'   condition = "Healthy",
+#'   use_neg_markers = FALSE,
+#'   thresh = 10,
+#'   mode = "markerDB",
+#'   species = "human",
+#'   verbose = FALSE
+#' )
+#'
+#' pbmc_small <- addTypoData(
+#'   obj = pbmc_small,
+#'   typoClust = tc,
+#'   clusters = "ClustoCell_Clusters",
+#'   refine = FALSE
+#' )
 #'
 #' @export
 
@@ -63,16 +89,6 @@ addTypoData <- function(
     refine_thresh = 1, # Integer, specifies how deep to traverse the hierarchy of cell subtypes. Ignored if refine = FALSE.
     outNames = NULL # Character, the names of the metadata column where the cell types corresponding to the provided clusters will be added. If NULL, the column names will default to the names of the clusters column with '_Celltype' appended.
 ) {
-  
-  #________________________________________
-  # Dealing with warnings
-  ## Save current warning setting and disable warnings
-  old_warn <- getOption("warn")
-  options(warn = -1)   # -1 = suppress all warnings
-  
-  on.exit(options(warn = old_warn), add = TRUE)  # restore when function exits
-
-  #________________________________________
   
   # Defining the default logs for info messages
   log_message <- function(...) {

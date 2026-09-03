@@ -100,7 +100,7 @@ cv_provider_key <- function(provider, config) {
   if (!keyless && !nzchar(key %||% "")) {
     cli::cli_abort(c(
       "No API key configured for provider {.val {provider}}.",
-      i = "Set it in ~/.celliverse/config.json or via the matching environment variable."
+      i = "Set it in config.json under the directory returned by tools::R_user_dir('celliverse', 'cache') or via the matching environment variable."
     ))
   }
   key %||% ""

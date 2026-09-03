@@ -59,9 +59,25 @@
 #' \code{\link{markoCell}}, \code{\link{getDatasetMarkers}}
 #'
 #' @examples
-#' \dontrun{
-#' mp <- markerPurity(data = my_seurat_obj, cluster_labels = "seurat_clusters")
-#' }
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' pbmc_small$example_clusters <- as.character(
+#'   SeuratObject::Idents(pbmc_small)
+#' )
+#'
+#' cluster_ids <- utils::head(
+#'   unique(pbmc_small$example_clusters),
+#'   2
+#' )
+#'
+#' mp <- markerPurity(
+#'   data = pbmc_small,
+#'   desired_markers = rownames(pbmc_small)[1:10],
+#'   cluster_labels = "example_clusters",
+#'   desired_clusters = cluster_ids,
+#'   num_threads = 1,
+#'   verbose = FALSE
+#' )
 #' 
 #' @useDynLib celliverse, .registration = TRUE
 #' @export
@@ -83,16 +99,6 @@ markerPurity <- function(
     seed = 121, # The seed for randomization and making consistent results
     verbose = TRUE # Logical, whether to show progress messages
 ) {
-  
-  #________________________________________
-  # Dealing with warnings
-  ## Save current warning setting and disable warnings
-  old_warn <- getOption("warn")
-  options(warn = -1)   # -1 = suppress all warnings
-  
-  on.exit(options(warn = old_warn), add = TRUE)  # restore when function exits
-  
-  #________________________________________
   
   # Defining the default logs for info messages
   log_message <- function(...) {
@@ -139,7 +145,9 @@ markerPurity <- function(
   #________________________________________
   
   # Setting the seed
-  set.seed(seed)
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
   
   # Start of function
   if(verbose) {

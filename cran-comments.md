@@ -1,7 +1,30 @@
 CRAN Comments
 ================
 Adrian Salavaty
-15 August 2026
+03 September 2026
+
+## Resubmission changes requested during manual review
+
+This resubmission addresses the manual-review comments:
+
+- Examples were revised so that short, self-contained examples are run
+  normally. `\dontrun{}` is retained only where execution genuinely
+  requires external software.
+
+- All uses of `options(warn = -1)` were removed.
+
+- Examples and vignettes that create files now use temporary locations.
+  Default CelliVerse Agent state is stored in the standard R user cache
+  directory rather than directly in the user’s home directory.
+
+- Direct manipulation of `.GlobalEnv` and `.Random.seed` was removed.
+
+- Automatic installation of R packages was removed. Missing optional
+  dependencies are now reported to the user with installation
+  instructions.
+
+- Fixed random-seed defaults were replaced by optional user-supplied
+  seeds.
 
 ## Submission
 
@@ -35,9 +58,6 @@ package-specific terminology, software/package names, scientific
 abbreviations, or proper names, including terms such as `CelliVerse`,
 `ClustoCell`, `MarkoCell`, `TypoPrompt`, `scRNA-seq`, `Seurat`,
 `Ollama`, and author names.
-
-The package uses Bioconductor dependencies where required, with the
-corresponding repository declared through `Additional_repositories`.
 
 ## External services and optional Agent functionality
 

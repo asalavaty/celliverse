@@ -10,7 +10,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<meta name="author" content="Adrian Salavaty 19-Aug-2026" />
+<meta name="author" content="Adrian Salavaty 03-Sep-2026" />
 
 
 <title>Introduction to CelliVerse</title>
@@ -1131,7 +1131,7 @@ break-inside: avoid;
 <h1 class="title toc-ignore">Introduction to CelliVerse</h1>
 <h3 class="subtitle">EWCSR-based clustering, marker discovery,
 AI-assisted cell annotation, and the CelliVerse Agent</h3>
-<h4 class="author">Adrian Salavaty 19-Aug-2026</h4>
+<h4 class="author">Adrian Salavaty 03-Sep-2026</h4>
 
 
 <div id="TOC">
@@ -4106,17 +4106,27 @@ can be inspected directly:</p>
 <div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a><span class="fu">cat</span>(pbmc_typoPrompt)</span>
 <span id="cb44-2"><a href="#cb44-2" tabindex="-1"></a><span class="fu">as.character</span>(pbmc_typoPrompt)</span></code></pre></div>
 <p>It can also be exported programmatically:</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" tabindex="-1"></a><span class="fu">saveTypoPrompt</span>(</span>
-<span id="cb45-2"><a href="#cb45-2" tabindex="-1"></a>  pbmc_typoPrompt,</span>
-<span id="cb45-3"><a href="#cb45-3" tabindex="-1"></a>  <span class="at">file =</span> <span class="st">&quot;pbmc_cell_annotation_prompt.txt&quot;</span>,</span>
-<span id="cb45-4"><a href="#cb45-4" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">&quot;txt&quot;</span></span>
-<span id="cb45-5"><a href="#cb45-5" tabindex="-1"></a>)</span>
-<span id="cb45-6"><a href="#cb45-6" tabindex="-1"></a></span>
-<span id="cb45-7"><a href="#cb45-7" tabindex="-1"></a><span class="fu">saveTypoPrompt</span>(</span>
-<span id="cb45-8"><a href="#cb45-8" tabindex="-1"></a>  pbmc_typoPrompt,</span>
-<span id="cb45-9"><a href="#cb45-9" tabindex="-1"></a>  <span class="at">file =</span> <span class="st">&quot;pbmc_cell_annotation_prompt.html&quot;</span>,</span>
-<span id="cb45-10"><a href="#cb45-10" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">&quot;html&quot;</span></span>
-<span id="cb45-11"><a href="#cb45-11" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" tabindex="-1"></a>txt_file <span class="ot">&lt;-</span> <span class="fu">file.path</span>(</span>
+<span id="cb45-2"><a href="#cb45-2" tabindex="-1"></a>  <span class="fu">tempdir</span>(),</span>
+<span id="cb45-3"><a href="#cb45-3" tabindex="-1"></a>  <span class="st">&quot;pbmc_cell_annotation_prompt.txt&quot;</span></span>
+<span id="cb45-4"><a href="#cb45-4" tabindex="-1"></a>)</span>
+<span id="cb45-5"><a href="#cb45-5" tabindex="-1"></a></span>
+<span id="cb45-6"><a href="#cb45-6" tabindex="-1"></a><span class="fu">saveTypoPrompt</span>(</span>
+<span id="cb45-7"><a href="#cb45-7" tabindex="-1"></a>  pbmc_typoPrompt,</span>
+<span id="cb45-8"><a href="#cb45-8" tabindex="-1"></a>  <span class="at">file =</span> txt_file,</span>
+<span id="cb45-9"><a href="#cb45-9" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">&quot;txt&quot;</span></span>
+<span id="cb45-10"><a href="#cb45-10" tabindex="-1"></a>)</span>
+<span id="cb45-11"><a href="#cb45-11" tabindex="-1"></a></span>
+<span id="cb45-12"><a href="#cb45-12" tabindex="-1"></a>html_file <span class="ot">&lt;-</span> <span class="fu">file.path</span>(</span>
+<span id="cb45-13"><a href="#cb45-13" tabindex="-1"></a>  <span class="fu">tempdir</span>(),</span>
+<span id="cb45-14"><a href="#cb45-14" tabindex="-1"></a>  <span class="st">&quot;pbmc_cell_annotation_prompt.html&quot;</span></span>
+<span id="cb45-15"><a href="#cb45-15" tabindex="-1"></a>)</span>
+<span id="cb45-16"><a href="#cb45-16" tabindex="-1"></a></span>
+<span id="cb45-17"><a href="#cb45-17" tabindex="-1"></a><span class="fu">saveTypoPrompt</span>(</span>
+<span id="cb45-18"><a href="#cb45-18" tabindex="-1"></a>  pbmc_typoPrompt,</span>
+<span id="cb45-19"><a href="#cb45-19" tabindex="-1"></a>  <span class="at">file =</span> html_file,</span>
+<span id="cb45-20"><a href="#cb45-20" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">&quot;html&quot;</span></span>
+<span id="cb45-21"><a href="#cb45-21" tabindex="-1"></a>)</span></code></pre></div>
 <div class="celliverse-tip">
 <p><strong>ClustoCell hierarchy awareness:</strong> When a prompt
 contains a major ClustoCell cluster together with its sub-clusters,

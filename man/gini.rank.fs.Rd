@@ -28,9 +28,18 @@ This method removes globally low-ranked features while retaining features
 with consistently high ranks across cells for downstream analysis.
 }
 \examples{
-\dontrun{
-fs <- gini.rank.fs(mat)
-}
+utils::data("pbmc_small", package = "SeuratObject")
+
+mat <- SeuratObject::LayerData(
+  pbmc_small,
+  assay = "RNA",
+  layer = "counts"
+)
+
+fs <- gini.rank.fs(
+  mat,
+  num_threads = 1
+)
 
 }
 \seealso{

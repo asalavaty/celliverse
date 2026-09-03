@@ -200,15 +200,31 @@
 #' \code{\link{clustoCell}}
 #'
 #' @examples
-#' \dontrun{
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' cc <- clustoCell(
+#'   data = pbmc_small,
+#'   identify_subclusters = FALSE,
+#'   num_threads = 1,
+#'   verbose = FALSE
+#' )
+#'
+#' desired_set <- utils::head(
+#'   sort(unique(as.character(cc$clusters$major_clusters))),
+#'   1
+#' )
+#'
 #' tc <- typoClust(
-#'   objects = list(clust_obj),
+#'   objects = list(cc),
+#'   desired_sets = desired_set,
 #'   tissue = "Blood",
 #'   condition = "Healthy",
-#'   thresh = 20,
-#'   species = "human"
+#'   use_neg_markers = FALSE,
+#'   thresh = 10,
+#'   mode = "markerDB",
+#'   species = "human",
+#'   verbose = FALSE
 #' )
-#' }
 #' 
 #' @export
 
@@ -237,16 +253,6 @@ typoClust <- function(objects = NULL, # A list of one or more objects of class C
                       llm_top_k = 3, # (mode = "ceLLMarkup" only) number of ranked candidate cell types returned per set.
                       verbose = TRUE # Logical, whether to show progress messages
                       ) {
-  
-  #________________________________________
-  # Dealing with warnings
-  ## Save current warning setting and disable warnings
-  old_warn <- getOption("warn")
-  options(warn = -1)   # -1 = suppress all warnings
-  
-  on.exit(options(warn = old_warn), add = TRUE)  # restore when function exits
-  
-  #________________________________________
   
   # Defining the default logs for info messages
   log_message <- function(...) {

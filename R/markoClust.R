@@ -117,12 +117,19 @@
 #' \code{\link{addClustoData}}
 #'
 #' @examples
-#' \dontrun{
-#' cc <- markoClust(
-#'   data = seurat_obj,
-#'   cluster_labels = "seurat_clusters"
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' pbmc_small$example_clusters <- as.character(
+#'   SeuratObject::Idents(pbmc_small)
 #' )
-#' }
+#'
+#' cc <- markoClust(
+#'   data = pbmc_small,
+#'   cluster_labels = "example_clusters",
+#'   identify_subclusters = FALSE,
+#'   num_threads = 1,
+#'   verbose = FALSE
+#' )
 #' 
 #' @useDynLib celliverse, .registration = TRUE
 #' @export
@@ -171,16 +178,6 @@ markoClust <- function(
     seed = 121, # The seed for randomization and making consistent results
     verbose = TRUE # Logical, whether to show progress messages
 ) {
-  
-  #________________________________________
-  # Dealing with warnings
-  ## Save current warning setting and disable warnings
-  old_warn <- getOption("warn")
-  options(warn = -1)   # -1 = suppress all warnings
-  
-  on.exit(options(warn = old_warn), add = TRUE)  # restore when function exits
-  
-  #________________________________________
   
   # Defining the default logs for info messages
   log_message <- function(...) {
@@ -235,7 +232,9 @@ markoClust <- function(
   #________________________________________
   
   # Setting the seed
-  set.seed(seed)
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
   
   # Start of function
   if(verbose) {
@@ -1173,7 +1172,13 @@ markoClust <- function(
         curr_cells <- major_clusters[major_clusters == i] %>% names()
         curr_count <- round(length(curr_cells)*sketch_fraction)
         
-        tmp_original_seu <- suppressMessages(Seurat::SketchData(object = original_seu[,curr_cells], ncells = curr_count, method = "Uniform", seed = seed, verbose = FALSE))
+        sketch_seed <- if (is.null(seed)) {
+          sample.int(.Machine$integer.max, 1L)
+        } else {
+          as.integer(seed)
+        }
+        
+        tmp_original_seu <- suppressMessages(Seurat::SketchData(object = original_seu[,curr_cells], ncells = curr_count, method = "Uniform", seed = sketch_seed, verbose = FALSE))
         colnames(tmp_original_seu@assays$sketch$counts)
         
       }) %>% unlist() %>% unname()

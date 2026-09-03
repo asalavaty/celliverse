@@ -20,7 +20,7 @@
 #     .artifacts_state.json                    # internal incremental-sync state
 #
 # saveRDS() writes straight to the artifacts dir because that dir lives on the
-# user's local disk (~/.celliverse/sessions/...), never on a FUSE/S3 mount.
+# user's local disk (sessions/ under the directory returned by tools::R_user_dir("celliverse", "cache") ...), never on a FUSE/S3 mount.
 #
 # Two entry points:
 #   cv_sync_object_artifacts(store, dir, session)  # end-of-turn: WRITE objects

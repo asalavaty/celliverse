@@ -122,12 +122,19 @@ Seurat's native label transfer workflows (\code{\link[Seurat]{ProjectData}},
 \code{\link[Seurat]{TransferData}}) and do not require integer count matrices.
 }
 \examples{
-\dontrun{
-cc <- markoClust(
-  data = seurat_obj,
-  cluster_labels = "seurat_clusters"
+utils::data("pbmc_small", package = "SeuratObject")
+
+pbmc_small$example_clusters <- as.character(
+  SeuratObject::Idents(pbmc_small)
 )
-}
+
+cc <- markoClust(
+  data = pbmc_small,
+  cluster_labels = "example_clusters",
+  identify_subclusters = FALSE,
+  num_threads = 1,
+  verbose = FALSE
+)
 
 }
 \seealso{

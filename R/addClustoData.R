@@ -37,14 +37,21 @@
 #' \code{\link{clustoCell}}, \code{\link{markoClust}}
 #'
 #' @examples
-#' \dontrun{
-#' so <- addClustoData(
-#'   obj = so,
-#'   clustoCell = cc,
+#' utils::data("pbmc_small", package = "SeuratObject")
+#'
+#' pbmc_small_cc <- clustoCell(
+#'   data = pbmc_small,
+#'   identify_subclusters = TRUE,
+#'   num_threads = 1,
+#'   verbose = FALSE
+#' )
+#'
+#' pbmc_small <- addClustoData(
+#'   obj = pbmc_small,
+#'   clustoCell = pbmc_small_cc,
 #'   add_major_clusters = TRUE,
 #'   add_sub_clusters = TRUE
 #' )
-#' }
 #' 
 #' @export
 
@@ -75,14 +82,6 @@ addClustoData <- function(
   if(!inherits(clustoCell, "ClustoCell")) {
     cli::cli_abort("The provided `clustoCell` is of the wrong class. It should be a 'ClustoCell' object, created using either the clustoCell or markoClust function!")
   }
-  
-  #________________________________________
-  # Dealing with warnings
-  ## Save current warning setting and disable warnings
-  old_warn <- getOption("warn")
-  options(warn = -1)   # -1 = suppress all warnings
-  
-  on.exit(options(warn = old_warn), add = TRUE)  # restore when function exits
   
   #________________________________________
   
