@@ -307,7 +307,10 @@ markerPurity <- function(
   log_progress_step("Expression-weighted centered scaled rank normalizing cells")
   
   # Global expression-weighted centered scaled rank data
-  ewcsr_mat <- ewcsr.sparse(expr_mat)
+  ewcsr_mat <- ewcsr.sparse(
+    expr_mat,
+    num_threads = num_threads
+  )
   
   ewcsr_vec <- matrix_to_vector_na_omit(ewcsr_mat)
   ewcsr_vec_pos <- ewcsr_vec[ewcsr_vec > 0] %>% sort()

@@ -85,7 +85,7 @@
 #'   layer = "counts"
 #' )
 #'
-#' full_ewcsr <- ewcsr.sparse(full_counts)
+#' full_ewcsr <- ewcsr.sparse(full_counts, num_threads = 1)
 #'
 #' cc_full <- clustoCell_TransferLabel(
 #'   clustoCell = cc_reference,
@@ -372,7 +372,7 @@ clustoCell_TransferLabel <- function(clustoCell, # Ab object of class ClustoCell
     # }, simplify = FALSE)
     # centroids <- do.call(rbind, centroids)  # Cluster x Dim matrix
     
-    centroids <- compute_reduced_centroids_cpp(mat = sketched_reduced, sketched_clusters = sketched_clusters, unique_clusters = unique_clusters)
+    centroids <- compute_reduced_centroids_cpp(mat = sketched_reduced, sketched_clusters = sketched_clusters, unique_clusters = unique_clusters, num_threads = num_threads)
     
     log_progress_done()
     

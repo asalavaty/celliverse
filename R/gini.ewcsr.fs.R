@@ -79,7 +79,7 @@ gini.ewcsr.fs <- function(mat, # A matrix with cells/samples on columns and feat
   # R version of gini.ewcsr.fs matrix generation
   
   # # Transform the matrix to EWCSR sparse matrix
-  # ewcsr_mat <- ewcsr.sparse(mat)
+  # ewcsr_mat <- ewcsr.sparse(mat, num_threads = num_threads)
   # 
   # # Binary transformation
   # if(!is.null(ewcsr_high_thresh) & !is.null(ewcsr_low_thresh)) {
@@ -123,7 +123,10 @@ gini.ewcsr.fs <- function(mat, # A matrix with cells/samples on columns and feat
   # C++ version of gini.ewcsr.fs matrix generation
   
   # Transform the matrix to EWCSR sparse matrix
-  ewcsr_mat <- ewcsr.sparse(mat)
+  ewcsr_mat <- ewcsr.sparse(
+    mat,
+    num_threads = num_threads
+  )
 
   # Binary transformation (R version)
   # if(!is.null(ewcsr_high_thresh) & !is.null(ewcsr_low_thresh)) {

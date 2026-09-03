@@ -11,6 +11,9 @@
 #'
 #' @param mat
 #' A matrix with features (genes) as rows and cells or samples as columns.
+#' 
+#' @param num_threads
+#' Integer; number of threads to use. The default is \code{-1} which uses all available cores.
 #'
 #' @return
 #' A matrix of EWCSR-transformed values with the same dimensions as \code{mat}.
@@ -27,13 +30,15 @@
 #'   layer = "counts"
 #' )
 #'
-#' ewcsr_mat <- ewcsr.sparse(mat)
+#' ewcsr_mat <- ewcsr.sparse(mat, num_threads = 1)
 #' 
 #' @useDynLib celliverse, .registration = TRUE
 #' @export
 
-ewcsr.sparse <- function(mat # A matrix with cells/samples on columns and features/genes on rows
-                           ){
+ewcsr.sparse <- function(
+    mat,
+    num_threads = -1L
+) {
   
   #============================================================================
   #============================================================================
@@ -62,7 +67,10 @@ ewcsr.sparse <- function(mat # A matrix with cells/samples on columns and featur
   
   # C++ version of ewcsr.sparse matrix generation
   
-  ewcsr_mat <- ewcsr_sparse_cpp(mat)
+  ewcsr_mat <- ewcsr_sparse_cpp(
+    mat,
+    num_threads = num_threads
+  )
   
   rownames(ewcsr_mat) <- rownames(mat)
   colnames(ewcsr_mat) <- colnames(mat)

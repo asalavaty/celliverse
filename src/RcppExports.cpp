@@ -12,13 +12,14 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // ewcsr_sparse_cpp
-Eigen::SparseMatrix<double> ewcsr_sparse_cpp(const Eigen::SparseMatrix<double>& mat);
-RcppExport SEXP _celliverse_ewcsr_sparse_cpp(SEXP matSEXP) {
+Eigen::SparseMatrix<double> ewcsr_sparse_cpp(const Eigen::SparseMatrix<double>& mat, int num_threads);
+RcppExport SEXP _celliverse_ewcsr_sparse_cpp(SEXP matSEXP, SEXP num_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::SparseMatrix<double>& >::type mat(matSEXP);
-    rcpp_result_gen = Rcpp::wrap(ewcsr_sparse_cpp(mat));
+    Rcpp::traits::input_parameter< int >::type num_threads(num_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(ewcsr_sparse_cpp(mat, num_threads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -234,15 +235,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // compute_reduced_centroids_cpp
-Rcpp::NumericMatrix compute_reduced_centroids_cpp(Rcpp::NumericMatrix mat, Rcpp::CharacterVector sketched_clusters, Rcpp::CharacterVector unique_clusters);
-RcppExport SEXP _celliverse_compute_reduced_centroids_cpp(SEXP matSEXP, SEXP sketched_clustersSEXP, SEXP unique_clustersSEXP) {
+Rcpp::NumericMatrix compute_reduced_centroids_cpp(Rcpp::NumericMatrix mat, Rcpp::CharacterVector sketched_clusters, Rcpp::CharacterVector unique_clusters, int num_threads);
+RcppExport SEXP _celliverse_compute_reduced_centroids_cpp(SEXP matSEXP, SEXP sketched_clustersSEXP, SEXP unique_clustersSEXP, SEXP num_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type mat(matSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type sketched_clusters(sketched_clustersSEXP);
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type unique_clusters(unique_clustersSEXP);
-    rcpp_result_gen = Rcpp::wrap(compute_reduced_centroids_cpp(mat, sketched_clusters, unique_clusters));
+    Rcpp::traits::input_parameter< int >::type num_threads(num_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_reduced_centroids_cpp(mat, sketched_clusters, unique_clusters, num_threads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -260,7 +262,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_celliverse_ewcsr_sparse_cpp", (DL_FUNC) &_celliverse_ewcsr_sparse_cpp, 1},
+    {"_celliverse_ewcsr_sparse_cpp", (DL_FUNC) &_celliverse_ewcsr_sparse_cpp, 2},
     {"_celliverse_filter_cluster_markers_cpp", (DL_FUNC) &_celliverse_filter_cluster_markers_cpp, 3},
     {"_celliverse_gini_rows_matrix", (DL_FUNC) &_celliverse_gini_rows_matrix, 5},
     {"_celliverse_gini_rows_lg_matrix", (DL_FUNC) &_celliverse_gini_rows_lg_matrix, 5},
@@ -277,7 +279,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_celliverse_replace_na_with_zero_cpp", (DL_FUNC) &_celliverse_replace_na_with_zero_cpp, 2},
     {"_celliverse_compute_centroids_cpp", (DL_FUNC) &_celliverse_compute_centroids_cpp, 4},
     {"_celliverse_sparse_dense_correlation_cpp", (DL_FUNC) &_celliverse_sparse_dense_correlation_cpp, 3},
-    {"_celliverse_compute_reduced_centroids_cpp", (DL_FUNC) &_celliverse_compute_reduced_centroids_cpp, 3},
+    {"_celliverse_compute_reduced_centroids_cpp", (DL_FUNC) &_celliverse_compute_reduced_centroids_cpp, 4},
     {"_celliverse_mutual_rank_sparse_cpp", (DL_FUNC) &_celliverse_mutual_rank_sparse_cpp, 2},
     {NULL, NULL, 0}
 };

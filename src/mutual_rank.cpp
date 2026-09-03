@@ -10,7 +10,75 @@
 #include <queue>
 #include <limits>
 #include <atomic>
+#include <exception>
+#include <system_error>
 using namespace Rcpp;
+
+namespace {
+
+template <typename Func>
+void cv_run_ranges(int n_items, int num_threads, Func&& func) {
+  if (n_items <= 0) return;
+
+  if (num_threads <= 1) {
+    func(0, n_items);
+    return;
+  }
+
+  const int items_per_thread =
+    std::max(1, (n_items + num_threads - 1) / num_threads);
+
+  std::vector<std::thread> threads;
+  threads.reserve(static_cast<size_t>(num_threads));
+  std::vector<std::exception_ptr> worker_errors(
+    static_cast<size_t>(num_threads)
+  );
+  int fallback_from = num_threads;
+
+  for (int t = 0; t < num_threads; ++t) {
+    const int start = t * items_per_thread;
+    const int end = std::min((t + 1) * items_per_thread, n_items);
+    if (start >= end) continue;
+
+    try {
+      threads.emplace_back([&, t, start, end]() {
+        try {
+          func(start, end);
+        } catch (...) {
+          worker_errors[static_cast<size_t>(t)] =
+            std::current_exception();
+        }
+      });
+    } catch (const std::system_error&) {
+      fallback_from = t;
+      break;
+    } catch (...) {
+      for (auto& thread : threads) {
+        if (thread.joinable()) thread.join();
+      }
+      throw;
+    }
+  }
+
+  for (auto& thread : threads) {
+    if (thread.joinable()) thread.join();
+  }
+
+  for (const auto& err : worker_errors) {
+    if (err) std::rethrow_exception(err);
+  }
+
+  // If a high-core system cannot create every requested worker, process only
+  // the ranges that were never launched, serially on the main thread.
+  for (int t = fallback_from; t < num_threads; ++t) {
+    const int start = t * items_per_thread;
+    const int end = std::min((t + 1) * items_per_thread, n_items);
+    if (start < end) func(start, end);
+  }
+}
+
+} // anonymous namespace
+
 
 // Custom comparator that handles -Inf properly (treats -Inf as the smallest value)
 struct CompareWithInf {
@@ -36,9 +104,13 @@ S4 mutual_rank_sparse_cpp(S4 mat, int num_threads = -1) {
   int n = dims[0];
   
   if (num_threads <= 0) {
-    num_threads = std::thread::hardware_concurrency();
+    const unsigned int hc = std::thread::hardware_concurrency();
+    num_threads = (hc == 0) ? 1 : static_cast<int>(hc);
   }
-  num_threads = std::min(num_threads, n);
+  num_threads = std::max(
+    1,
+    std::min(num_threads, n)
+  );
   
   // PHASE 1: Build row data directly without expensive data structures
   // Pre-count row sizes
@@ -94,7 +166,7 @@ S4 mutual_rank_sparse_cpp(S4 mat, int num_threads = -1) {
       int row_size = row_sizes[row];
       
       // Resize buffers if needed
-      if (sort_buffer.size() < row_size) {
+      if (sort_buffer.size() < static_cast<size_t>(row_size)) {
         sort_buffer.resize(row_size);
         unique_values.resize(row_size);
       }
@@ -149,21 +221,8 @@ S4 mutual_rank_sparse_cpp(S4 mat, int num_threads = -1) {
     }
   };
   
-  // Parallel rank computation
-  std::vector<std::thread> rank_threads;
-  int rows_per_thread = std::max(1, (n + num_threads - 1) / num_threads);
-  
-  for (int t = 0; t < num_threads; t++) {
-    int start_row = t * rows_per_thread;
-    int end_row = std::min((t + 1) * rows_per_thread, n);
-    if (start_row < end_row) {
-      rank_threads.emplace_back(compute_ranks, start_row, end_row);
-    }
-  }
-  
-  for (auto& thread : rank_threads) {
-    thread.join();
-  }
+  // Robust parallel range execution; num_threads == 1 is truly serial.
+  cv_run_ranges(n, num_threads, compute_ranks);
   
   // PHASE 3: Precompute output structure efficiently
   // Count non-zeros per column in output using atomic operations
@@ -198,19 +257,7 @@ S4 mutual_rank_sparse_cpp(S4 mat, int num_threads = -1) {
     }
   };
   
-  // Parallel count
-  std::vector<std::thread> count_threads;
-  for (int t = 0; t < num_threads; t++) {
-    int start_row = t * rows_per_thread;
-    int end_row = std::min((t + 1) * rows_per_thread, n);
-    if (start_row < end_row) {
-      count_threads.emplace_back(count_nnz, start_row, end_row);
-    }
-  }
-  
-  for (auto& thread : count_threads) {
-    thread.join();
-  }
+  cv_run_ranges(n, num_threads, count_nnz);
   
   // Build column pointers
   std::vector<int> p_new(n + 1, 0);
@@ -265,19 +312,7 @@ S4 mutual_rank_sparse_cpp(S4 mat, int num_threads = -1) {
     }
   };
   
-  // Parallel fill
-  std::vector<std::thread> fill_threads;
-  for (int t = 0; t < num_threads; t++) {
-    int start_row = t * rows_per_thread;
-    int end_row = std::min((t + 1) * rows_per_thread, n);
-    if (start_row < end_row) {
-      fill_threads.emplace_back(fill_matrix, start_row, end_row);
-    }
-  }
-  
-  for (auto& thread : fill_threads) {
-    thread.join();
-  }
+  cv_run_ranges(n, num_threads, fill_matrix);
   
   // PHASE 5: Sort rows within each column (required for dgCMatrix)
   auto sort_columns = [&](int start_col, int end_col) {
@@ -293,7 +328,7 @@ S4 mutual_rank_sparse_cpp(S4 mat, int num_threads = -1) {
       if (col_size <= 1) continue;
       
       // Create index array
-      if (indices.size() < col_size) {
+      if (indices.size() < static_cast<size_t>(col_size)) {
         indices.resize(col_size);
         temp_i.resize(col_size);
         temp_x.resize(col_size);
@@ -320,21 +355,7 @@ S4 mutual_rank_sparse_cpp(S4 mat, int num_threads = -1) {
     }
   };
   
-  // Parallel column sorting
-  std::vector<std::thread> sort_threads;
-  int cols_per_thread = std::max(1, (n + num_threads - 1) / num_threads);
-  
-  for (int t = 0; t < num_threads; t++) {
-    int start_col = t * cols_per_thread;
-    int end_col = std::min((t + 1) * cols_per_thread, n);
-    if (start_col < end_col) {
-      sort_threads.emplace_back(sort_columns, start_col, end_col);
-    }
-  }
-  
-  for (auto& thread : sort_threads) {
-    thread.join();
-  }
+  cv_run_ranges(n, num_threads, sort_columns);
   
   // Clean up allocated memory
   for (int row = 0; row < n; row++) {

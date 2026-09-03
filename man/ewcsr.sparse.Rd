@@ -4,10 +4,12 @@
 \alias{ewcsr.sparse}
 \title{Compute expression-weighted centered scaled ranks (EWCSR)}
 \usage{
-ewcsr.sparse(mat)
+ewcsr.sparse(mat, num_threads = -1L)
 }
 \arguments{
 \item{mat}{A matrix with features (genes) as rows and cells or samples as columns.}
+
+\item{num_threads}{Integer; number of threads to use. The default is \code{-1} which uses all available cores.}
 }
 \value{
 A matrix of EWCSR-transformed values with the same dimensions as \code{mat}.
@@ -30,7 +32,7 @@ mat <- SeuratObject::LayerData(
   layer = "counts"
 )
 
-ewcsr_mat <- ewcsr.sparse(mat)
+ewcsr_mat <- ewcsr.sparse(mat, num_threads = 1)
 
 }
 \seealso{

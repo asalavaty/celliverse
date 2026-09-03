@@ -374,52 +374,142 @@ LogicalVector sparse_row_nonzero_count_cpp(
 #include <algorithm>
 #include <thread>
 #include <atomic>
+#include <exception>
+#include <system_error>
+#include <cstring>
+#include <cstdint>
+#include <limits>
+#include <unordered_map>
+
+namespace {
+
+// Resolve the public thread setting consistently:
+//   num_threads <= 0 -> all logical threads reported by the OS
+//   num_threads > 0  -> honour the user's request
+// The count is bounded only by the amount of independent work available.
+inline int cv_resolve_threads(int num_threads, int work_items) {
+  if (work_items <= 0) {
+    return 1;
+  }
+
+  if (num_threads <= 0) {
+    const unsigned int hc = std::thread::hardware_concurrency();
+    num_threads = (hc == 0U) ? 1 : static_cast<int>(hc);
+  }
+
+  return std::max(1, std::min(num_threads, work_items));
+}
+
+// Exact R NA detection without calling the R API from a worker thread.
+// The NA bit pattern is captured on the main R thread and compared natively.
+inline bool cv_is_r_na(double value, std::uint64_t na_bits) {
+  std::uint64_t value_bits = 0U;
+  std::memcpy(&value_bits, &value, sizeof(double));
+  return value_bits == na_bits;
+}
+
+} // anonymous namespace
 
 // Ultra-fast parallel version
 // [[Rcpp::export]]
 Rcpp::S4 replace_na_with_zero_cpp(Rcpp::S4 mat, int num_threads = -1) {
-  // Extract slots from dgCMatrix
+  // All R/Rcpp access happens on the main R thread.
   Rcpp::NumericVector x = mat.slot("x");
-  Rcpp::IntegerVector i = mat.slot("i");
-  Rcpp::IntegerVector p = mat.slot("p");
-  Rcpp::IntegerVector dim = mat.slot("Dim");
-  
-  // Determine optimal number of threads
-  if (num_threads <= 0) {
-    num_threads = std::thread::hardware_concurrency();
-    if (num_threads == 0) num_threads = 4; // fallback
+  const size_t n = static_cast<size_t>(x.size());
+
+  if (n == 0U) {
+    return mat;
   }
-  
-  const size_t n = x.size();
-  if (n == 0) return mat; // quick return for empty matrix
-  
-  // Process in parallel chunks
-  const size_t chunk_size = (n + num_threads - 1) / num_threads;
+
+  // Obtain the raw data pointer on the main thread. Worker threads only touch
+  // disjoint elements through this native pointer and never call the R API.
+  double* x_ptr = x.begin();
+
+  // Capture R's exact NA_REAL bit pattern on the main thread so workers can
+  // distinguish NA from an arbitrary NaN without calling ISNA/R_IsNA.
+  const double na_value = NA_REAL;
+  std::uint64_t na_bits = 0U;
+  std::memcpy(&na_bits, &na_value, sizeof(double));
+
+  const int max_work_items =
+    (n > static_cast<size_t>(std::numeric_limits<int>::max()))
+      ? std::numeric_limits<int>::max()
+      : static_cast<int>(n);
+  num_threads = cv_resolve_threads(num_threads, max_work_items);
+
+  auto process_range = [&](size_t start, size_t end) {
+    for (size_t idx = start; idx < end; ++idx) {
+      if (cv_is_r_na(x_ptr[idx], na_bits)) {
+        x_ptr[idx] = 0.0;
+      }
+    }
+  };
+
+  // True serial path: no std::thread is created when num_threads == 1.
+  if (num_threads == 1) {
+    process_range(0U, n);
+    return mat;
+  }
+
+  const size_t chunk_size =
+    (n + static_cast<size_t>(num_threads) - 1U) /
+    static_cast<size_t>(num_threads);
+
   std::vector<std::thread> threads;
-  
+  threads.reserve(static_cast<size_t>(num_threads));
+  std::vector<std::exception_ptr> worker_errors(
+    static_cast<size_t>(num_threads)
+  );
+
+  int fallback_from = num_threads;
+
   for (int t = 0; t < num_threads; ++t) {
-    const size_t start = t * chunk_size;
-    const size_t end = std::min((t + 1) * chunk_size, n);
-    
-    if (start < end) {
-      threads.emplace_back([&x, start, end]() {
-        // Use local variables for better cache performance
-        double* x_ptr = &x[0]; // direct pointer access
-        for (size_t idx = start; idx < end; ++idx) {
-          // Direct memory comparison for NA (faster than Rcpp::NumericVector::is_na)
-          if (ISNA(x_ptr[idx])) {
-            x_ptr[idx] = 0.0;
-          }
+    const size_t start = static_cast<size_t>(t) * chunk_size;
+    const size_t end = std::min(start + chunk_size, n);
+
+    if (start >= end) {
+      continue;
+    }
+
+    try {
+      threads.emplace_back([&, t, start, end]() {
+        try {
+          process_range(start, end);
+        } catch (...) {
+          worker_errors[static_cast<size_t>(t)] =
+            std::current_exception();
         }
       });
+    } catch (const std::system_error&) {
+      // Avoid std::terminate() if a high-core system cannot create every
+      // requested worker. Join existing workers and finish remaining chunks
+      // serially on the main thread.
+      fallback_from = t;
+      break;
+    } catch (...) {
+      for (auto& thread : threads) {
+        if (thread.joinable()) thread.join();
+      }
+      throw;
     }
   }
-  
-  // Wait for all threads to complete
+
   for (auto& thread : threads) {
-    thread.join();
+    if (thread.joinable()) thread.join();
   }
-  
+
+  for (const auto& err : worker_errors) {
+    if (err) std::rethrow_exception(err);
+  }
+
+  for (int t = fallback_from; t < num_threads; ++t) {
+    const size_t start = static_cast<size_t>(t) * chunk_size;
+    const size_t end = std::min(start + chunk_size, n);
+    if (start < end) {
+      process_range(start, end);
+    }
+  }
+
   return mat;
 }
 
@@ -429,110 +519,155 @@ Rcpp::S4 replace_na_with_zero_cpp(Rcpp::S4 mat, int num_threads = -1) {
 // Fast version with dynamic load balancing
 // [[Rcpp::export]]
 Rcpp::NumericMatrix compute_centroids_cpp(
-    Rcpp::S4 mat, 
+    Rcpp::S4 mat,
     Rcpp::CharacterVector sketched_clusters,
     Rcpp::CharacterVector unique_clusters,
     int num_threads = -1) {
-  
-  // Extract dgCMatrix components
+
+  // Extract and resolve all R/Rcpp objects on the main R thread.
   Rcpp::NumericVector x = mat.slot("x");
   Rcpp::IntegerVector i = mat.slot("i");
   Rcpp::IntegerVector p = mat.slot("p");
   Rcpp::IntegerVector dim = mat.slot("Dim");
-  int n_genes = dim[0];
-  int n_cells = dim[1];
-  
-  // Get column names
+  const int n_genes = dim[0];
+
   Rcpp::List dimnames = mat.slot("Dimnames");
   Rcpp::CharacterVector colnames = dimnames[1];
-  
-  // Create mapping structures
+
   std::unordered_map<std::string, int> cell_to_index;
-  for (int idx = 0; idx < colnames.size(); ++idx) {
-    cell_to_index[Rcpp::as<std::string>(colnames[idx])] = idx;
+  cell_to_index.reserve(static_cast<size_t>(colnames.size()));
+  for (R_xlen_t idx = 0; idx < colnames.size(); ++idx) {
+    cell_to_index[Rcpp::as<std::string>(colnames[idx])] =
+      static_cast<int>(idx);
   }
-  
+
   std::unordered_map<std::string, std::vector<int>> cluster_to_cells;
   Rcpp::CharacterVector sketched_names = sketched_clusters.names();
-  
-  for (int idx = 0; idx < sketched_clusters.size(); ++idx) {
-    std::string cell_name = Rcpp::as<std::string>(sketched_names[idx]);
-    std::string cluster_name = Rcpp::as<std::string>(sketched_clusters[idx]);
-    
-    auto it = cell_to_index.find(cell_name);
+
+  for (R_xlen_t idx = 0; idx < sketched_clusters.size(); ++idx) {
+    const std::string cell_name =
+      Rcpp::as<std::string>(sketched_names[idx]);
+    const std::string cluster_name =
+      Rcpp::as<std::string>(sketched_clusters[idx]);
+
+    const auto it = cell_to_index.find(cell_name);
     if (it != cell_to_index.end()) {
       cluster_to_cells[cluster_name].push_back(it->second);
     }
   }
-  
-  // Initialize result
-  int n_clusters = unique_clusters.size();
+
+  const int n_clusters = static_cast<int>(unique_clusters.size());
   Rcpp::NumericMatrix centroids(n_genes, n_clusters);
-  
-  // Auto-detect threads
-  if (num_threads <= 0) {
-    num_threads = std::thread::hardware_concurrency();
+  if (n_clusters == 0 || n_genes == 0) {
+    return centroids;
   }
-  num_threads = std::min(num_threads, n_clusters);
-  
-  // Dynamic load balancing
+
+  // Convert character data before spawning workers. Rcpp string conversion
+  // must not happen inside secondary threads.
+  std::vector<std::string> unique_cluster_names;
+  unique_cluster_names.reserve(static_cast<size_t>(n_clusters));
+  for (int c_idx = 0; c_idx < n_clusters; ++c_idx) {
+    unique_cluster_names.emplace_back(
+      Rcpp::as<std::string>(unique_clusters[c_idx])
+    );
+  }
+
+  // Raw pointers are obtained on the main R thread. Workers only read the
+  // sparse input and write disjoint centroid columns; they call no R API.
+  const double* x_ptr = x.begin();
+  const int* i_ptr = i.begin();
+  const int* p_ptr = p.begin();
+  double* centroids_ptr = centroids.begin();
+
+  num_threads = cv_resolve_threads(num_threads, n_clusters);
   std::atomic<int> next_cluster{0};
-  std::vector<std::thread> threads;
-  
-  for (int t = 0; t < num_threads; ++t) {
-    threads.emplace_back([&]() {
-      // Thread-local arrays to avoid contention
-      std::vector<double> local_sums(n_genes);
-      std::vector<int> local_counts(n_genes);
-      
-      while (true) {
-        int c_idx = next_cluster.fetch_add(1);
-        if (c_idx >= n_clusters) break;
-        
-        std::string cluster_name = Rcpp::as<std::string>(unique_clusters[c_idx]);
-        auto cluster_it = cluster_to_cells.find(cluster_name);
-        
-        if (cluster_it == cluster_to_cells.end()) {
-          continue;
-        }
-        
-        const std::vector<int>& cell_indices = cluster_it->second;
-        int n_cells_in_cluster = cell_indices.size();
-        
-        if (n_cells_in_cluster == 0) {
-          continue;
-        }
-        
-        // Reset local arrays
-        std::fill(local_sums.begin(), local_sums.end(), 0.0);
-        std::fill(local_counts.begin(), local_counts.end(), 0);
-        
-        // Process cells in this cluster
-        for (int cell_idx : cell_indices) {
-          int col_start = p[cell_idx];
-          int col_end = p[cell_idx + 1];
-          
-          for (int data_idx = col_start; data_idx < col_end; ++data_idx) {
-            int gene_idx = i[data_idx];
-            double value = x[data_idx];
-            local_sums[gene_idx] += value;
-            local_counts[gene_idx]++;
-          }
-        }
-        
-        // Compute means
-        double inv_n_cells = 1.0 / n_cells_in_cluster;
-        for (int gene_idx = 0; gene_idx < n_genes; ++gene_idx) {
-          centroids(gene_idx, c_idx) = local_sums[gene_idx] * inv_n_cells;
+
+  auto worker = [&]() {
+    std::vector<double> local_sums(static_cast<size_t>(n_genes), 0.0);
+
+    while (true) {
+      const int c_idx = next_cluster.fetch_add(1, std::memory_order_relaxed);
+      if (c_idx >= n_clusters) break;
+
+      const auto cluster_it =
+        cluster_to_cells.find(unique_cluster_names[static_cast<size_t>(c_idx)]);
+      if (cluster_it == cluster_to_cells.end()) continue;
+
+      const std::vector<int>& cell_indices = cluster_it->second;
+      const int n_cells_in_cluster =
+        static_cast<int>(cell_indices.size());
+      if (n_cells_in_cluster == 0) continue;
+
+      std::fill(local_sums.begin(), local_sums.end(), 0.0);
+
+      for (const int cell_idx : cell_indices) {
+        const int col_start = p_ptr[cell_idx];
+        const int col_end = p_ptr[cell_idx + 1];
+
+        for (int data_idx = col_start; data_idx < col_end; ++data_idx) {
+          const int gene_idx = i_ptr[data_idx];
+          local_sums[static_cast<size_t>(gene_idx)] += x_ptr[data_idx];
         }
       }
-    });
+
+      const double inv_n_cells = 1.0 / n_cells_in_cluster;
+      const size_t out_offset =
+        static_cast<size_t>(n_genes) * static_cast<size_t>(c_idx);
+
+      for (int gene_idx = 0; gene_idx < n_genes; ++gene_idx) {
+        centroids_ptr[out_offset + static_cast<size_t>(gene_idx)] =
+          local_sums[static_cast<size_t>(gene_idx)] * inv_n_cells;
+      }
+    }
+  };
+
+  if (num_threads == 1) {
+    worker();
+    return centroids;
   }
-  
+
+  std::vector<std::thread> threads;
+  threads.reserve(static_cast<size_t>(num_threads));
+  std::vector<std::exception_ptr> worker_errors(
+    static_cast<size_t>(num_threads)
+  );
+  bool launch_failed = false;
+
+  for (int t = 0; t < num_threads; ++t) {
+    try {
+      threads.emplace_back([&, t]() {
+        try {
+          worker();
+        } catch (...) {
+          worker_errors[static_cast<size_t>(t)] =
+            std::current_exception();
+        }
+      });
+    } catch (const std::system_error&) {
+      launch_failed = true;
+      break;
+    } catch (...) {
+      for (auto& thread : threads) {
+        if (thread.joinable()) thread.join();
+      }
+      throw;
+    }
+  }
+
   for (auto& thread : threads) {
-    thread.join();
+    if (thread.joinable()) thread.join();
   }
-  
+
+  for (const auto& err : worker_errors) {
+    if (err) std::rethrow_exception(err);
+  }
+
+  // Dynamic scheduling makes fallback simple: after existing workers finish,
+  // the main thread consumes any remaining clusters.
+  if (launch_failed) {
+    worker();
+  }
+
   return centroids;
 }
 
@@ -557,97 +692,133 @@ using Eigen::SparseMatrix;
 // More memory-efficient version with dynamic load balancing
 // [[Rcpp::export]]
 Eigen::MatrixXd sparse_dense_correlation_cpp(
-    Rcpp::S4 sp_mat, 
+    Rcpp::S4 sp_mat,
     Rcpp::NumericMatrix centroids,
     int num_threads = -1) {
-  
+
+  // Rcpp -> Eigen conversion happens entirely on the main R thread.
   SparseMatrix<double> mat = Rcpp::as<SparseMatrix<double>>(sp_mat);
   MatrixXd cent = Rcpp::as<MatrixXd>(centroids);
-  
-  int n_cells = mat.cols();
-  int n_genes = mat.rows();
-  int n_clusters = cent.cols();
-  
-  // Precompute centroid statistics
+
+  const int n_cells = static_cast<int>(mat.cols());
+  const int n_genes = static_cast<int>(mat.rows());
+  const int n_clusters = static_cast<int>(cent.cols());
+
+  MatrixXd correlations(n_cells, n_clusters);
+  if (n_cells == 0 || n_clusters == 0 || n_genes == 0) {
+    return correlations;
+  }
+
+  // Precompute centroid statistics on the main thread.
   MatrixXd cent_means = cent.colwise().mean();
   MatrixXd cent_std = MatrixXd::Zero(1, n_clusters);
-  
-  for (int k = 0; k < n_clusters; ++k) {
-    VectorXd centered = cent.col(k).array() - cent_means(0, k);
-    cent_std(0, k) = std::sqrt(centered.squaredNorm() / (n_genes - 1));
+
+  if (n_genes > 1) {
+    for (int k = 0; k < n_clusters; ++k) {
+      VectorXd centered = cent.col(k).array() - cent_means(0, k);
+      cent_std(0, k) =
+        std::sqrt(centered.squaredNorm() / static_cast<double>(n_genes - 1));
+    }
   }
-  
-  // Initialize result
-  MatrixXd correlations(n_cells, n_clusters);
-  
-  // Auto-detect threads
-  if (num_threads <= 0) {
-    num_threads = std::thread::hardware_concurrency();
-  }
-  num_threads = std::min(num_threads, n_cells);
-  
-  // Dynamic load balancing
+
+  num_threads = cv_resolve_threads(num_threads, n_cells);
   std::atomic<int> next_cell{0};
-  std::vector<std::thread> threads;
-  
-  for (int t = 0; t < num_threads; ++t) {
-    threads.emplace_back([&]() {
-      // Thread-local storage
-      std::vector<double> cell_vals(n_genes, 0.0);
-      
-      while (true) {
-        int cell = next_cell.fetch_add(1);
-        if (cell >= n_cells) break;
-        
-        // Extract sparse column values
-        int nnz = 0;
-        double cell_sum = 0.0;
-        
-        // Reset cell_vals for this cell
-        std::fill(cell_vals.begin(), cell_vals.end(), 0.0);
-        
-        for (SparseMatrix<double>::InnerIterator it(mat, cell); it; ++it) {
-          int gene_idx = it.row();
-          double val = it.value();
-          cell_vals[gene_idx] = val;
-          cell_sum += val;
-          nnz++;
-        }
-        
-        double cell_mean = cell_sum / n_genes;
-        
-        // Compute cell standard deviation
-        double cell_var = 0.0;
-        for (int g = 0; g < n_genes; ++g) {
-          double diff = cell_vals[g] - cell_mean;
-          cell_var += diff * diff;
-        }
-        double cell_std = std::sqrt(cell_var / (n_genes - 1));
-        
-        // Compute correlations with centroids
-        for (int k = 0; k < n_clusters; ++k) {
-          double covariance = 0.0;
-          double cent_mean = cent_means(0, k);
-          
-          for (int g = 0; g < n_genes; ++g) {
-            covariance += (cell_vals[g] - cell_mean) * (cent(g, k) - cent_mean);
-          }
-          
-          double denom = cell_std * cent_std(0, k);
-          if (denom > 1e-10) {
-            correlations(cell, k) = covariance / ((n_genes - 1) * denom);
-          } else {
-            correlations(cell, k) = 0.0;
-          }
-        }
+
+  auto worker = [&]() {
+    std::vector<double> cell_vals(static_cast<size_t>(n_genes), 0.0);
+
+    while (true) {
+      const int cell = next_cell.fetch_add(1, std::memory_order_relaxed);
+      if (cell >= n_cells) break;
+
+      std::fill(cell_vals.begin(), cell_vals.end(), 0.0);
+
+      double cell_sum = 0.0;
+      for (SparseMatrix<double>::InnerIterator it(mat, cell); it; ++it) {
+        const int gene_idx = static_cast<int>(it.row());
+        const double val = it.value();
+        cell_vals[static_cast<size_t>(gene_idx)] = val;
+        cell_sum += val;
       }
-    });
+
+      const double cell_mean = cell_sum / static_cast<double>(n_genes);
+
+      double cell_var = 0.0;
+      for (int g = 0; g < n_genes; ++g) {
+        const double diff = cell_vals[static_cast<size_t>(g)] - cell_mean;
+        cell_var += diff * diff;
+      }
+
+      const double cell_std =
+        (n_genes > 1)
+          ? std::sqrt(cell_var / static_cast<double>(n_genes - 1))
+          : 0.0;
+
+      for (int k = 0; k < n_clusters; ++k) {
+        double covariance = 0.0;
+        const double cent_mean = cent_means(0, k);
+
+        for (int g = 0; g < n_genes; ++g) {
+          covariance +=
+            (cell_vals[static_cast<size_t>(g)] - cell_mean) *
+            (cent(g, k) - cent_mean);
+        }
+
+        const double denom = cell_std * cent_std(0, k);
+        correlations(cell, k) =
+          (n_genes > 1 && denom > 1e-10)
+            ? covariance /
+                (static_cast<double>(n_genes - 1) * denom)
+            : 0.0;
+      }
+    }
+  };
+
+  if (num_threads == 1) {
+    worker();
+    return correlations;
   }
-  
+
+  std::vector<std::thread> threads;
+  threads.reserve(static_cast<size_t>(num_threads));
+  std::vector<std::exception_ptr> worker_errors(
+    static_cast<size_t>(num_threads)
+  );
+  bool launch_failed = false;
+
+  for (int t = 0; t < num_threads; ++t) {
+    try {
+      threads.emplace_back([&, t]() {
+        try {
+          worker();
+        } catch (...) {
+          worker_errors[static_cast<size_t>(t)] =
+            std::current_exception();
+        }
+      });
+    } catch (const std::system_error&) {
+      launch_failed = true;
+      break;
+    } catch (...) {
+      for (auto& thread : threads) {
+        if (thread.joinable()) thread.join();
+      }
+      throw;
+    }
+  }
+
   for (auto& thread : threads) {
-    thread.join();
+    if (thread.joinable()) thread.join();
   }
-  
+
+  for (const auto& err : worker_errors) {
+    if (err) std::rethrow_exception(err);
+  }
+
+  if (launch_failed) {
+    worker();
+  }
+
   return correlations;
 }
 
@@ -668,102 +839,165 @@ Eigen::MatrixXd sparse_dense_correlation_cpp(
 Rcpp::NumericMatrix compute_reduced_centroids_cpp(
     Rcpp::NumericMatrix mat,
     Rcpp::CharacterVector sketched_clusters,
-    Rcpp::CharacterVector unique_clusters) {
-  
-  int n_cells = mat.rows();
-  int n_dims = mat.cols();
-  int n_clusters = unique_clusters.size();
-  
-  // Get row names from reduced matrix
+    Rcpp::CharacterVector unique_clusters,
+    int num_threads = -1) {
+
+  const int n_cells = mat.rows();
+  const int n_dims = mat.cols();
+  const int n_clusters = static_cast<int>(unique_clusters.size());
+
+  // Resolve all R/Rcpp metadata on the main R thread.
   Rcpp::List dimnames = mat.attr("dimnames");
   Rcpp::CharacterVector rownames = dimnames[0];
-  
-  // Create mapping from cell name to row index
+
   std::unordered_map<std::string, int> cell_to_index;
-  for (int idx = 0; idx < rownames.size(); ++idx) {
-    cell_to_index[Rcpp::as<std::string>(rownames[idx])] = idx;
+  cell_to_index.reserve(static_cast<size_t>(rownames.size()));
+  for (R_xlen_t idx = 0; idx < rownames.size(); ++idx) {
+    cell_to_index[Rcpp::as<std::string>(rownames[idx])] =
+      static_cast<int>(idx);
   }
-  
-  // Create mapping from cluster to row indices
+
   std::unordered_map<std::string, std::vector<int>> cluster_to_cells;
   Rcpp::CharacterVector sketched_names = sketched_clusters.names();
-  
-  for (int idx = 0; idx < sketched_clusters.size(); ++idx) {
-    std::string cell_name = Rcpp::as<std::string>(sketched_names[idx]);
-    std::string cluster_name = Rcpp::as<std::string>(sketched_clusters[idx]);
-    
-    auto it = cell_to_index.find(cell_name);
+
+  for (R_xlen_t idx = 0; idx < sketched_clusters.size(); ++idx) {
+    const std::string cell_name =
+      Rcpp::as<std::string>(sketched_names[idx]);
+    const std::string cluster_name =
+      Rcpp::as<std::string>(sketched_clusters[idx]);
+
+    const auto it = cell_to_index.find(cell_name);
     if (it != cell_to_index.end()) {
       cluster_to_cells[cluster_name].push_back(it->second);
     }
   }
-  
-  // Initialize result matrix (clusters x dimensions)
-  Rcpp::NumericMatrix centroids(n_clusters, n_dims);
-  
-  // Determine optimal number of threads
-  int num_threads = std::max(1, static_cast<int>(std::thread::hardware_concurrency()));
-  if (n_clusters < num_threads) {
-    num_threads = n_clusters;
+
+  std::vector<std::string> unique_cluster_names;
+  unique_cluster_names.reserve(static_cast<size_t>(n_clusters));
+  for (int c_idx = 0; c_idx < n_clusters; ++c_idx) {
+    unique_cluster_names.emplace_back(
+      Rcpp::as<std::string>(unique_clusters[c_idx])
+    );
   }
-  
-  // Process clusters in parallel
-  std::vector<std::thread> threads;
-  int clusters_per_thread = (n_clusters + num_threads - 1) / num_threads;
-  
-  for (int t = 0; t < num_threads; ++t) {
-    int start_cluster = t * clusters_per_thread;
-    int end_cluster = std::min((t + 1) * clusters_per_thread, n_clusters);
-    
-    if (start_cluster < end_cluster) {
-      threads.emplace_back([&, start_cluster, end_cluster]() {
-        // Thread-local storage for sums
-        std::vector<double> dim_sums(n_dims, 0.0);
-        
-        for (int c_idx = start_cluster; c_idx < end_cluster; ++c_idx) {
-          std::string cluster_name = Rcpp::as<std::string>(unique_clusters[c_idx]);
-          auto cluster_it = cluster_to_cells.find(cluster_name);
-          
-          if (cluster_it == cluster_to_cells.end()) {
-            continue; // Skip empty clusters
-          }
-          
-          const std::vector<int>& cell_indices = cluster_it->second;
-          int n_cells_in_cluster = cell_indices.size();
-          
-          if (n_cells_in_cluster == 0) {
-            continue;
-          }
-          
-          // Reset thread-local array
-          std::fill(dim_sums.begin(), dim_sums.end(), 0.0);
-          
-          // Sum across all dimensions for cells in this cluster
-          for (int cell_idx : cell_indices) {
-            for (int dim = 0; dim < n_dims; ++dim) {
-              dim_sums[dim] += mat(cell_idx, dim);
-            }
-          }
-          
-          // Compute means and store in result matrix
-          double inv_n_cells = 1.0 / n_cells_in_cluster;
-          for (int dim = 0; dim < n_dims; ++dim) {
-            centroids(c_idx, dim) = dim_sums[dim] * inv_n_cells;
-          }
+
+  Rcpp::NumericMatrix centroids(n_clusters, n_dims);
+
+  if (n_clusters == 0 || n_dims == 0 || n_cells == 0) {
+    Rcpp::List result_dimnames =
+      Rcpp::List::create(unique_clusters, dimnames[1]);
+    centroids.attr("dimnames") = result_dimnames;
+    return centroids;
+  }
+
+  // Obtain raw pointers on the main thread. Workers use only native pointers,
+  // std::string/std::vector containers, and arithmetic.
+  const double* mat_ptr = mat.begin();
+  double* centroids_ptr = centroids.begin();
+
+  num_threads = cv_resolve_threads(num_threads, n_clusters);
+
+  auto process_cluster_range = [&](int start_cluster, int end_cluster) {
+    std::vector<double> dim_sums(static_cast<size_t>(n_dims), 0.0);
+
+    for (int c_idx = start_cluster; c_idx < end_cluster; ++c_idx) {
+      const auto cluster_it =
+        cluster_to_cells.find(unique_cluster_names[static_cast<size_t>(c_idx)]);
+      if (cluster_it == cluster_to_cells.end()) continue;
+
+      const std::vector<int>& cell_indices = cluster_it->second;
+      const int n_cells_in_cluster =
+        static_cast<int>(cell_indices.size());
+      if (n_cells_in_cluster == 0) continue;
+
+      std::fill(dim_sums.begin(), dim_sums.end(), 0.0);
+
+      for (const int cell_idx : cell_indices) {
+        for (int dim_idx = 0; dim_idx < n_dims; ++dim_idx) {
+          // R matrices are column-major.
+          const size_t in_idx =
+            static_cast<size_t>(cell_idx) +
+            static_cast<size_t>(n_cells) * static_cast<size_t>(dim_idx);
+          dim_sums[static_cast<size_t>(dim_idx)] += mat_ptr[in_idx];
         }
-      });
+      }
+
+      const double inv_n_cells = 1.0 / n_cells_in_cluster;
+      for (int dim_idx = 0; dim_idx < n_dims; ++dim_idx) {
+        const size_t out_idx =
+          static_cast<size_t>(c_idx) +
+          static_cast<size_t>(n_clusters) * static_cast<size_t>(dim_idx);
+        centroids_ptr[out_idx] =
+          dim_sums[static_cast<size_t>(dim_idx)] * inv_n_cells;
+      }
+    }
+  };
+
+  if (num_threads == 1) {
+    process_cluster_range(0, n_clusters);
+  } else {
+    const int clusters_per_thread =
+      (n_clusters + num_threads - 1) / num_threads;
+
+    std::vector<std::thread> threads;
+    threads.reserve(static_cast<size_t>(num_threads));
+    std::vector<std::exception_ptr> worker_errors(
+      static_cast<size_t>(num_threads)
+    );
+
+    int fallback_from = num_threads;
+
+    for (int t = 0; t < num_threads; ++t) {
+      const int start_cluster = t * clusters_per_thread;
+      const int end_cluster = std::min(
+        (t + 1) * clusters_per_thread,
+        n_clusters
+      );
+      if (start_cluster >= end_cluster) continue;
+
+      try {
+        threads.emplace_back([&, t, start_cluster, end_cluster]() {
+          try {
+            process_cluster_range(start_cluster, end_cluster);
+          } catch (...) {
+            worker_errors[static_cast<size_t>(t)] =
+              std::current_exception();
+          }
+        });
+      } catch (const std::system_error&) {
+        fallback_from = t;
+        break;
+      } catch (...) {
+        for (auto& thread : threads) {
+          if (thread.joinable()) thread.join();
+        }
+        throw;
+      }
+    }
+
+    for (auto& thread : threads) {
+      if (thread.joinable()) thread.join();
+    }
+
+    for (const auto& err : worker_errors) {
+      if (err) std::rethrow_exception(err);
+    }
+
+    for (int t = fallback_from; t < num_threads; ++t) {
+      const int start_cluster = t * clusters_per_thread;
+      const int end_cluster = std::min(
+        (t + 1) * clusters_per_thread,
+        n_clusters
+      );
+      if (start_cluster < end_cluster) {
+        process_cluster_range(start_cluster, end_cluster);
+      }
     }
   }
-  
-  // Wait for all threads to complete
-  for (auto& thread : threads) {
-    thread.join();
-  }
-  
-  // Set row and column names
-  Rcpp::List result_dimnames = Rcpp::List::create(unique_clusters, dimnames[1]);
+
+  // Rcpp attribute assignment happens only after all workers have joined.
+  Rcpp::List result_dimnames =
+    Rcpp::List::create(unique_clusters, dimnames[1]);
   centroids.attr("dimnames") = result_dimnames;
-  
+
   return centroids;
 }
-
