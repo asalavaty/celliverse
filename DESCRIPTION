@@ -2,7 +2,7 @@ Package: celliverse
 Type: Package
 Title: An Ecosystem for Exploring the Universe of Single-Cell Data
 Language: en-US
-Version: 0.0.2
+Version: 0.0.2.9000
 Authors@R:
     person("Adrian", "Salavaty",
       role = c("aut", "cre"),

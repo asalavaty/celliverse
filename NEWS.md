@@ -3,6 +3,10 @@ celliverse
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
 
+# celliverse 0.0.2.9000 (Developmental version)
+
+- Update README. Package is on CRAN.
+
 # celliverse 0.0.2
 
 ## Initial CRAN release
