@@ -2,6 +2,8 @@
 
 ## celliverse 0.0.2
 
+CRAN release: 2026-09-12
+
 ### Initial CRAN release
 
 This is the first CRAN release of `celliverse`, an R toolkit for
