@@ -1,5 +1,9 @@
 # Changelog
 
+## celliverse 0.0.2.9000 (Developmental version)
+
+- Update README. Package is on CRAN.
+
 ## celliverse 0.0.2
 
 CRAN release: 2026-09-12

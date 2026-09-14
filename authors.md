@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/asalavaty/celliverse/blob/v0.0.2/inst/CITATION)
+[`inst/CITATION`](https://github.com/asalavaty/celliverse/blob/main/inst/CITATION)
 
 Integrated Value of Influence: An Integrative Method for the
 Identification of the Most Influential Nodes within Networks. Abbas
