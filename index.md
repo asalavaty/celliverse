@@ -5,6 +5,13 @@
 A robust and versatile toolkit for interpretable single-cell
 RNA-sequencing analysis.
 
+### Finding CelliVerse useful? Please star this repo!
+
+Your star helps other researchers discover and use CelliVerse.
+
+[![Animated Star on GitHub button; opens the CelliVerse
+repository](.github/assets/celliverse-star-button.gif)](https://github.com/asalavaty/celliverse "Star CelliVerse on GitHub")
+
 ## Overview
 
 `CelliVerse` is an R toolkit for **single-cell RNA-sequencing
@@ -278,3 +285,8 @@ problems or suggest enhancements.
 When reporting a bug, including a minimal reproducible example together
 with your R and package versions will make it easier to diagnose the
 issue.
+
+If `CelliVerse` has been useful in your research, please consider
+[starring the repository on
+GitHub](https://github.com/asalavaty/celliverse). It helps other
+researchers discover the package.
