@@ -10,6 +10,8 @@ RNA-sequencing analysis.
 
 <!-- badges: start -->
 
+[![GitHub
+stars](https://img.shields.io/github/stars/asalavaty/celliverse?style=social)](https://github.com/asalavaty/celliverse)
 [![R-CMD-check](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/asalavaty/celliverse/actions/workflows/R-CMD-check.yaml)
 [![CRAN
 Version](https://www.r-pkg.org/badges/version/celliverse?color=blue)](https://cran.r-project.org/package=celliverse)
@@ -22,6 +24,25 @@ Downloads](https://cranlogs.r-pkg.org/badges/celliverse?color=8B0000)](https://c
 Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/asalavaty/celliverse)
 
 <!-- badges: end -->
+
+<!-- A GitHub star helps others discover CelliVerse. Text stays real HTML for sharp rendering. -->
+
+<h3 align="center">
+
+Finding CelliVerse useful? Please star this repo!
+</h3>
+
+<p align="center">
+
+Your star helps other researchers discover and use CelliVerse.
+</p>
+
+<p align="center">
+
+<a href="https://github.com/asalavaty/celliverse" title="Star CelliVerse on GitHub">
+<img src=".github/assets/celliverse-star-button.gif" width="360" alt="Animated Star on GitHub button; opens the CelliVerse repository" />
+</a>
+</p>
 
 ## Overview
 
@@ -335,3 +356,8 @@ problems or suggest enhancements.
 When reporting a bug, including a minimal reproducible example together
 with your R and package versions will make it easier to diagnose the
 issue.
+
+If `CelliVerse` has been useful in your research, please consider
+[starring the repository on
+GitHub](https://github.com/asalavaty/celliverse). It helps other
+researchers discover the package.
