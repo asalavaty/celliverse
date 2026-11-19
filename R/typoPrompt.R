@@ -751,7 +751,7 @@ typoPrompt <- function(
              "Positive ", feature_type, "s indicate features supporting a cell identity,",
              " while negative ", feature_type, "s provide exclusionary evidence and",
              " should be considered when distinguishing between closely related cell",
-             "types or cellular states."
+             " types or cellular states."
            ),
            paste0(
              "Positive ", feature_type, "s indicate features supporting a cell identity."
@@ -779,7 +779,9 @@ typoPrompt <- function(
     "For every candidate annotation, provide:",
     "1. The proposed cell type, subtype, or cellular state.",
     "2. A confidence score between 0 and 1.",
-    "3. A concise biological rationale citing the most informative positive markers and, where relevant, important negative markers.",
+    ifelse(use_neg_markers,
+           "3. A concise biological rationale citing the most informative positive markers and, where relevant, important negative markers.",
+           "3. A concise biological rationale citing the most informative positive markers."),
     "",
     "Do not force a specific subtype when the marker evidence does not support",
     "it. When the evidence is ambiguous, prefer the most defensible broader",
